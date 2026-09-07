@@ -73,7 +73,7 @@ export function EditQuoteForm({
           <Field id="currency" label={t("currency")}>
             <p
               id="currency"
-              className="border-input text-muted-foreground flex h-11 items-center rounded-lg border px-3 text-sm"
+              className="border-input text-muted-foreground flex h-11 items-center rounded-control border px-3 text-sm"
             >
               {t("editCurrency", { currency })}
             </p>

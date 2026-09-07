@@ -56,7 +56,7 @@ export function EditTenderItemForm({
   const removeId = `remove-item-${item.id}`;
 
   return (
-    <div className="border-border flex flex-col gap-3 rounded-lg border p-4">
+    <div className="bg-card rounded-surface shadow-surface flex flex-col gap-3 p-4">
       <form id={saveId} action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="tenderId" value={tenderId} />
         <input type="hidden" name="itemId" value={item.id} />

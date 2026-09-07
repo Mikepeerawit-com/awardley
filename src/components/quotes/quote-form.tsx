@@ -277,7 +277,7 @@ export function QuoteForm({
                 {held.map((photo) => (
                   <li
                     key={photo.key}
-                    className="border-border flex items-center justify-between gap-2 rounded-lg border px-3 py-1.5"
+                    className="bg-muted/60 flex items-center justify-between gap-2 rounded-control px-3 py-1.5"
                   >
                     <span className="min-w-0 text-sm break-all">{photo.file.name}</span>
                     <Button
@@ -334,7 +334,7 @@ export function QuoteForm({
       {outstanding.map((run) => (
         <div
           key={run.quoteId}
-          className="border-destructive/40 bg-destructive/10 flex flex-col items-start gap-2 rounded-lg border px-3 py-2"
+          className="border-destructive/40 bg-destructive/10 flex flex-col items-start gap-2 rounded-surface border px-3 py-2"
         >
           <p role="alert" className="text-sm break-words">
             {t("photos.savedWithout", {

@@ -72,13 +72,13 @@ export function TenderSections({ sections }: { sections: TenderSectionLink[] }) 
   return (
     <nav
       aria-label={t("tenders.sections.jump")}
-      className="border-hairline bg-card/95 supports-[backdrop-filter]:bg-card/80 sticky top-2 z-30 flex min-w-0 flex-wrap items-center gap-1 rounded-xl border px-1.5 py-1 shadow-sm backdrop-blur"
+      className="bg-card/95 supports-[backdrop-filter]:bg-card/80 shadow-raised sticky top-2 z-30 flex min-w-0 flex-wrap items-center gap-1 rounded-surface border px-1.5 py-1 shadow-sm backdrop-blur"
     >
       {sections.map((section) => (
         <a
           key={section.id}
           href={`#${section.id}`}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-2.5 text-[13px] font-medium break-words transition-colors"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex min-h-11 min-w-11 items-center justify-center rounded-control px-2.5 text-[13px] font-medium break-words transition-colors"
         >
           {t(section.label)}
         </a>

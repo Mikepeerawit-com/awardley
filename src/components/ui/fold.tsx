@@ -87,7 +87,7 @@ export function Fold({
     <details
       id={id}
       open={defaultOpen}
-      className="group border-hairline bg-card min-w-0 scroll-mt-20 overflow-hidden rounded-xl border"
+      className="group bg-card rounded-surface shadow-surface min-w-0 scroll-mt-20 overflow-hidden"
     >
       <summary className="hover:bg-muted/50 flex min-h-11 min-w-0 cursor-pointer list-none items-center gap-2.5 px-4 py-2.5 transition-colors [&::-webkit-details-marker]:hidden">
         <ChevronDown

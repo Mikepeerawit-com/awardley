@@ -109,7 +109,7 @@ export function AppHeader({ location = { kind: "app" } }: { location?: AppLocati
             <Link
               href="/tenders"
               prefetch={false}
-              className="hover:bg-muted flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-2 transition-colors"
+              className="hover:bg-muted flex min-h-11 min-w-0 items-center gap-2 rounded-control px-2 transition-colors"
             >
               <Wordmark />
               <span className="min-w-0 truncate text-sm font-semibold">{app("name")}</span>

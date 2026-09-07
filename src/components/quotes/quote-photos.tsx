@@ -78,7 +78,7 @@ export function QuotePhotoControls({
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {photos.map((photo, index) => (
             <li key={photo.id} className="flex flex-col gap-1">
-              <div className="border-border bg-muted flex aspect-square items-center justify-center overflow-hidden rounded-lg border">
+              <div className="bg-muted flex aspect-square items-center justify-center overflow-hidden rounded-control border">
                 {photo.url === "" ? (
                   <span className="text-muted-foreground p-2 text-center text-xs">
                     {shared("unavailable")}

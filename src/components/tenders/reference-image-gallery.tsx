@@ -90,7 +90,7 @@ export function ReferenceImageGallery({
               <li key={image.id} className="flex flex-col gap-1.5">
                 <button
                   type="button"
-                  className="focus-visible:ring-ring border-border bg-muted flex aspect-square items-center justify-center overflow-hidden rounded-lg border focus-visible:ring-3 focus-visible:outline-none"
+                  className="focus-visible:ring-ring bg-muted flex aspect-square items-center justify-center overflow-hidden rounded-control border focus-visible:ring-3 focus-visible:outline-none"
                   onClick={() => setOpenAt(ordered.indexOf(image))}
                 >
                   {image.url === "" ? (

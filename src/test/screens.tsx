@@ -647,7 +647,7 @@ export function screens(m: Messages) {
               colleagues who could have have both priced them instead. A colleague's note,
               when there is one, is shown as fact and is measured on the Tender detail. */}
           <Measure>
-            <section className="border-border rounded-lg border border-dashed p-4">
+            <section className="border-border rounded-surface border border-dashed p-4">
               <NoSupplierFoundForm
                 tenderId={tender.id}
                 tenderItemId={gloves.id}
@@ -718,7 +718,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
               <h2 className="text-sm font-medium">{m.people.invite.title}</h2>
               <InviteForm />
             </section>
@@ -740,7 +740,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
               {/* Set up, which is the fuller of the two shapes: it draws the sentence
                   saying when it was last changed and the control that removes it, neither
                   of which exists on an org that has never saved one. */}
@@ -759,7 +759,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
               <CurrencyConversionForm percent={2.5} />
             </section>
           </Measure>
@@ -1056,7 +1056,7 @@ function preferences(m: Messages) {
       </ScreenHeader>
 
       <Measure>
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <h2 className="text-sm font-medium">{m.localeSwitcher.label}</h2>
           <LocaleSwitcher />
         </section>
@@ -1065,7 +1065,7 @@ function preferences(m: Messages) {
             and because it is the widest of the three in both scripts — 跟随系统 is four Han
             glyphs against two. A fixture pinned to a shorter answer would measure the easy
             case of a row that has to fit three thumb-sized targets at 390px. */}
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <h2 className="text-sm font-medium">{m.themeSwitcher.label}</h2>
           <ThemeSwitcher current="system" />
         </section>

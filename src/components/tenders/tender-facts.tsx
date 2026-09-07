@@ -112,7 +112,7 @@ export function TenderDeadlines({
  */
 function Strip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-hairline bg-card flex min-w-0 flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border px-4 py-3">
+    <div className="bg-card rounded-surface shadow-surface flex min-w-0 flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
       {children}
     </div>
   );

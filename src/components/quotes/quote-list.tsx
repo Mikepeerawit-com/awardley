@@ -86,12 +86,12 @@ export function QuoteList({
           // form takes photos on the way in now (#60) and stays where it is, so nothing
           // navigates to this any more — but a row worth linking to is worth naming.
           id={`quote-${quote.id}`}
-          className={`flex flex-col gap-2 rounded-lg border p-4 ${
+          className={`rounded-surface flex flex-col gap-2 p-4 ${
             quote.matchType === "alternative"
               ? // Flag, per screen 5, and for the same reason here: this is a property of
                 // the Quote — a substitute was offered — and not something wrong with it.
-                "border-flag/40 bg-flag/5"
-              : "border-border"
+                "border-flag/40 bg-flag/5 border"
+              : "bg-card shadow-surface"
           }`}
         >
           <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">

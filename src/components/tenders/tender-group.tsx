@@ -57,7 +57,7 @@ export function TenderGroup({
 
   if (section.group === "submission_missed") {
     return (
-      <section className="border-alarm-edge border-alarm min-w-0 overflow-hidden rounded-lg border border-t-2">
+      <section className="border-alarm-edge border-alarm min-w-0 overflow-hidden rounded-surface border border-t-2">
         <div className="bg-alarm-wash flex min-w-0 flex-col gap-1 px-3.5 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <IndicatorLamp tone="alarm" size={15} />
@@ -91,7 +91,7 @@ export function TenderGroup({
           {hint}
         </p>
       </div>
-      <div className="border-hairline bg-card min-w-0 overflow-hidden rounded-lg border">
+      <div className="bg-card rounded-surface shadow-surface min-w-0 overflow-hidden">
         {rows}
       </div>
     </section>

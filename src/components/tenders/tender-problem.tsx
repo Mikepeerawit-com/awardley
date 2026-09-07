@@ -19,7 +19,7 @@ export function TenderProblemNotice({ error }: { error?: TenderProblem }) {
   return (
     <p
       role="alert"
-      className="border-destructive/40 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm"
+      className="border-destructive/40 bg-destructive/10 text-destructive rounded-surface border px-3 py-2 text-sm"
     >
       {t(error)}
     </p>

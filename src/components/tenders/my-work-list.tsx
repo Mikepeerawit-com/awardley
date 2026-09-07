@@ -66,7 +66,7 @@ export function MyWorkList({ items }: { items: MyWorkRow[] }) {
   }
 
   return (
-    <div className="border-hairline bg-card min-w-0 overflow-hidden rounded-lg border">
+    <div className="bg-card rounded-surface shadow-surface min-w-0 overflow-hidden">
       <ul className="flex min-w-0 flex-col">
         {items.map((item, index) => (
           <li

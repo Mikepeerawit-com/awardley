@@ -28,7 +28,7 @@ export function MembershipList({ members }: { members: Membership[] }) {
       {members.map((member) => (
         <li
           key={member.id}
-          className="border-border flex flex-col gap-3 rounded-lg border p-4"
+          className="bg-card rounded-surface shadow-surface flex flex-col gap-3 p-4"
         >
           <div className="flex flex-wrap items-baseline gap-2">
             <span className="font-medium">{member.name}</span>

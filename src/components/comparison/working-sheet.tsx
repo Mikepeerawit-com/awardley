@@ -90,7 +90,7 @@ export function WorkingSheet({
     <div className="flex min-w-0 flex-col gap-4">
       {/* "2 of 4 Items still need a Quote selected" — the sentence that tells somebody
           landing here what the page is currently about. */}
-      <div className="border-border bg-muted/40 flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-lg border px-4 py-3">
+      <div className="bg-muted/60 flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-surface px-4 py-3">
         <span className="text-sm font-medium">
           {undecided === 0
             ? t("header.allDecided")
@@ -104,7 +104,7 @@ export function WorkingSheet({
       {/* A list, not a table: the Item's blocks wrap into a column where there is no room
           for a row, which is what makes this half of the screen the same design at 390px
           and at 1280px rather than two of them. */}
-      <ul className="border-border divide-border divide-y rounded-lg border text-sm">
+      <ul className="bg-card divide-hairline-soft rounded-surface shadow-surface divide-y overflow-hidden text-sm">
         {items.map((item) => (
           <ItemDisclosure
             key={item.id}
@@ -165,7 +165,7 @@ function TotalsBar({ items }: { items: SheetItem[] }) {
     });
 
   return (
-    <div className="border-border bg-muted/40 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 rounded-lg border px-4 py-3">
+    <div className="bg-muted/60 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 rounded-surface px-4 py-3">
       <span className="text-sm font-medium">
         {t("coverage", { priced: totals.pricedCount, total: totals.itemCount })}
       </span>
@@ -413,7 +413,7 @@ function QuoteTable({
   const t = useTranslations("comparison");
 
   return (
-    <div className="border-border bg-background rounded-lg border max-md:border-0 max-md:bg-transparent">
+    <div className="bg-card rounded-surface shadow-surface max-md:bg-transparent max-md:shadow-none">
       <table className="w-full table-fixed text-sm max-md:block">
         <thead className="max-md:hidden">
           <tr className="text-muted-foreground border-border border-b text-left text-xs">
@@ -508,7 +508,7 @@ function QuoteRow({
         "border-border border-t align-top",
         // Below the breakpoint the row is a card: a bordered box headed by the rank pill
         // and the supplier it ranks, with everything else stacked full-width beneath.
-        "max-md:border-border max-md:grid max-md:grid-cols-[1.75rem_minmax(0,1fr)] max-md:gap-x-3 max-md:rounded-lg max-md:border max-md:p-3",
+        "max-md:border-border max-md:grid max-md:grid-cols-[1.75rem_minmax(0,1fr)] max-md:gap-x-3 max-md:rounded-surface max-md:border max-md:p-3",
         // Flag, because this row is a *property* of the Quote — the supplier offered a
         // substitute — and not something that has gone wrong. Alarm would read as the
         // second thing, which is exactly the misreading ADR-0019 keeps it away from.
@@ -556,7 +556,7 @@ function QuoteRow({
 
       <Cell>
         {isAlternative ? (
-          <div className="flex flex-col gap-1 max-md:rounded-lg max-md:border max-md:border-flag/40 max-md:bg-flag/10 max-md:p-2">
+          <div className="flex flex-col gap-1 max-md:rounded-control max-md:border max-md:border-flag/40 max-md:bg-flag/10 max-md:p-2">
             <span className="field-label bg-flag-wash text-flag-ink w-fit max-w-full rounded px-1.5 py-0.5 text-[0.7rem] font-medium">
               {tq("matchType.alternative")}
             </span>
@@ -831,7 +831,7 @@ function Notice({
       // do; holding it structurally is what survives the difference. The corollary is that
       // a *green* run of this suite locally is not evidence about the runner either.
       role="note"
-      className={`rounded-lg border px-3 py-2 text-sm break-words ${tones[tone]}`}
+      className={`rounded-surface border px-3 py-2 text-sm break-words ${tones[tone]}`}
     >
       <span className="font-semibold">{title}</span> <span>{children}</span>
     </p>

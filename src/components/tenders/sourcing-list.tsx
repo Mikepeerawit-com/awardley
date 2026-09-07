@@ -53,7 +53,7 @@ export function SourcingList({
           the Owner's screen wondering what broke. */}
       <p className="text-muted-foreground text-sm">{t("hint")}</p>
 
-      <ul className="border-border divide-border divide-y rounded-lg border text-sm">
+      <ul className="bg-card divide-hairline-soft rounded-surface shadow-surface divide-y overflow-hidden text-sm">
         {items.map((item) => (
           <li key={item.id} className="flex min-w-0 flex-col gap-2 p-4">
             <Item

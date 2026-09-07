@@ -45,6 +45,7 @@ export function Fold({
   id,
   title,
   count,
+  level = 2,
   defaultOpen = false,
   children,
 }: {
@@ -69,9 +70,19 @@ export function Fold({
    * a "1" beside a block of facts says nothing.
    */
   count?: number;
+  /**
+   * Which heading the summary is, and the only reason this is a prop: a fold nested
+   * inside a {@link Section} that already drew an `<h2>` is a level down from one sitting
+   * beside it, and a document whose levels skip is one a screen reader's heading list
+   * misreports. The look is the same either way — the tier is the outline's, not the
+   * type scale's.
+   */
+  level?: 2 | 3;
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
+  const Heading = level === 3 ? "h3" : "h2";
+
   return (
     <details
       id={id}
@@ -83,7 +94,7 @@ export function Fold({
           aria-hidden="true"
           className="text-ink-faint size-4 shrink-0 -rotate-90 transition-transform group-open:rotate-0"
         />
-        <h2 className="min-w-0 text-[13px] font-semibold break-words">{title}</h2>
+        <Heading className="min-w-0 text-[13px] font-semibold break-words">{title}</Heading>
         {count !== undefined && (
           <span className="text-ink-faint ml-auto shrink-0 font-mono text-[13px] font-medium tabular-nums">
             {count}

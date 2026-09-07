@@ -136,6 +136,65 @@ export type Messages = typeof en;
  * touch them before they exist.
  */
 export function screens(m: Messages) {
+  /**
+   * The Owner's edit screen, drawn either at rest or with the add-an-item fold down.
+   *
+   * A function rather than two literals because the pair differs by one prop, and the
+   * reason it is a pair at all is that a `<details>` the reader has not opened is
+   * invisible to `checkVisibility()` and therefore to every guard in the `layout`
+   * project (ADR-0026).
+   */
+  const editingATender = (addingItem: boolean) => (
+    <Body location={editBar}>
+      <ScreenHeader eyebrow={tender.reference} heading={m.tenders.edit}>
+        <p className="text-muted-foreground text-sm">{m.tenders.editDescription}</p>
+      </ScreenHeader>
+
+      <Measure>
+        <EditTenderForm tenderId={tender.id} members={ownerChoices} defaults={tender} />
+      </Measure>
+
+      <Measure>
+        <Section id="items" title={m.tenders.item.plural}>
+          <p className="text-muted-foreground text-sm">{m.tenders.item.hint}</p>
+
+          {/* All three Items, and `removable` on every one — the Tender has more than
+              one, so the destructive Remove is drawn per row. A fixture with a single
+              Item would compose the one shape of this screen that has no Remove on it
+              at all. */}
+          {tender.items.map((item) => (
+            <EditTenderItemForm key={item.id} tenderId={tender.id} item={item} removable />
+          ))}
+
+          <AddTenderItemForm tenderId={tender.id} defaultOpen={addingItem} />
+        </Section>
+      </Measure>
+
+      {/* Outside the measure, as the page draws it: the gallery is a grid of tiles
+          scanned rather than a line of prose read along. */}
+      <Section id="reference-images" title={m.tenders.referenceImages.title}>
+        <ReferenceImageUploader tenderId={tender.id} />
+        <ReferenceImageGallery
+          tenderId={tender.id}
+          images={referenceImages}
+          items={tender.items}
+        />
+      </Section>
+
+      {/* A `Section` here and a `Fold` on the Tender detail, which the page does too:
+          the same block is a lookup there and the work here. */}
+      <Section id="assignees" title={m.tenders.assignees.title}>
+        <AssigneeControls
+          tenderId={tender.id}
+          assignees={tender.assignees}
+          members={members}
+          callerId={tender.ownerUserId}
+          isOwner
+        />
+      </Section>
+    </Body>
+  );
+
   return {
     // The screen an Assignee actually opens (ADR-0021): their own Items, each linking
     // straight to the quote form. Composed at 390px, which is the width it is designed
@@ -469,67 +528,20 @@ export function screens(m: Messages) {
     // The Owner's other form, and the densest screen in the app after the working sheet:
     // the Tender's own fields, one form per Item, an uploader, a gallery of the client's
     // pictures with a picker on every one, and the Assignee controls under all of it.
-    "editing a tender": {
+    //
+    // **Two records off one body, unlike the Tender detail's pair.** That screen's
+    // folds-open twin is written out in full because it is a different screen — the
+    // Owner's rather than the Assignee's, with the working sheet in place of the sourcing
+    // list. This pair differs in one boolean, so a second copy of sixty lines would be
+    // sixty lines that could drift apart while both kept passing.
+    "editing a tender": { measure: 768, body: editingATender(false) },
+    // **The same screen with the add-an-item fold open**, and it exists for the reason
+    // ADR-0026 gives: a shut `<details>` fails `checkVisibility()`, so with the fold down
+    // the contrast walk, the tap floor and the 390px measure all stop at its summary bar
+    // and four inputs and a submit go unwalked.
+    "editing a tender, adding an item": {
       measure: 768,
-      body: (
-        <Body location={editBar}>
-          <ScreenHeader eyebrow={tender.reference} heading={m.tenders.edit}>
-            <p className="text-muted-foreground text-sm">{m.tenders.editDescription}</p>
-          </ScreenHeader>
-
-          <Measure>
-            <EditTenderForm
-              tenderId={tender.id}
-              members={ownerChoices}
-              defaults={tender}
-            />
-          </Measure>
-
-          <Measure>
-            <section className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-sm font-medium">{m.tenders.item.plural}</h2>
-                <p className="text-muted-foreground text-xs">{m.tenders.item.hint}</p>
-              </div>
-
-              {/* All three Items, and `removable` on every one — the Tender has more than
-                  one, so the destructive Remove is drawn per row. A fixture with a single
-                  Item would compose the one shape of this screen that has no Remove on it
-                  at all. */}
-              {tender.items.map((item) => (
-                <EditTenderItemForm
-                  key={item.id}
-                  tenderId={tender.id}
-                  item={item}
-                  removable
-                />
-              ))}
-
-              <AddTenderItemForm tenderId={tender.id} />
-            </section>
-          </Measure>
-
-          {/* Outside the measure, as the page draws it: the gallery is a grid of tiles
-              scanned rather than a line of prose read along. */}
-          <section className="flex flex-col gap-4">
-            <h2 className="text-sm font-medium">{m.tenders.referenceImages.title}</h2>
-            <ReferenceImageUploader tenderId={tender.id} />
-            <ReferenceImageGallery
-              tenderId={tender.id}
-              images={referenceImages}
-              items={tender.items}
-            />
-          </section>
-
-          <AssigneeControls
-            tenderId={tender.id}
-            assignees={tender.assignees}
-            members={members}
-            callerId={tender.ownerUserId}
-            isOwner
-          />
-        </Body>
-      ),
+      body: editingATender(true),
     },
     "sourcing an item": {
       measure: 768,

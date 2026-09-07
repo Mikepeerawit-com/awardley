@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { Screen } from "@/components/screen";
 import { Measure } from "@/components/ui/screen-body";
+import { Section } from "@/components/ui/section";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { AssigneeControls } from "@/components/tenders/assignee-controls";
 import { EditTenderForm } from "@/components/tenders/edit-tender-form";
@@ -70,11 +71,8 @@ export default async function EditTenderPage({
       </Measure>
 
       <Measure>
-        <section className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-sm font-medium">{t("item.plural")}</h2>
-            <p className="text-muted-foreground text-xs">{t("item.hint")}</p>
-          </div>
+        <Section id="items" title={t("item.plural")}>
+          <p className="text-muted-foreground text-sm">{t("item.hint")}</p>
 
           {tender.items.map((item) => (
             <EditTenderItemForm
@@ -88,15 +86,13 @@ export default async function EditTenderPage({
           ))}
 
           <AddTenderItemForm tenderId={tender.id} />
-        </section>
+        </Section>
       </Measure>
 
       {/* Buildspec screen 3 puts Reference Images on this screen, and they upload
           per-Tender: five pictures arrive in one email with nothing saying which Item
           each is of, so the placing happens below, against pictures you can see. */}
-      <section className="flex flex-col gap-4">
-        <h2 className="text-sm font-medium">{t("referenceImages.title")}</h2>
-
+      <Section id="reference-images" title={t("referenceImages.title")}>
         {/* The hint lives on the input rather than on the heading — one sentence, beside
             the thing it is about. */}
         <ReferenceImageUploader tenderId={tender.id} />
@@ -106,18 +102,26 @@ export default async function EditTenderPage({
           images={referenceImages}
           items={tender.items}
         />
-      </section>
+      </Section>
 
       {/* Buildspec screen 3 names Assignees alongside the dates and the Items. They
           also sit on the detail page, because that is where somebody who was never
           asked goes to put themselves on a Tender. */}
-      <AssigneeControls
-        tenderId={tender.id}
-        assignees={tender.assignees}
-        members={members}
-        callerId={user.id}
-        isOwner={tender.ownerUserId === user.id}
-      />
+      {/* **A `Section` here and a `Fold` on the detail screen, on purpose.** The same
+          block is a lookup there — *who else is on this?* — and the work here, since
+          managing Assignees is one of the things this screen exists to do. It is also
+          where the heading went when the Tender detail's fold took it over: the component
+          stopped drawing its own `<h2>` and this page, which draws it bare, was left with
+          an unlabelled list. */}
+      <Section id="assignees" title={t("assignees.title")}>
+        <AssigneeControls
+          tenderId={tender.id}
+          assignees={tender.assignees}
+          members={members}
+          callerId={user.id}
+          isOwner={tender.ownerUserId === user.id}
+        />
+      </Section>
     </Screen>
   );
 }

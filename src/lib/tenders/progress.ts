@@ -29,6 +29,27 @@ import { tenderOutcome, type DecidedItem } from "@/lib/tenders/outcome";
 /** The rolling window "Coming up" means. Rolling, not a calendar week — see below. */
 const comingUpDays = 7;
 
+/**
+ * How loudly a date still ahead is stated: lit inside the rolling window, hollow outside
+ * it.
+ *
+ * Pulled out of {@link rowStatus} when the Tender detail started drawing its two
+ * deadlines directly ({@link TenderDeadlines}). The window is the interesting number and
+ * it is now read in two places, so it is defined in one — a second `days <= 7` written
+ * beside the second screen is how a deadline comes to be urgent on the list and calm on
+ * the Tender it names.
+ *
+ * **A date already gone by is calm here, and that is not an oversight.** Alarm is time
+ * and only time (ADR-0019), and the two readings of a passed date that *are* alarming —
+ * a Submission Missed, and an Item still unsourced after the internal deadline — are
+ * decided by {@link isSubmissionMissed} and {@link isSourcingOverdue}, which know things
+ * a bare number of days does not. What is left over is a date somebody has already looked
+ * at, and it is stated rather than shouted about.
+ */
+export function deadlineTone(days: number): LampTone {
+  return days >= 0 && days <= comingUpDays ? "signal" : "calm";
+}
+
 /** What the rules need of a Tender Item: how it ended, and how its sourcing stands. */
 export type SourcedItem = DecidedItem & {
   quoteCount: number;
@@ -295,8 +316,9 @@ export function rowStatus(tender: ClassifiedTender, today: string): RowStatus {
     // Inside the rolling window something is expected of the reader; beyond it the lamp
     // is drawn hollow. A date already gone by that got this far is one somebody has
     // already looked at — a part-decided Tender that was never sent — so it is stated
-    // rather than shouted about.
-    tone: days >= 0 && days <= comingUpDays ? "signal" : "calm",
+    // rather than shouted about. `deadlineTone` holds that reading for this row and for
+    // the Tender detail's two deadlines both.
+    tone: deadlineTone(days),
     deadline: next.kind,
     days,
   };

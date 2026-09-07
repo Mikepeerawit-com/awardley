@@ -1,7 +1,6 @@
 import { render } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import { alphaOf, backgrounds, contrast, flatten, groundUnder } from "@/test/colour";
 import { describeElement, desk, drawn, phone } from "@/test/layout";
@@ -150,7 +149,25 @@ describe.each(themes)("the %s theme", (theme) => {
   );
 });
 
-/** Tab from the top of the page to the bottom of it, at every width, and report the stops. */
+/**
+ * Tab from the top of the page to the bottom of it, at every width, and report the stops.
+ *
+ * **The Tab is the browser's own, not a simulated one**, and the difference is not
+ * academic. This walked with `@testing-library/user-event` until the Tender detail grew
+ * its first `<details>`, and that library's `tab()` computes the next stop in JavaScript
+ * from a selector of its own: it can focus a `<summary>` and cannot tab *off* one, so
+ * focus stopped dead on the last fold and this file reported the bottom bar's two
+ * destinations as controls no keyboard could reach. They were reachable — the same walk
+ * driven through the real browser visits all thirteen stops in document order and ends on
+ * `body`, which is how the claim was settled rather than assumed.
+ *
+ * A simulated Tab in a suite whose whole premise is *a real browser at a real viewport*
+ * was the wrong instrument anyway: what this file asserts is that a reader pressing a key
+ * sees a ring, and the reader's key is the browser's. The version of that bug worth
+ * fearing is the inverse of the one that happened — a simulation *agreeing* that focus
+ * reaches everything when the engine disagrees, which is a green check on a screen nobody
+ * can operate (ADR-0016).
+ */
 async function expectEveryStopRings(container: HTMLElement, name: string): Promise<void> {
   for (const width of widths) {
     await page.viewport(width.width, width.height);
@@ -160,18 +177,37 @@ async function expectEveryStopRings(container: HTMLElement, name: string): Promi
     const faults: string[] = [];
     const visited: HTMLElement[] = [];
 
-    // One press past the number of controls that are drawn, so the walk ends by coming
-    // back round to where it started rather than by running out of a budget somebody
-    // guessed. A screen that grew a control does not quietly stop being fully walked.
     const stops = focusable(container).length;
 
-    for (let press = 0; press <= stops; press++) {
+    /**
+     * **The walk ends by coming back to where it started, not by running out of a budget
+     * somebody guessed** — so a screen that grew a control does not quietly stop being
+     * fully walked. `visited[0]` is that starting point, and returning to it is the only
+     * ordinary way out; `body` is the other, for a page whose last Tab leaves the document.
+     *
+     * **A press that does not move focus is not the end of the walk**, and pressing real
+     * keys is what made that distinction necessary. `<input type="date">` is one control
+     * to this file and three to Chromium — day, month and year are separate stops inside
+     * it, and `document.activeElement` is the same input at all three. Breaking on any
+     * repeat, which is what this did while the Tab was simulated, stopped the walk dead on
+     * the first date field of every form in the app and reported the twelve controls after
+     * it as unreachable. They are reachable; the walk was not looking.
+     *
+     * `limit` is therefore a backstop rather than the plan: high enough that no real
+     * composite control can exhaust it, and there only so that a genuine focus trap ends
+     * this loop instead of hanging the suite. Reaching it is not a pass — the assertion
+     * below is what decides that, by naming every control the walk never got to.
+     */
+    const limit = stops * 6 + 12;
+
+    for (let press = 0; press < limit; press++) {
       await user.tab();
 
       const stop = document.activeElement;
 
       if (!(stop instanceof HTMLElement) || stop === document.body) break;
-      if (visited.includes(stop)) break;
+      if (stop === visited[0]) break;
+      if (visited.includes(stop)) continue;
 
       visited.push(stop);
 

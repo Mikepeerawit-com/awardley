@@ -44,13 +44,14 @@ export function SourcingList({
   const t = useTranslations("tenders.yourItems");
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="border-border bg-muted/40 flex flex-col gap-1 rounded-lg border px-4 py-3">
-        <span className="text-sm font-medium">{t("title")}</span>
-        {/* Says what is missing and whose it is, rather than leaving somebody who has
-            seen the Owner's screen wondering what broke. */}
-        <span className="text-muted-foreground text-sm">{t("hint")}</span>
-      </div>
+    // A `div`, and one line lighter, since the Tender detail draws every part inside a
+    // `Section`. This was a `<section>` with no heading, holding a box whose first line
+    // was `t("title")` — the same string the `Section` above it now draws as the actual
+    // `<h2>`. One of the two had to go and it is the one that was not a heading.
+    <div className="flex min-w-0 flex-col gap-4">
+      {/* Says what is missing and whose it is, rather than leaving somebody who has seen
+          the Owner's screen wondering what broke. */}
+      <p className="text-muted-foreground text-sm">{t("hint")}</p>
 
       <ul className="border-border divide-border divide-y rounded-lg border text-sm">
         {items.map((item) => (
@@ -66,7 +67,7 @@ export function SourcingList({
           </li>
         ))}
       </ul>
-    </section>
+    </div>
   );
 }
 

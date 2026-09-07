@@ -37,11 +37,14 @@ export async function OutcomePanel({
   const verdict = await tenderVerdict(tender);
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold tracking-tight">{t("title")}</h2>
-        <p className="text-muted-foreground text-sm">{t("hint")}</p>
-      </div>
+    // No heading and no `<section>`: the `Section` this is drawn inside carries both, at
+    // the one weight every part of the Tender detail now uses. This drew its own at
+    // `text-lg font-semibold` while `AssigneeControls` two blocks down drew one at
+    // `text-sm font-medium`, which is how a screen ends up with no heading level a reader
+    // can navigate by. The hint stays — it is prose about this block, not a second name
+    // for it.
+    <div className="flex min-w-0 flex-col gap-4">
+      <p className="text-muted-foreground text-sm">{t("hint")}</p>
 
       <div className="border-border flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border px-4 py-3">
         <div className="flex flex-col gap-0.5">
@@ -104,7 +107,7 @@ export async function OutcomePanel({
         <span className="text-sm font-semibold">{verdict.label}</span>
         <span className="text-muted-foreground text-sm">{verdict.note}</span>
       </div>
-    </section>
+    </div>
   );
 }
 

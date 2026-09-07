@@ -58,7 +58,13 @@ vi.mock("@/app/actions/comparison", () => ({
 describe(`the working sheet at ${phone.width}×${phone.height}`, () => {
   it("never scrolls sideways, anywhere on the page", () => {
     const { container } = renderSheet();
-    const sheet = container.querySelector("section")!;
+    // The sheet's own root, whatever element it happens to be. This was
+    // `querySelector("section")` until the Tender detail grew sections of its own: the
+    // sheet is drawn inside a `Section` now and stopped being one, and a selector naming
+    // the tag went from finding the sheet to finding nothing — which fails as a
+    // `TypeError` on `null` rather than as the overflow this test is about. The root is
+    // the thing being measured; which tag it wears is not this test's business.
+    const sheet = container.firstElementChild!;
 
     // The criterion, stated as ADR-0009 states it.
     expect(sheet.scrollWidth).toBeLessThanOrEqual(sheet.clientWidth);

@@ -82,7 +82,12 @@ export function WorkingSheet({
   const undecided = itemsNeedingDecision(items);
 
   return (
-    <section className="flex flex-col gap-4">
+    // A `div` since the Tender detail draws every part inside a `Section`: this was a
+    // `<section>` with no heading in it, which is a region a screen reader cannot name
+    // and therefore will not offer — a wrapper that cost a landmark and bought nothing.
+    // The heading is the `Section`'s now, and it is the first this half of the screen has
+    // ever had.
+    <div className="flex min-w-0 flex-col gap-4">
       {/* "2 of 4 Items still need a Quote selected" — the sentence that tells somebody
           landing here what the page is currently about. */}
       <div className="border-border bg-muted/40 flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-lg border px-4 py-3">
@@ -127,7 +132,7 @@ export function WorkingSheet({
       <TotalsBar items={items} />
 
       <p className="text-muted-foreground text-xs">{t("derivedNote")}</p>
-    </section>
+    </div>
   );
 }
 
@@ -226,6 +231,9 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
   // The Tender's own sourcing vocabulary, not the sheet's: these three states are facts
   // about an Item and are named the same wherever an Item is shown.
   const ts = useTranslations("tenders.sourcing");
+  // And the Tender's own way of saying how many of a thing there are, for the same
+  // reason — `ItemBrief` and the sourcing list already say it this way.
+  const ti = useTranslations("tenders.item");
   const format = useFormatter();
   const selected = item.quotes.find((quote) => quote.id === item.selectedQuoteId);
 
@@ -248,12 +256,17 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
             the page with it, however narrow the column around it was allowed to become.
             The chips below already carry this pair; the two lines of text did not. */}
         <span className="text-foreground max-w-full font-medium">{item.productName}</span>
+        {/* **`tenders.item.quantified`, which is the Item's own line and not a second one
+            written for this screen.** The sheet had a `comparison.item.quantified` of its
+            own reading "40000 × piece · 3 quotes", and the count on the end of it was the
+            same count the chip directly beneath states — so an Item with Quotes and no
+            refusals said "3 quotes" twice, on adjacent lines. The chips are the ones that
+            survive: they distinguish Quoted from No Supplier Found from Not Yet Sourced,
+            which the tail of a sentence cannot. Deleting the sheet's copy also picked up
+            the `, number` formatting the shared key has and this one never did — the
+            quantity reads 40,000 rather than 40000. */}
         <span className="text-muted-foreground max-w-full text-xs">
-          {t("item.quantified", {
-            quantity: item.quantity,
-            unit: item.unit,
-            quotes: item.quotes.length,
-          })}
+          {ti("quantified", { quantity: item.quantity, unit: item.unit })}
         </span>
 
         {/* The three sourcing states. The difference between the last two decides
@@ -413,8 +426,12 @@ function QuoteTable({
             <th className="w-[15%] px-2 py-2 text-right font-medium">
               {t("quote.unitPrice")}
             </th>
+            {/* No quantity in the heading. It used to read "Line total (40000 piece)",
+                and the multiplier it named is stated once already on the Item's own row a
+                few lines above — so the column repeated it, and the card below repeated it
+                again on every Quote. One key says "Line total" and both places use it. */}
             <th className="w-[14%] px-2 py-2 text-right font-medium">
-              {t("quote.lineTotal", { quantity: item.quantity, unit: item.unit })}
+              {t("quote.lineTotal")}
             </th>
             <th className="w-[12%] px-2 py-2 font-medium">{t("quote.photos")}</th>
             <th className="w-[13%] px-2 py-2" />
@@ -440,9 +457,16 @@ function QuoteTable({
  * One Quote: a row at a desk, a card on a phone, and the same cells in the same order
  * both ways.
  *
- * Below the breakpoint the row becomes a two-column grid — the rank pill in the first
- * column, every other cell stacked down the second — so the reflow is a handful of
- * placement rules rather than a second component.
+ * Below the breakpoint the row becomes a grid, so the reflow is a handful of placement
+ * rules rather than a second component. **Only the card's first line is two columns**:
+ * the rank pill, and the supplier name beside it. Everything under that line runs the
+ * full width of the card.
+ *
+ * The rank used to hold a 1.75rem column open down the whole card, with a 0.75rem gap
+ * beside it — 40px of nothing to the left of seven lines, on a 390px screen, taken off
+ * the one column there is. The names this sheet carries are long and often unbreakable
+ * (a product code, a Chinese supplier's full registered name), so that gutter was paid
+ * for in wrapped lines rather than in white space.
  *
  * The heading row is not on screen to say what each cell is, so the cells say it
  * themselves, and in two different ways on purpose. A supplier name, a price and an
@@ -482,8 +506,8 @@ function QuoteRow({
     <tr
       className={[
         "border-border border-t align-top",
-        // Below the breakpoint the row is a card: a bordered box with the rank pill down
-        // its left-hand side and everything else stacked beside it.
+        // Below the breakpoint the row is a card: a bordered box headed by the rank pill
+        // and the supplier it ranks, with everything else stacked full-width beneath.
         "max-md:border-border max-md:grid max-md:grid-cols-[1.75rem_minmax(0,1fr)] max-md:gap-x-3 max-md:rounded-lg max-md:border max-md:p-3",
         // Flag, because this row is a *property* of the Quote — the supplier offered a
         // substitute — and not something that has gone wrong. Alarm would read as the
@@ -513,7 +537,9 @@ function QuoteRow({
         </span>
       </td>
 
-      <Cell className="font-medium">{quote.supplierName}</Cell>
+      <Cell besideRank className="font-medium">
+        {quote.supplierName}
+      </Cell>
 
       <Cell className="text-muted-foreground text-xs">
         <CardLabel>{t("quote.sourcedBy")}</CardLabel>
@@ -544,7 +570,17 @@ function QuoteRow({
         )}
       </Cell>
 
-      <Cell className="text-right tabular-nums max-md:text-left">
+      {/*
+        **Where the card stops describing the Quote and starts pricing it.**
+
+        Everything above is who and what — the supplier, who found them, whether they
+        priced the thing that was asked for. Everything from here is money. On a phone the
+        card had neither a rule nor a change of rhythm between the two, so eight lines
+        arrived at one weight and the reader had to parse the card to find the figure they
+        came for. The hairline is `max-md:` only: at a desk these are two columns of a
+        table and the columns already say it.
+      */}
+      <Cell className="text-right tabular-nums max-md:border-hairline-soft max-md:mt-1 max-md:border-t max-md:pt-2 max-md:text-left">
         <div className="flex flex-col items-end gap-0.5 max-md:items-start">
           <CardLabel>{t("quote.unitPrice")}</CardLabel>
 
@@ -552,12 +588,24 @@ function QuoteRow({
               loudest thing there is: mono, tabular, display size. Eight competing offers
               for the same goods have to read as a column of numbers rather than as eight
               paragraphs, and tabular figures are what make the digits line up down it.
-              The THB figure beneath it is ours, derived, and says so with an `≈`. */}
-          <span className="money text-xl leading-tight font-medium md:text-base lg:text-xl">
-            {format.number(quote.unitPrice, {
-              style: "currency",
-              currency: quote.currency,
-            })}
+              The THB figure beneath it is ours, derived, and says so with an `≈`.
+
+              **The unit rides on the price's own line** rather than sitting under the
+              conversion two rows below it. It is a qualifier of the figure — *0.06 of a
+              dollar, per piece* — and stacked as a third line it read as a third fact,
+              which on a card with eight of them is one more thing to sort through. A
+              wrapping baseline row, so a long unit drops under the price instead of
+              widening the column. */}
+          <span className="flex flex-wrap items-baseline justify-end gap-x-1.5 max-md:justify-start">
+            <span className="money text-xl leading-tight font-medium md:text-base lg:text-xl">
+              {format.number(quote.unitPrice, {
+                style: "currency",
+                currency: quote.currency,
+              })}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              {tq("perUnit", { unit: quote.quotedUnit })}
+            </span>
           </span>
 
           {quote.currency === reportingCurrency ? null : (
@@ -577,12 +625,10 @@ function QuoteRow({
             </span>
           )}
 
-          <span className="text-muted-foreground text-xs">
-            {tq("perUnit", { unit: quote.quotedUnit })}
-          </span>
-
           {/* "lowest", never "cheapest": the row is highlighted, not stamped. Absent
-              entirely from an Item that cannot be ranked. */}
+              entirely from an Item that cannot be ranked. Kept even beside a rank-1 pill
+              that usually says the same thing, because the two disagree exactly when it
+              matters: `isLowest` is true on **both** rows of a tie, and rank is not. */}
           {row.isLowest ? (
             <span className="bg-signal-wash text-signal-ink w-fit max-w-full rounded px-1.5 py-0.5 text-[0.7rem] font-medium">
               {t("quote.lowest")}
@@ -591,9 +637,12 @@ function QuoteRow({
         </div>
       </Cell>
 
-      <Cell className="text-right tabular-nums max-md:text-left">
+      {/* The line total sits with the unit price rather than a rule apart from it: both
+          are money and the card's one division is the rule above. `-mt-1` closes the gap
+          the cells' own spacing leaves, so the two figures read as one block. */}
+      <Cell className="text-right tabular-nums max-md:-mt-1 max-md:text-left">
         <span className="text-muted-foreground text-xs md:hidden">
-          {t("quote.lineTotal", { quantity: item.quantity, unit: item.unit })}{" "}
+          {t("quote.lineTotal")}{" "}
         </span>
         {row.lineTotalThb === null ? (
           // The Quote is priced in a unit the Item is not counted in. A total here would
@@ -639,10 +688,12 @@ function QuoteRow({
  * cell that is not this, because it is the pill in the card's *first* column and is
  * placed by hand.
  *
- * At a desk it is a table cell with the table's padding. Below 768px it is a block in the
- * card's second column, with the padding taken off — the card's own padding is what
+ * At a desk it is a table cell with the table's padding. Below 768px it is a block
+ * spanning the card, with the padding taken off — the card's own padding is what
  * separates it from the border, and a cell keeping its `px-2` would indent every line of
- * the card by an amount only the table needed.
+ * the card by an amount only the table needed. `besideRank` is the single exception, and
+ * the supplier name is the only cell that asks for it: it is what the pill is ranking, so
+ * the two belong on one line, and it is short enough to still fit beside it.
  *
  * `break-words` is the failure bar held structurally rather than by column arithmetic. A
  * product code, a supplier name or a formatted total that is one long token wider than
@@ -652,14 +703,28 @@ function QuoteRow({
  */
 function Cell({
   className = "",
+  besideRank = false,
   children,
 }: {
   className?: string;
+  /** Sits in the card's second column, on the rank pill's own line, instead of below it. */
+  besideRank?: boolean;
   children: ReactNode;
 }) {
+  // Written as one branch rather than as two utilities on one element: `col-span-2` and
+  // `col-start-2` both write `grid-column`, so an element carrying both is decided by the
+  // order Tailwind happens to emit them in rather than by anything stated here.
+  const placement = besideRank
+    ? "max-md:col-start-2 max-md:row-start-1"
+    : "max-md:col-span-2";
+
+  // `empty:hidden`, on the card only: a cell that drew nothing still spent its `py-1`, so
+  // a Quote with no photographs left an eight-pixel band where the badge would have been.
+  // At a desk the cell has to stay — an omitted `<td>` takes the column with it and the
+  // row below stops lining up.
   return (
     <td
-      className={`px-2 py-3 break-words max-md:col-start-2 max-md:px-0 max-md:py-1 ${className}`}
+      className={`px-2 py-3 break-words max-md:px-0 max-md:py-1 max-md:empty:hidden ${placement} ${className}`}
     >
       {children}
     </td>

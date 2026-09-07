@@ -149,7 +149,7 @@ function NavLink({
     <Link
       href={destination.href}
       prefetch={false}
-      className={`hover:bg-muted flex min-h-11 items-center gap-2 rounded-lg text-sm font-medium transition-colors ${
+      className={`hover:bg-muted flex min-h-11 items-center gap-2 rounded-control text-sm font-medium transition-colors ${
         reachedBy === "thumb" ? "px-4" : "px-3"
       }`}
     >

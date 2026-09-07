@@ -40,7 +40,7 @@ export default async function GroupRobotPage() {
       </ScreenHeader>
 
       <Measure>
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <GroupRobotForm configured={status.configured} updatedAt={status.updatedAt} />
         </section>
       </Measure>

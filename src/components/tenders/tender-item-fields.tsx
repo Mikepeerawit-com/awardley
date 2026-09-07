@@ -51,7 +51,16 @@ export function TenderItemInputs({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* **Two columns at every width, unlike the pair above.** A quantity and its unit
+          are one fact — *12,000 pieces* — and stacking them made two rows of a 66px
+          field out of a number and a word that between them are rarely twelve
+          characters. Product and Description keep the `sm:` because they are prose and a
+          half-width input for either is worse than a second row.
+
+          At 390px each half is about 165px, which is wide enough for `box of 50` and for
+          单位 with room over, and far past the 44px floor `target.layout.test.tsx`
+          holds every control to. */}
+      <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${domId}-quantity`}>{t("quantity")}</Label>
           <Input

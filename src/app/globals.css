@@ -162,6 +162,43 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /*
+   * **The form vocabulary: a corner says what kind of thing it is** (ADR-0028).
+   *
+   * The scale above has existed since the app was scaffolded and nothing ever assigned a
+   * meaning to a step of it, so 68 of the 84 rounded corners in the app were `rounded-lg`
+   * — a submit button, a text field, a filter chip, a banner and a Tender row all drawn
+   * as the same 10px rectangle behind the same hairline. On a screen whose only remaining
+   * hierarchy is colour, that reads as a wireframe of the app rather than the app.
+   *
+   * Three steps, named for what wears them rather than for how big they are, so that the
+   * rule is legible at the call site and a fourth reading has to be argued for:
+   *
+   * - **`rounded-full`** — you pick it out of a set. A filter chip, a rank pill, a count.
+   * - **`rounded-control`** — you operate it. A button, an input, a select, a textarea.
+   * - **`rounded-surface`** — it contains other things. A card, a banner, a fold, a panel.
+   *
+   * They are aliases of `md` and `xl` rather than new values: the visual system did not
+   * need more numbers, it needed the numbers to mean something.
+   */
+  --radius-control: calc(var(--radius) * 0.8);
+  --radius-surface: calc(var(--radius) * 1.4);
+
+  /*
+   * **What a container is separated from its ground by, now that it is not a hairline.**
+   *
+   * A card is `--card` on `--background`, and in the light theme those are two percent
+   * apart — near enough that the hairline was doing the whole job of saying where the card
+   * ended, which is why every container in the app had one. Two percent plus a shadow is
+   * a surface; two percent plus a hairline is a box drawn on paper.
+   *
+   * Deliberately weak. This is the shadow of a sheet lying on a desk, not of a dialog
+   * floating over one — `--shadow-raised` is that, and there is at most one raised thing
+   * on a screen.
+   */
+  --shadow-surface: var(--surface-shadow);
+  --shadow-raised: var(--raised-shadow);
 }
 
 :root {
@@ -272,6 +309,22 @@
   --chart-4: oklch(0.545 0.018 265);
   --chart-5: oklch(0.225 0.015 265);
   --radius: 0.625rem;
+  /*
+   * **Elevation is a light-theme device, and the dark block says so by turning it off.**
+   *
+   * A shadow works by darkening the ground, and on a dark ground there is nothing left to
+   * darken — every dark UI that ships a light UI's shadows ends up with cards that look
+   * smudged rather than raised. Dark separates surfaces by lightness instead, which this
+   * palette already does: `--card` is 0.225 against a 0.185 ground, twice the separation
+   * the light theme has.
+   *
+   * Cast in the ink hue rather than in black, so the shade over warm paper stays the
+   * paper's own colour rather than turning it grey.
+   */
+  --surface-shadow:
+    0 1px 2px -1px oklch(0.225 0.015 265 / 0.07), 0 2px 6px -2px oklch(0.225 0.015 265 / 0.05);
+  --raised-shadow:
+    0 2px 4px -2px oklch(0.225 0.015 265 / 0.1), 0 6px 16px -6px oklch(0.225 0.015 265 / 0.12);
   --sidebar: oklch(0.995 0.003 90);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--signal);
@@ -360,6 +413,20 @@
     --border: oklch(0.345 0.014 265);
     --input: oklch(0.545 0.016 265);
     --ring: var(--signal);
+    /*
+     * **Off, rather than softened.** A shadow separates by darkening the ground, and a
+     * dark ground has nothing left to darken — the light theme's shadows on this palette
+     * read as a smudge under the card rather than as a card above the desk. Dark
+     * separates surfaces by lightness instead, and this palette already does: `--card` at
+     * 0.225 against a 0.185 ground is twice the separation the light theme has, which is
+     * why the hairline could come off a container in both themes for one reason.
+     *
+     * `none` rather than a re-tuned value, so that a container carrying `shadow-surface`
+     * is one declaration in both themes and there is no second shadow to keep in step.
+     */
+    --surface-shadow: none;
+    --raised-shadow:
+      0 2px 4px -2px oklch(0 0 0 / 0.4), 0 8px 20px -8px oklch(0 0 0 / 0.5);
     --chart-1: var(--signal);
     --chart-2: var(--flag);
     --chart-3: oklch(0.745 0.016 265);

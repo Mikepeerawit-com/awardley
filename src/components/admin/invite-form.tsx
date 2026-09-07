@@ -21,8 +21,8 @@ export function InviteForm() {
           role="status"
           className={
             state.status === "sent"
-              ? "border-border bg-muted rounded-lg border px-3 py-2 text-sm"
-              : "border-destructive/40 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-sm"
+              ? "bg-muted/60 rounded-surface px-3 py-2 text-sm"
+              : "border-destructive/40 bg-destructive/10 text-destructive rounded-surface border px-3 py-2 text-sm"
           }
         >
           {t(`status.${state.status}`)}

@@ -111,7 +111,7 @@ export function ReduceBar({
       </nav>
 
       <details className="group/refine min-w-0" open={refineOpen}>
-        <summary className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex min-h-11 w-fit cursor-pointer list-none items-center gap-1.5 rounded-lg px-0.5 text-[13px] font-medium outline-none focus-visible:ring-3 [&::-webkit-details-marker]:hidden">
+        <summary className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex min-h-11 w-fit cursor-pointer list-none items-center gap-1.5 rounded-control px-0.5 text-[13px] font-medium outline-none focus-visible:ring-3 [&::-webkit-details-marker]:hidden">
           <SlidersHorizontal aria-hidden="true" className="size-3.5" />
           {t("refine")}
         </summary>
@@ -194,7 +194,7 @@ export function ReduceBar({
        * only control that turns the reveal back off would go with it.
        */}
       {suppressedMissed > 0 && (
-        <p className="border-alarm-edge bg-alarm-wash text-alarm-ink flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border px-3 py-2 text-xs leading-relaxed break-words">
+        <p className="border-alarm-edge bg-alarm-wash text-alarm-ink flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-surface border px-3 py-2 text-xs leading-relaxed break-words">
           {filter.revealMissed
             ? t("revealedMissed", { count: suppressedMissed })
             : t("suppressedMissed", { count: suppressedMissed })}
@@ -320,7 +320,7 @@ function Chip({ href, on, label }: { href: string; on: boolean; label: string })
     <Button
       variant={on ? "default" : "outline"}
       size="sm"
-      className="h-11 px-3 text-[13px] font-medium whitespace-normal"
+      className="h-11 rounded-full px-3.5 text-[13px] font-medium whitespace-normal"
       nativeButton={false}
       render={
         <Link href={href} prefetch={false} aria-current={on ? "true" : undefined}>

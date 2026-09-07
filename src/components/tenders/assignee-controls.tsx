@@ -41,10 +41,12 @@ export function AssigneeControls({
   const assigned = new Set(assignees.map((assignee) => assignee.id));
   const unassigned = members.filter((member) => !assigned.has(member.id));
 
+  // No heading and no `<section>` of its own since the Tender detail put this behind a
+  // `Fold`: the fold's summary *is* the heading, and it carries the count of Assignees as
+  // well. Two headings one line apart at two different weights is what the old screen
+  // had. The block keeps its own `gap-4` — how it lays itself out is still its business.
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-sm font-medium">{t("title")}</h2>
-
+    <div className="flex min-w-0 flex-col gap-4">
       {assignees.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t("none")}</p>
       ) : (
@@ -81,7 +83,7 @@ export function AssigneeControls({
           <AddPicker tenderId={tenderId} members={unassigned} />
         ) : null}
       </div>
-    </section>
+    </div>
   );
 }
 

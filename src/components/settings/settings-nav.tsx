@@ -127,7 +127,7 @@ export function SettingsNav({ isOrgAdmin }: { isOrgAdmin: boolean }) {
               key={screen.href}
               href={screen.href}
               prefetch={false}
-              className="hover:bg-muted flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors"
+              className="hover:bg-muted flex min-h-11 items-center rounded-control px-3 text-sm font-medium transition-colors"
             >
               {t(screen.label)}
             </Link>

@@ -34,11 +34,17 @@ import {
   AddTenderItemForm,
   EditTenderItemForm,
 } from "@/components/tenders/tender-item-forms";
-import { TenderFacts } from "@/components/tenders/tender-facts";
+import {
+  TenderDeadlines,
+  TenderFacts,
+} from "@/components/tenders/tender-facts";
 import { ReduceBar } from "@/components/tenders/reduce-bar";
 import { TenderGroup } from "@/components/tenders/tender-group";
+import { TenderSections } from "@/components/tenders/tender-sections";
 import { QuoteForm } from "@/components/quotes/quote-form";
 import { Button } from "@/components/ui/button";
+import { Fold } from "@/components/ui/fold";
+import { Section } from "@/components/ui/section";
 import {
   Measure,
   type MeasureWidth,
@@ -130,6 +136,65 @@ export type Messages = typeof en;
  * touch them before they exist.
  */
 export function screens(m: Messages) {
+  /**
+   * The Owner's edit screen, drawn either at rest or with the add-an-item fold down.
+   *
+   * A function rather than two literals because the pair differs by one prop, and the
+   * reason it is a pair at all is that a `<details>` the reader has not opened is
+   * invisible to `checkVisibility()` and therefore to every guard in the `layout`
+   * project (ADR-0026).
+   */
+  const editingATender = (addingItem: boolean) => (
+    <Body location={editBar}>
+      <ScreenHeader eyebrow={tender.reference} heading={m.tenders.edit}>
+        <p className="text-muted-foreground text-sm">{m.tenders.editDescription}</p>
+      </ScreenHeader>
+
+      <Measure>
+        <EditTenderForm tenderId={tender.id} members={ownerChoices} defaults={tender} />
+      </Measure>
+
+      <Measure>
+        <Section id="items" title={m.tenders.item.plural}>
+          <p className="text-muted-foreground text-sm">{m.tenders.item.hint}</p>
+
+          {/* All three Items, and `removable` on every one — the Tender has more than
+              one, so the destructive Remove is drawn per row. A fixture with a single
+              Item would compose the one shape of this screen that has no Remove on it
+              at all. */}
+          {tender.items.map((item) => (
+            <EditTenderItemForm key={item.id} tenderId={tender.id} item={item} removable />
+          ))}
+
+          <AddTenderItemForm tenderId={tender.id} defaultOpen={addingItem} />
+        </Section>
+      </Measure>
+
+      {/* Outside the measure, as the page draws it: the gallery is a grid of tiles
+          scanned rather than a line of prose read along. */}
+      <Section id="reference-images" title={m.tenders.referenceImages.title}>
+        <ReferenceImageUploader tenderId={tender.id} />
+        <ReferenceImageGallery
+          tenderId={tender.id}
+          images={referenceImages}
+          items={tender.items}
+        />
+      </Section>
+
+      {/* A `Section` here and a `Fold` on the Tender detail, which the page does too:
+          the same block is a lookup there and the work here. */}
+      <Section id="assignees" title={m.tenders.assignees.title}>
+        <AssigneeControls
+          tenderId={tender.id}
+          assignees={tender.assignees}
+          members={members}
+          callerId={tender.ownerUserId}
+          isOwner
+        />
+      </Section>
+    </Body>
+  );
+
   return {
     // The screen an Assignee actually opens (ADR-0021): their own Items, each linking
     // straight to the quote form. Composed at 390px, which is the width it is designed
@@ -259,29 +324,141 @@ export function screens(m: Messages) {
           >
             <p className="text-muted-foreground text-sm break-words">{tender.title}</p>
           </ScreenHeader>
+          {/* The bar the page builds from the parts it actually drew. `outcome` is in
+              this list and the panel it points at is not in this fixture, for the reason
+              the file header gives — the panel is `async`. That is a gap in what can be
+              *photographed*, not a wrong list: the page draws both for an Owner, and it
+              is the bar's width in five links across two scripts that this record is
+              here to measure. */}
+          <TenderSections sections={ownerSections} />
+          {/* The two dates the Tender turns on, against a fixed day so the reading is a
+              property of the fixture rather than of the morning somebody ran the suite —
+              see {@link fixtureToday}. One lit and one hollow, which is the pair. */}
+          <TenderDeadlines
+            tender={tender}
+            today={fixtureToday}
+            timezone="Asia/Bangkok"
+            decided={false}
+          />
           {/* The two Items the Owner has neither priced nor given up on, both named with
               nothing in them to break at — which is the row this band has that can be any
               width, because a product name is whatever the client called it. */}
-          <OutstandingBand tenderId={tender.id} items={yourOutstanding(tender.ownerUserId)} />
-          <TenderFacts tender={tender} />
+          <OutstandingBand
+            tenderId={tender.id}
+            items={yourOutstanding(tender.ownerUserId)}
+          />
           {/* The densest thing in the app, and until #135 the one screen no shared guard
               could see: it was measured only by its own suite, on a bare page, in one
               locale and one theme. `--money-red` and `--money-green` are drawn here and
               nowhere else, so a Margin that went unreadable in the dark was a defect with
               no test standing anywhere near it. */}
-          <WorkingSheet
-            tenderId={tender.id}
-            items={sheetItems}
-            photos={quotePhotos}
-            referenceImages={referenceImages}
+          <Section id="items" title={m.tenders.sections.items}>
+            <WorkingSheet
+              tenderId={tender.id}
+              items={sheetItems}
+              photos={quotePhotos}
+              referenceImages={referenceImages}
+            />
+          </Section>
+          {/* Both folds **shut**, as the page draws them and as a reader arriving from a
+              Reminder really meets this screen. What is behind them is measured by
+              `"a tender with its folds open"` below rather than here — see the note on
+              that entry for why the two are separate records instead of one compromise. */}
+          <Fold id="tender-facts" title={m.tenders.sections.facts}>
+            <TenderFacts tender={tender} />
+          </Fold>
+          <Fold
+            id="assignees"
+            title={m.tenders.assignees.title}
+            count={tender.assignees.length}
+          >
+            <AssigneeControls
+              tenderId={tender.id}
+              assignees={tender.assignees}
+              members={members}
+              callerId="user-somchai"
+              isOwner
+            />
+          </Fold>
+        </Body>
+      ),
+    },
+    /**
+     * The same screen with both folds open — the state a reader reaches by tapping one.
+     *
+     * **A record of its own rather than a flag on the one above**, for the reason
+     * `"a tender somebody else owns"` is one: it is markup no other screen draws in that
+     * arrangement, and the two answer different questions. The entry above answers *what
+     * does a reader arrive at*, which is what the contact sheet is for and what the
+     * density budget prices. This one answers *does what is behind the fold hold up* —
+     * and it has to exist, because a `checkVisibility()` of a closed `<details>` is
+     * `false`, so every shared guard that walks these records is blind to the contents
+     * otherwise. {@link TenderFacts} is drawn nowhere else in the app at all, so without
+     * this its four cells would have no contrast, tap-target or 390px guard standing
+     * anywhere near them.
+     *
+     * The Owner's copy, because it is the fuller of the two: three Assignees with a Remove
+     * on every row, and the picker for adding a fourth.
+     *
+     * **The whole screen, not just the two folds.** A record holding the folds alone was
+     * written and taken out again: it draws no prose and no form field, so it reaches for
+     * no {@link Measure}, and `screens.layout.test.tsx` asserts the set of measure columns
+     * is exactly `[measure]` rather than at most one — so the fixture needed an empty
+     * `Measure` put in it purely to satisfy a guard. That is the shape `app-header.tsx`
+     * refuses when it declines to teach `overflowing` an exception: a check with a hole cut
+     * in it for the case in front of you. The screen entire costs four more photographs and
+     * owes the guards nothing.
+     */
+    "a tender with its folds open": {
+      measure: 768,
+      body: (
+        <Body location={tenderBar}>
+          <ScreenHeader
+            heading={tender.clientName}
+            actions={
+              <Button variant="outline" className="h-11">
+                {m.tenders.edit}
+              </Button>
+            }
+          >
+            <p className="text-muted-foreground text-sm break-words">{tender.title}</p>
+          </ScreenHeader>
+          <TenderSections sections={ownerSections} />
+          <TenderDeadlines
+            tender={tender}
+            today={fixtureToday}
+            timezone="Asia/Bangkok"
+            decided={false}
           />
-          <AssigneeControls
+          <OutstandingBand
             tenderId={tender.id}
-            assignees={tender.assignees}
-            members={members}
-            callerId="user-somchai"
-            isOwner
+            items={yourOutstanding(tender.ownerUserId)}
           />
+          <Section id="items" title={m.tenders.sections.items}>
+            <WorkingSheet
+              tenderId={tender.id}
+              items={sheetItems}
+              photos={quotePhotos}
+              referenceImages={referenceImages}
+            />
+          </Section>
+          <Fold id="tender-facts" title={m.tenders.sections.facts} defaultOpen>
+            <TenderFacts tender={tender} />
+          </Fold>
+          <Fold
+            id="assignees"
+            title={m.tenders.assignees.title}
+            count={tender.assignees.length}
+            defaultOpen
+          >
+            <AssigneeControls
+              tenderId={tender.id}
+              assignees={tender.assignees}
+              members={members}
+              callerId="user-somchai"
+              isOwner
+            />
+          </Fold>
         </Body>
       ),
     },
@@ -303,90 +480,68 @@ export function screens(m: Messages) {
           >
             <p className="text-muted-foreground text-sm break-words">{tender.title}</p>
           </ScreenHeader>
+          {/* Three links rather than the Owner's five: no Outcome section, because
+              ADR-0020 gives that panel to the Owner alone and the page builds this bar
+              from the parts it drew. */}
+          <TenderSections sections={assigneeSections} />
+          <TenderDeadlines
+            tender={tender}
+            today={fixtureToday}
+            timezone="Asia/Bangkok"
+            decided={false}
+          />
           {/* The one Item this reader still owes, which is the whole of what the band
               says to somebody who has already priced two of the three. */}
-          <OutstandingBand tenderId={tender.id} items={yourOutstanding("user-nok")} />
-          <TenderFacts tender={tender} />
-          <SourcingList
+          <OutstandingBand
             tenderId={tender.id}
-            items={yourSourcing("user-nok")}
-            photos={quotePhotos}
-            referenceImages={referenceImages}
+            items={yourOutstanding("user-nok")}
           />
-          <AssigneeControls
-            tenderId={tender.id}
-            assignees={tender.assignees}
-            members={members}
-            callerId="user-nok"
-            isOwner={false}
-          />
+          <Section id="items" title={m.tenders.yourItems.title}>
+            <SourcingList
+              tenderId={tender.id}
+              items={yourSourcing("user-nok")}
+              photos={quotePhotos}
+              referenceImages={referenceImages}
+            />
+          </Section>
+          {/* Shut, as the page draws them. What is inside is measured on
+              `"a tender with its folds open"`. */}
+          <Fold id="tender-facts" title={m.tenders.sections.facts}>
+            <TenderFacts tender={tender} />
+          </Fold>
+          <Fold
+            id="assignees"
+            title={m.tenders.assignees.title}
+            count={tender.assignees.length}
+          >
+            <AssigneeControls
+              tenderId={tender.id}
+              assignees={tender.assignees}
+              members={members}
+              callerId="user-nok"
+              isOwner={false}
+            />
+          </Fold>
         </Body>
       ),
     },
     // The Owner's other form, and the densest screen in the app after the working sheet:
     // the Tender's own fields, one form per Item, an uploader, a gallery of the client's
     // pictures with a picker on every one, and the Assignee controls under all of it.
-    "editing a tender": {
+    //
+    // **Two records off one body, unlike the Tender detail's pair.** That screen's
+    // folds-open twin is written out in full because it is a different screen — the
+    // Owner's rather than the Assignee's, with the working sheet in place of the sourcing
+    // list. This pair differs in one boolean, so a second copy of sixty lines would be
+    // sixty lines that could drift apart while both kept passing.
+    "editing a tender": { measure: 768, body: editingATender(false) },
+    // **The same screen with the add-an-item fold open**, and it exists for the reason
+    // ADR-0026 gives: a shut `<details>` fails `checkVisibility()`, so with the fold down
+    // the contrast walk, the tap floor and the 390px measure all stop at its summary bar
+    // and four inputs and a submit go unwalked.
+    "editing a tender, adding an item": {
       measure: 768,
-      body: (
-        <Body location={editBar}>
-          <ScreenHeader eyebrow={tender.reference} heading={m.tenders.edit}>
-            <p className="text-muted-foreground text-sm">{m.tenders.editDescription}</p>
-          </ScreenHeader>
-
-          <Measure>
-            <EditTenderForm
-              tenderId={tender.id}
-              members={ownerChoices}
-              defaults={tender}
-            />
-          </Measure>
-
-          <Measure>
-            <section className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-sm font-medium">{m.tenders.item.plural}</h2>
-                <p className="text-muted-foreground text-xs">{m.tenders.item.hint}</p>
-              </div>
-
-              {/* All three Items, and `removable` on every one — the Tender has more than
-                  one, so the destructive Remove is drawn per row. A fixture with a single
-                  Item would compose the one shape of this screen that has no Remove on it
-                  at all. */}
-              {tender.items.map((item) => (
-                <EditTenderItemForm
-                  key={item.id}
-                  tenderId={tender.id}
-                  item={item}
-                  removable
-                />
-              ))}
-
-              <AddTenderItemForm tenderId={tender.id} />
-            </section>
-          </Measure>
-
-          {/* Outside the measure, as the page draws it: the gallery is a grid of tiles
-              scanned rather than a line of prose read along. */}
-          <section className="flex flex-col gap-4">
-            <h2 className="text-sm font-medium">{m.tenders.referenceImages.title}</h2>
-            <ReferenceImageUploader tenderId={tender.id} />
-            <ReferenceImageGallery
-              tenderId={tender.id}
-              images={referenceImages}
-              items={tender.items}
-            />
-          </section>
-
-          <AssigneeControls
-            tenderId={tender.id}
-            assignees={tender.assignees}
-            members={members}
-            callerId={tender.ownerUserId}
-            isOwner
-          />
-        </Body>
-      ),
+      body: editingATender(true),
     },
     "sourcing an item": {
       measure: 768,
@@ -492,7 +647,7 @@ export function screens(m: Messages) {
               colleagues who could have have both priced them instead. A colleague's note,
               when there is one, is shown as fact and is measured on the Tender detail. */}
           <Measure>
-            <section className="border-border rounded-lg border border-dashed p-4">
+            <section className="border-border rounded-surface border border-dashed p-4">
               <NoSupplierFoundForm
                 tenderId={tender.id}
                 tenderItemId={gloves.id}
@@ -563,7 +718,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
               <h2 className="text-sm font-medium">{m.people.invite.title}</h2>
               <InviteForm />
             </section>
@@ -585,7 +740,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
               {/* Set up, which is the fuller of the two shapes: it draws the sentence
                   saying when it was last changed and the control that removes it, neither
                   of which exists on an org that has never saved one. */}
@@ -604,7 +759,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
               <CurrencyConversionForm percent={2.5} />
             </section>
           </Measure>
@@ -901,7 +1056,7 @@ function preferences(m: Messages) {
       </ScreenHeader>
 
       <Measure>
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <h2 className="text-sm font-medium">{m.localeSwitcher.label}</h2>
           <LocaleSwitcher />
         </section>
@@ -910,7 +1065,7 @@ function preferences(m: Messages) {
             and because it is the widest of the three in both scripts — 跟随系统 is four Han
             glyphs against two. A fixture pinned to a shorter answer would measure the easy
             case of a row that has to fit three thumb-sized targets at 390px. */}
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <h2 className="text-sm font-medium">{m.themeSwitcher.label}</h2>
           <ThemeSwitcher current="system" />
         </section>
@@ -931,7 +1086,9 @@ function preferences(m: Messages) {
 function YourQuotesHeading({ count }: { count: number }) {
   const t = useTranslations("quotes");
 
-  return <h2 className="text-sm font-medium">{t("yours.recorded", { count })}</h2>;
+  return (
+    <h2 className="text-sm font-medium">{t("yours.recorded", { count })}</h2>
+  );
 }
 
 /**
@@ -950,7 +1107,13 @@ function SourcedBy({ name }: { name: string }) {
 }
 
 /** The client's own pictures for one Item, as the sourcing page hands them to the brief. */
-function ReferenceImages({ label, images }: { label: string; images: ReferenceImage[] }) {
+function ReferenceImages({
+  label,
+  images,
+}: {
+  label: string;
+  images: ReferenceImage[];
+}) {
   const t = useTranslations("tenders.referenceImages");
 
   return (
@@ -1200,6 +1363,50 @@ const myWorkRows: MyWorkRow[] = [
     status: { tone: "calm", days: 49 },
   },
 ];
+
+/**
+ * The day the Tender detail's two deadlines are read against.
+ *
+ * **Fixed, and it has to be.** `TenderDeadlines` states "Quotes due tomorrow" or "Quotes
+ * were due 20 Aug" depending on the day it is asked, and a fixture that asked the real
+ * clock would photograph a different sentence every morning and change the width of the
+ * thing the layout guard is measuring. ADR-0010 already bans a bare `new Date()` under
+ * `src/` and says why; a fixture has a boundary too, and this is it.
+ *
+ * **2026-08-19 is chosen so the pair is not one tone twice.** The Tender's Internal Quote
+ * Deadline is the 20th — one day out, inside the rolling window, so that line is lit and
+ * reads "Quotes due tomorrow" — and its Client Submission Deadline is the 28th, nine days
+ * out and therefore hollow. A day on which both were calm would photograph half the
+ * component and let a signal-on-card contrast fault through unmeasured.
+ */
+export const fixtureToday = "2026-08-19";
+
+/**
+ * The Tender detail's parts, as its page composes the list for each of the two readers.
+ *
+ * Written out here rather than imported from the page, because the page is an `async`
+ * Server Component behind `currentUser` and is reachable by no browser test — the same
+ * reason every other screen in this file is assembled by hand. What keeps the two honest
+ * is that both name the parts by **message key**, so a section renamed in `en.json` is
+ * renamed on the bar in the app and in the photograph together.
+ */
+const ownerSections = [
+  { id: "items", label: "tenders.sections.items" },
+  { id: "outcome", label: "tenders.outcome.title" },
+];
+
+/**
+ * One entry, which is one below what {@link TenderSections} will draw anything for — so
+ * the Assignee's screen gets no bar, and that is the assertion rather than an omission.
+ *
+ * Their screen is 1932px against the Owner's 4786px and its other two parts are folds,
+ * which are 44px each whether open or shut. `density.layout.test.tsx` holds this screen to
+ * an exact count of control rows, and a bar here spent two of them in `en` on a screen with
+ * no distance to cover. It is passed the real list anyway rather than being left out of
+ * the fixture, because *the bar deciding not to draw itself* is the behaviour worth
+ * photographing.
+ */
+const assigneeSections = [{ id: "items", label: "tenders.yourItems.title" }];
 
 export const tender: Tender = {
   id: "8f14e45f-ceea-4d67-b4a7-4c5e2f6a1b90",

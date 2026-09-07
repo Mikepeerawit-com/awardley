@@ -95,7 +95,19 @@ import { locales, type Locale, Screen, screens } from "@/test/screens";
  * budget that silently covers two scripts out of three.
  */
 const budget = {
-  tenderDetail: { en: 8, "zh-Hans": 8 },
+  // Eight until the Tender detail was given parts (#149). Seven now, and the row that
+  // left is the one the Assignee controls used to spend: they are behind a `Fold`, and a
+  // shut `<details>` fails `checkVisibility()`, so `controlRows` stops counting the Remove
+  // beside their own name until they open it. `Fold`'s own summary is a `<summary>` and
+  // not an `a` or a `button`, so the disclosure that replaced the block costs nothing
+  // here.
+  //
+  // **A number going down is the direction this file exists to record**, and the opening
+  // note is explicit that it must be written down by hand rather than ratcheted in
+  // silence. Worth saying plainly: it is not seven because the work got smaller. It is
+  // seven because one row of it is now one tap away, which `controlRows` cannot tell
+  // apart from a reduction — the limit this file's own header states.
+  tenderDetail: { en: 7, "zh-Hans": 7 },
   sourcingScreen: { en: 10, "zh-Hans": 9 },
   quoteForm: { en: 2, "zh-Hans": 2 },
 } satisfies Record<string, Record<Locale, number>>;

@@ -39,7 +39,7 @@ export default async function CurrencyConversionPage() {
       </ScreenHeader>
 
       <Measure>
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <CurrencyConversionForm percent={asPercent(fxBufferPct)} />
         </section>
       </Measure>

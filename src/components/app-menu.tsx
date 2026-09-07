@@ -52,7 +52,7 @@ export function AppMenu() {
         />
         <Menu.Portal>
           <Menu.Positioner sideOffset={8} align="end" className="z-50">
-            <Menu.Popup className="border-border bg-background text-foreground min-w-44 rounded-lg border p-1 shadow-lg outline-none">
+            <Menu.Popup className="border-border bg-popover text-popover-foreground shadow-raised min-w-44 rounded-surface border p-1 outline-none">
               <Menu.LinkItem href="/settings" className={item}>
                 {t("settings")}
               </Menu.LinkItem>

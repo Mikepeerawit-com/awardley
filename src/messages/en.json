@@ -165,6 +165,12 @@
     "expectedDecisionHint": "Optional — clients rarely state one. Set it and the owner is reminded to chase the client that day.",
     "notes": "Notes",
     "itemCount": "{count, plural, =1 {# item} other {# items}}",
+    "sections": {
+      "jump": "On this page",
+      "items": "Items and quotes",
+      "facts": "Tender details",
+      "unassignedImages": "Unassigned images"
+    },
     "group": {
       "submission_missed": {
         "title": "Submission missed",
@@ -435,9 +441,6 @@
       "open": "Show the quotes for {item}",
       "fold": "Fold away {item}"
     },
-    "item": {
-      "quantified": "{quantity} × {unit} · {quotes, plural, =1 {# quote} other {# quotes}}"
-    },
     "referenceImages": {
       "label": "Client reference images",
       "open": "Open {count, plural, =1 {# reference image} other {# reference images}} for {item}"
@@ -475,7 +478,7 @@
       "sourcedBy": "Sourced by",
       "quotedProduct": "Quoted product",
       "unitPrice": "Unit price",
-      "lineTotal": "Line total ({quantity} {unit})",
+      "lineTotal": "Line total",
       "photos": "Photos",
       "asRequested": "As requested",
       "requested": "Requested: {product}",

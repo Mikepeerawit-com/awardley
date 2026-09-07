@@ -46,7 +46,7 @@ export function ReferenceImageUploader({ tenderId }: { tenderId: string }) {
           multiple
           accept={imageAccept}
           disabled={busy}
-          className="file:bg-muted file:text-foreground hover:file:bg-muted/70 border-input h-11 w-full cursor-pointer rounded-lg border bg-transparent text-sm file:mr-3 file:h-full file:cursor-pointer file:rounded-l-lg file:border-0 file:px-3 file:text-sm file:font-medium disabled:pointer-events-none disabled:opacity-50"
+          className="file:bg-muted file:text-foreground hover:file:bg-muted/70 border-input h-11 w-full cursor-pointer rounded-control border bg-transparent text-sm file:mr-3 file:h-full file:cursor-pointer file:rounded-l-lg file:border-0 file:px-3 file:text-sm file:font-medium disabled:pointer-events-none disabled:opacity-50"
           onChange={async (event) => {
             const files = [...(event.target.files ?? [])];
 

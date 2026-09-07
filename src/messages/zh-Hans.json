@@ -165,6 +165,12 @@
     "expectedDecisionHint": "选填——客户很少给出明确日期。填写后，当天会提醒负责人跟进客户。",
     "notes": "备注",
     "itemCount": "{count, plural, other {# 个产品项}}",
+    "sections": {
+      "jump": "本页内容",
+      "items": "产品项与报价",
+      "facts": "招标详情",
+      "unassignedImages": "未指定的参考图"
+    },
     "group": {
       "submission_missed": {
         "title": "已错过提交",
@@ -435,9 +441,6 @@
       "open": "展开 {item} 的报价",
       "fold": "收起 {item}"
     },
-    "item": {
-      "quantified": "{quantity} × {unit} · {quotes, plural, other {# 条报价}}"
-    },
     "referenceImages": {
       "label": "客户参考图",
       "open": "查看 {item} 的 {count, plural, other {# 张客户参考图}}"
@@ -475,7 +478,7 @@
       "sourcedBy": "询价人",
       "quotedProduct": "所报产品",
       "unitPrice": "单价",
-      "lineTotal": "行合计（{quantity} {unit}）",
+      "lineTotal": "行合计",
       "photos": "照片",
       "asRequested": "与要求一致",
       "requested": "客户要求：{product}",

@@ -70,7 +70,7 @@ export function NewTenderForm({
         {rowIds.map((rowId, index) => (
           <div
             key={rowId}
-            className="border-border flex flex-col gap-3 rounded-lg border p-4"
+            className="bg-card rounded-surface shadow-surface flex flex-col gap-3 p-4"
           >
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-xs">

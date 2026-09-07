@@ -183,7 +183,7 @@ export default async function ItemSourcingPage({
           </Measure>
 
           <Measure>
-            <section className="border-border rounded-lg border border-dashed p-4">
+            <section className="border-border rounded-surface border border-dashed p-4">
               <NoSupplierFoundForm
                 tenderId={tender.id}
                 tenderItemId={item.id}
@@ -196,7 +196,7 @@ export default async function ItemSourcingPage({
       ) : (
         <Measure>
           <section className="flex flex-col gap-4">
-            <p className="border-border rounded-lg border px-3 py-2 text-sm">
+            <p className="bg-muted/60 rounded-surface px-3 py-2 text-sm">
               {t("notAssignee")}
             </p>
 

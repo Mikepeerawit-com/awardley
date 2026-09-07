@@ -40,7 +40,7 @@ export function OutstandingBand({
   if (items.length === 0) return null;
 
   return (
-    <section className="border-signal-edge bg-signal-wash flex min-w-0 flex-col gap-2 rounded-lg border p-3.5">
+    <section className="border-signal-edge bg-signal-wash flex min-w-0 flex-col gap-2 rounded-surface border p-3.5">
       <div className="flex min-w-0 items-center gap-2">
         <IndicatorLamp tone="signal" size={15} />
         <h2 className="text-signal-ink min-w-0 text-[13px] font-semibold break-words">

@@ -47,12 +47,12 @@ export default async function PreferencesPage() {
       </ScreenHeader>
 
       <Measure>
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <h2 className="text-sm font-medium">{language("label")}</h2>
           <LocaleSwitcher />
         </section>
 
-        <section className="border-border flex flex-col gap-4 rounded-lg border p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
           <h2 className="text-sm font-medium">{appearance("label")}</h2>
           <ThemeSwitcher current={theme} />
         </section>

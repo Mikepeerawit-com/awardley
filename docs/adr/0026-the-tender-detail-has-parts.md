@@ -16,7 +16,7 @@ says to judge this app at:
 | Editing a tender | 3827px |
 | Sourcing an item | 2338px |
 | A tender somebody else owns | 1932px |
-| The tender list | 1100px |
+| The tender list | 1664px |
 | My work | 844px |
 
 Five and a half screenfuls, and **two `<h2>`s in the whole of it** — one at

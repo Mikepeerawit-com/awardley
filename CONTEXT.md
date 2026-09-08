@@ -238,7 +238,9 @@ _Avoid_: summary, daily report, standup
 **Reporting Currency**:
 Thai Baht (THB). The single currency comparison and dashboard figures are displayed
 in. Quotes are always stored in the currency the supplier quoted; conversion is for
-display only and is always shown as derived.
+display only and is always marked as derived — which is a claim about provenance and
+not about prominence, so which of the two figures a given screen leads with is that
+screen's decision to make.
 _Avoid_: base currency, home currency, display currency
 
 **FX Buffer**:

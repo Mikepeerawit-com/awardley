@@ -117,13 +117,20 @@ export function QuoteList({
           ) : null}
 
           <div className="flex flex-col gap-0.5">
-            {/* Original amount primary and bold, THB beneath it in grey with `≈` — screen
-                5's rule, and it starts here so the two screens never disagree about which
-                number is the real one. */}
-            {/* Mono, tabular, display size — the same treatment the working sheet gives
-                it, because this card is the other place where the price *is* the
-                decision. An Assignee rings several suppliers in a row for one Item, and
-                the cards they come back to have to read as a column of numbers. */}
+            {/* **Original amount primary and bold, THB beneath it in grey with `≈` — and
+                the working sheet now does the opposite, on purpose** (ADR-0029). The two
+                screens used to be bound together so they could never disagree about which
+                number was the real one; they are no longer, because they are read by
+                different people doing different things. This card is the Assignee's: they
+                ring a supplier and will transact in that supplier's currency, so the
+                supplier's own amount is the operative number here. The Owner's sheet
+                ranks in the Reporting Currency, so that is the figure it leads with.
+                Restoring the symmetry would cost one of the two screens its lead figure.
+
+                Mono, tabular, display size, because this card is the other place where
+                the price *is* the decision. An Assignee rings several suppliers in a row
+                for one Item, and the cards they come back to have to read as a column of
+                numbers. */}
             <span className="money text-xl leading-tight font-medium">
               {format.number(quote.unitPrice, {
                 style: "currency",

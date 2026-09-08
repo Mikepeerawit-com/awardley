@@ -161,6 +161,11 @@ cell takes its column with it and every row below stops lining up.
 
 ## Open, and deliberately not decided here
 
+> **Since answered by [ADR-0029](0029-the-sheet-leads-with-the-figure-it-ranks-on.md),
+> through [#150](https://github.com/Mikepeerawit-com/tender-tracker/issues/150).** The
+> sheet now leads with the converted figure, on the Owner's screen only. The section below
+> stands as the question that was asked; ADR-0029 is the answer and the reasoning.
+
 **The figure the sheet ranks on is the quietest number on the card.** Rows are ordered by
 `unitPriceThb`, and that figure is drawn at `text-xs` in muted ink behind an `≈`, while the
 supplier's own amount is `text-xl` mono. The comment defending that arrangement argues

@@ -502,6 +502,18 @@ function QuoteRow({
     date: format.dateTime(calendarDate(quote.fxRateAsOf), calendarDateFormat),
   });
 
+  // Whether this row has two figures to show or one. A Quote already in the Reporting
+  // Currency is not converted, and repeating its own amount under an `≈` would claim a
+  // derivation that never happened — the same refusal the Assignee's card makes.
+  const isConverted = quote.currency !== reportingCurrency;
+
+  // The supplier's own amount, formatted once: it leads an unconverted row and sits
+  // beneath the converted figure on every other, and the two must not drift apart.
+  const supplierAmount = format.number(quote.unitPrice, {
+    style: "currency",
+    currency: quote.currency,
+  });
+
   return (
     <tr
       className={[
@@ -584,46 +596,63 @@ function QuoteRow({
         <div className="flex flex-col items-end gap-0.5 max-md:items-start">
           <CardLabel>{t("quote.unitPrice")}</CardLabel>
 
-          {/* The supplier's own amount is the real one, and on this screen it is the
-              loudest thing there is: mono, tabular, display size. Eight competing offers
-              for the same goods have to read as a column of numbers rather than as eight
-              paragraphs, and tabular figures are what make the digits line up down it.
-              The THB figure beneath it is ours, derived, and says so with an `≈`.
+          {/* **The sheet leads with the figure it ranks on** (ADR-0029). The converted
+              figure is the one `rankQuotes` orders on, the one `isLowest` marks, and the
+              one both the line total and the Landed Cost prefill are built from — so it
+              is the one drawn at display size, mono and tabular. Eight competing offers
+              have to read as a column of numbers, and `$0.06`, `CN¥0.42` and `THB 2.35`
+              at display size are not a column of anything; one currency down the page is.
+              A Quote already in the Reporting Currency draws no second line, which is
+              what makes every row in this column a THB figure at one size.
 
-              **The unit rides on the price's own line** rather than sitting under the
-              conversion two rows below it. It is a qualifier of the figure — *0.06 of a
-              dollar, per piece* — and stacked as a third line it read as a third fact,
-              which on a card with eight of them is one more thing to sort through. A
-              wrapping baseline row, so a long unit drops under the price instead of
+              **The `≈` stays at display size with it.** It is the mark that keeps the
+              conversion derived, and `CONTEXT.md` constrains provenance rather than
+              prominence — shrinking the mark as the figure was promoted is the erosion
+              that glossary line exists to prevent.
+
+              **The unit and the stale chip ride on the leading figure's own line.** The
+              unit qualifies the figure the reader is comparing on — *2.35 of a baht, per
+              piece* — and a stale rate is what makes *that* figure unreliable, so the
+              warning belongs on the loudest thing on the card rather than tucked under
+              it. A wrapping baseline row, so a long unit drops under the price instead of
               widening the column. */}
           <span className="flex flex-wrap items-baseline justify-end gap-x-1.5 max-md:justify-start">
-            <span className="money text-xl leading-tight font-medium md:text-base lg:text-xl">
-              {format.number(quote.unitPrice, {
-                style: "currency",
-                currency: quote.currency,
-              })}
+            <span
+              className="money text-xl leading-tight font-medium md:text-base lg:text-xl"
+              title={isConverted ? rateTitle : undefined}
+            >
+              {isConverted ? (
+                <>
+                  <span className="sr-only">{rateTitle}</span>
+                  {tq("approx", {
+                    amount: format.number(quote.unitPriceThb, {
+                      style: "currency",
+                      currency: reportingCurrency,
+                    }),
+                  })}
+                </>
+              ) : (
+                supplierAmount
+              )}
             </span>
             <span className="text-muted-foreground text-xs">
               {tq("perUnit", { unit: quote.quotedUnit })}
             </span>
+            {isConverted && quote.fxRateIsStale ? (
+              <span className="bg-flag-wash text-flag-ink rounded px-1 py-0.5 text-[0.65rem] font-medium">
+                {tq("staleRate")}
+              </span>
+            ) : null}
           </span>
 
-          {quote.currency === reportingCurrency ? null : (
-            <span className="text-muted-foreground text-xs" title={rateTitle}>
-              <span className="sr-only">{rateTitle}</span>
-              {tq("approx", {
-                amount: format.number(quote.unitPriceThb, {
-                  style: "currency",
-                  currency: reportingCurrency,
-                }),
-              })}
-              {quote.fxRateIsStale ? (
-                <span className="bg-flag-wash text-flag-ink ml-1 rounded px-1 py-0.5 text-[0.65rem] font-medium">
-                  {tq("staleRate")}
-                </span>
-              ) : null}
-            </span>
-          )}
+          {/* The supplier's own amount: what they will invoice, and what the Assignee
+              typed in. It does not disappear — but on the Owner's screen it is reference
+              rather than the operative number, so it sits under the figure the ranking
+              used. It keeps `.money`, because it is still a figure and still has to line
+              up with the one above it. */}
+          {isConverted ? (
+            <span className="money text-muted-foreground text-xs">{supplierAmount}</span>
+          ) : null}
 
           {/* "lowest", never "cheapest": the row is highlighted, not stamped. Absent
               entirely from an Item that cannot be ranked. Kept even beside a rank-1 pill

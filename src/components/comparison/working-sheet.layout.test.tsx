@@ -156,6 +156,45 @@ describe("the figures on the working sheet", () => {
       await page.viewport(phone.width, phone.height);
     }
   });
+
+  /**
+   * **The figure the sheet ranks on is the figure it leads with** (ADR-0029).
+   *
+   * Rows are ordered by the converted figure, `isLowest` marks it, and both the line
+   * total and the Landed Cost prefill are built from it — so the decision is that it is
+   * drawn larger than the supplier's own amount rather than beneath it in small grey
+   * text. Nothing else pins that, and a craft pass that quietly swapped the two back
+   * would leave the ADR describing a screen the app no longer draws.
+   *
+   * **Font size, never width.** The header above explains why a width measured here is a
+   * fact about whatever face Chromium substituted for a stack that does not resolve; it
+   * would be a different fact on the CI runner and a third on a phone. A font size comes
+   * off the class rather than the face, so it is the same number everywhere.
+   *
+   * The converted figure is found by its rate `title` — the tooltip carrying the rate and
+   * the day it was published, which only a converted figure has. That is the attribute
+   * the decision requires it to keep, not a hook added for this test.
+   */
+  it("draws the figure it ranks on larger than the supplier's own amount", () => {
+    const { container } = renderSheet();
+    const led = container.querySelector<HTMLElement>(".money[title]");
+
+    // The dataset quotes in USD and CNY as well as THB. A sheet where nothing converted
+    // would pass the comparison below by having nothing to compare.
+    expect(led, "no converted figure was drawn").not.toBeNull();
+
+    // Both figures of one row, and only that row: the line total is its own cell.
+    const cell = led!.closest("div")!;
+    const secondary = [...cell.querySelectorAll<HTMLElement>(".money")].find(
+      (figure) => figure !== led,
+    );
+
+    expect(secondary, "the supplier's own amount was dropped, not demoted").toBeDefined();
+
+    const size = (el: HTMLElement) => parseFloat(getComputedStyle(el).fontSize);
+
+    expect(size(led!)).toBeGreaterThan(size(secondary!));
+  });
 });
 
 function renderSheet() {

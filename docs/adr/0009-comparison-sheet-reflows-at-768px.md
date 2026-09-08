@@ -48,3 +48,33 @@ Two smaller things, recorded so they are not read as drift:
 - **The quote table's columns are percentages, not pixels.** Fixed pixel widths overflowed at 768px, which is the failure bar at the narrow end of the desktop range rather than on a phone. Cells also carry `break-words`, because the widths a formatted total needs move with the locale.
 
 The failure bar is now pinned by `working-sheet.layout.test.tsx`, in headless Chromium at 390×844 and again at 768/1024/1280. The 44px tap-target floor is deliberately **not** in it, for the reason the Consequences above give.
+
+## Amendment, 8 September 2026 — the per-card figure above is stale ([#151](https://github.com/Mikepeerawit-com/tender-tracker/issues/151))
+
+The decision holds unchanged. One **number** in it does not.
+
+*Measured, at 390px* records **189px per quote card**, and prices the 8-quote density
+stress case at **2,250px ≈ 2.7 phone screens** for a single Tender Item. Measured again in
+September, a card is **232–350px** depending on what the Quote carries — a photo count, an
+Alternative's own product name, a stale-rate chip. Re-running this ADR's own sum with the
+real number puts that same 8-quote Item at roughly **3,350px**, about half as long again
+as the figure the cost was accepted on.
+
+**How it grew is not attributed here, because it cannot honestly be.** The card has been
+worked four times since — the reflow itself, ADR-0026's rail and doubled-count pass, #149,
+and ADR-0029's promotion of the converted figure to display size — and each of those was
+measured against what it changed rather than against this line. ADR-0026 states that its
+own pass "bought no height" and that is consistent with what is above; the rest is
+archaeology nobody needs.
+
+**What matters is that the number went wrong silently for four weeks**, because it lived
+in prose with nothing able to re-derive it. This ADR was written on 13 August; the figure
+was found wrong on 8 September, by somebody measuring for a different reason. It can now: `npm run screen-length` prints the
+per-card cost and the split between the card's identity half and its money half, and
+[ADR-0030](0030-the-sheet-is-long-because-the-owner-reads-every-quote.md) is where the
+current figures are recorded. The original line is left standing above rather than edited,
+so what this ADR was decided on stays visible beside what is true now.
+
+**The cost accepted in *The cost, accepted deliberately* is therefore larger than stated**
+— rank 1 and rank 8 are further apart than 2.7 screens. ADR-0030 takes that up: it holds
+that the length is correct and that co-visibility, not length, is the question left open.

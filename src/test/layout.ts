@@ -214,6 +214,91 @@ export function familiesIn(fontFamily: string): string[] {
 }
 
 /**
+ * What a face does on the machine that ran this: **drew it**, **never reached** because
+ * something ahead of it resolved first, or **not installed** at all.
+ *
+ * The middle role is the one worth keeping separate. A family that is declared and never
+ * consulted is a different fact from a family that is absent, and a reader looking at a
+ * measurement to decide how much to trust it needs them told apart.
+ */
+export type FaceRole = "drew this" | "never reached" | "not installed";
+
+export type ResolvedFace = { family: string; role: FaceRole };
+
+/** CSS keywords, not faces: nothing to probe, and they always resolve to something. */
+const GENERIC = new Set([
+  "system-ui",
+  "sans-serif",
+  "serif",
+  "monospace",
+  "cursive",
+  "fantasy",
+  "ui-sans-serif",
+  "ui-serif",
+  "ui-monospace",
+  "ui-rounded",
+]);
+
+/**
+ * Which of the families the app *declares* actually drew whatever was just rendered.
+ *
+ * Read off the element's own computed stack rather than hardcoded, so a caller cannot
+ * claim a stack the stylesheet no longer has. Availability is **measured, not asked for**:
+ * there is no API that answers it — `document.fonts.check` reports on loaded webfonts, and
+ * these are the device's own.
+ *
+ * This is what makes a measurement taken in this harness safe to read on another machine.
+ * `next/font` sets `--font-fira-sans` on the real `<html>` and is absent here, so unless
+ * Fira Sans is installed locally the Latin text is being drawn by the CJK face behind it —
+ * a real difference from production, and one the reader has to be told rather than spared
+ * (ADR-0019). It lives here because both things that report it — the contact sheet (#78)
+ * and the screen-length report (#151) — would otherwise each keep a copy, and #151 shipped
+ * with a copy that had silently dropped {@link GENERIC} and reported `sans-serif` absent.
+ */
+export function resolvedFaces(root: HTMLElement = document.body): ResolvedFace[] {
+  const declared = familiesIn(getComputedStyle(root).fontFamily);
+
+  // A generic keyword always resolves, so the walk stops there if it gets that far.
+  const resolves = declared.map(
+    (family) => GENERIC.has(family.toLowerCase()) || canDraw(family),
+  );
+
+  // Only the first family that resolves draws anything; everything after it is declared
+  // and never consulted.
+  const winner = resolves.indexOf(true);
+
+  return declared.map((family, index) => ({
+    family,
+    role:
+      index === winner ? "drew this" : resolves[index] ? "never reached" : "not installed",
+  }));
+}
+
+/** Han and Latin both, because a CJK face can carry one and not the other. */
+const SAMPLE = "尚未开始 Sourcing 1,240.50";
+
+/**
+ * Whether a named family is really installed, measured rather than asked for.
+ *
+ * A family the machine does not have falls through to the same last-resort face as a name
+ * nothing can match, so an identical advance width means it did not resolve.
+ */
+export function canDraw(family: string): boolean {
+  const context = document.createElement("canvas").getContext("2d");
+
+  if (context === null) return false;
+
+  const missing = "__no_such_family__";
+
+  context.font = `24px "${missing}"`;
+  const fallback = context.measureText(SAMPLE).width;
+
+  context.font = `24px "${family}", "${missing}"`;
+
+  return context.measureText(SAMPLE).width !== fallback;
+}
+
+/**
  * Enough of an element to find it in the markup from a failure message, **by what it
  * says**.
  *

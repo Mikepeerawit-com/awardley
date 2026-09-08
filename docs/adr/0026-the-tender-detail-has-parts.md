@@ -96,6 +96,12 @@ the same trade `app-header.tsx` refused for eight pixels of ghost-button inset.
 with names, a way between them, and a heading level to navigate by; the Assignee's screen,
 where the folds are a larger share of it, is 17% shorter.
 
+> **Since answered by [ADR-0030](0030-the-sheet-is-long-because-the-owner-reads-every-quote.md),
+> through [#151](https://github.com/Mikepeerawit-com/tender-tracker/issues/151).** The
+> length was taken up as a problem, measured, and recorded as correct: the Owner reads
+> every Quote to judge which satisfies the client, so nothing on the card may be hidden by
+> price. The paragraph below stands as the question that was asked.
+
 **What is still long is the working sheet itself**, and its *structure* is deliberately
 untouched. Three Items with their ranked Quotes is roughly 3400px of that 4404, and
 shortening it properly means reopening [ADR-0009](0009-comparison-sheet-reflows-at-768px.md)

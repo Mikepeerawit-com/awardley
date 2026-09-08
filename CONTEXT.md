@@ -315,9 +315,20 @@ _Label_: en "Profit" · zh 毛利.
 _Direction_: en "Gain" / "Loss" / "Break-even" · zh 盈利 / 亏损 / 持平 — the words a
 screen reader hears in place of the triangle.
 
+**Working Sheet**:
+The Owner's surface for deciding a Tender: every Tender Item with the competing Quotes
+ranked beneath it, the Selected Quote, and the pricing that turns it into a Bid. The act
+performed on it is a judgement about *fit* before price — the Owner is the client's
+direct contact and decides which Quote satisfies what the client asked for — so a ranking
+orders it and does not settle it (ADR-0030). Not drawn for an Assignee, who sees their own
+Quotes and no money (ADR-0020).
+_Label_: en "Items and quotes" · zh 产品项与报价 — the screen names the parts, never the
+sheet.
+_Avoid_: comparison table, quote list — it is a table only above 768px
+
 **Coverage**:
 How many Tender Items carry a selling price, out of all of them. Sits at the head of the
-working sheet's totals bar because the three money figures beside it mean nothing without
+Working Sheet's totals bar because the three money figures beside it mean nothing without
 it: a Bid total across two of four Items must not be read as the Tender's.
 _Avoid_: completeness, progress, fill rate
 

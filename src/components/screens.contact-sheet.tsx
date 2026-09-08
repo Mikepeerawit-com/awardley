@@ -11,7 +11,7 @@ import {
   type Theme,
   themes,
 } from "@/test/screens";
-import { phone } from "@/test/layout";
+import { phone, resolvedFaces, type ResolvedFace } from "@/test/layout";
 import { captureWindow } from "@/test/phone.mjs";
 
 /**
@@ -98,7 +98,7 @@ describe("the contact sheet", () => {
       </Screen>,
     );
 
-    if (faces.length === 0) faces = resolveDeclaredStack();
+    if (faces.length === 0) faces = resolvedFaces();
 
     await photograph(name, locale, theme);
   });
@@ -170,89 +170,6 @@ async function photograph(name: string, locale: string, theme: Theme): Promise<v
   shots.push({ screen: name, locale, theme, file });
 }
 
-/**
- * Which of the families the app *declares* actually got used.
- *
- * Read off `--font-sans` rather than hardcoded, so the sheet cannot claim a stack the
- * stylesheet no longer has. Availability is measured, not asked for: a family that is not
- * installed falls through to the same last-resort face as a deliberately bogus name, so
- * an identical advance width means it did not resolve.
- *
- * The Latin face matters most here. `--font-fira-sans` is set by `next/font` on the real
- * `<html>` and is absent in this harness, so unless Fira Sans is installed locally the
- * Latin text in these images is being drawn by the CJK face behind it. That is a real
- * difference from production and the reader has to be told, not spared.
- */
-type FaceRole = "drew this sheet" | "never reached" | "not installed";
-type ResolvedFace = { family: string; role: FaceRole };
-
-/** CSS keywords, not faces: nothing to probe, and they always resolve to something. */
-const GENERIC = new Set([
-  "system-ui",
-  "sans-serif",
-  "serif",
-  "monospace",
-  "cursive",
-  "fantasy",
-  "ui-sans-serif",
-  "ui-serif",
-  "ui-monospace",
-  "ui-rounded",
-]);
-
-function resolveDeclaredStack(): ResolvedFace[] {
-  const declared = getComputedStyle(document.body)
-    .fontFamily.split(",")
-    .map((family) => family.trim().replace(/^["']|["']$/g, ""))
-    .filter((family) => family !== "");
-
-  // A generic keyword always resolves, so the walk below stops there if it gets that far.
-  const resolves = declared.map(
-    (family) => GENERIC.has(family.toLowerCase()) || canDraw(family),
-  );
-
-  // Only the first family that resolves draws anything. Everything after it is declared
-  // and never consulted, which is a different fact from being absent, and the reader
-  // needs them told apart to know what they are looking at.
-  const winner = resolves.indexOf(true);
-
-  return declared.map((family, index) => ({
-    family,
-    role:
-      index === winner
-        ? "drew this sheet"
-        : resolves[index]
-          ? "never reached"
-          : "not installed",
-  }));
-}
-
-/** Han and Latin both, because a CJK face can carry one and not the other. */
-const SAMPLE = "尚未开始 Sourcing 1,240.50";
-
-/**
- * Whether a named family is really installed, measured rather than asked for.
- *
- * A family the machine does not have falls through to the same last-resort face as a name
- * nothing can match, so an identical advance width means it did not resolve. There is no
- * API that answers this directly — `document.fonts.check` reports on loaded webfonts, and
- * these are the device's own.
- */
-function canDraw(family: string): boolean {
-  const context = document.createElement("canvas").getContext("2d");
-
-  if (context === null) return false;
-
-  const missing = "__no_such_family__";
-
-  context.font = `24px "${missing}"`;
-  const fallback = context.measureText(SAMPLE).width;
-
-  context.font = `24px "${family}", "${missing}"`;
-
-  return context.measureText(SAMPLE).width !== fallback;
-}
-
 /** How tall this screen really is, however it chose to lay itself out. */
 function fullHeight(): number {
   return Math.max(
@@ -314,7 +231,7 @@ function indexPage(taken: Shot[], resolved: ResolvedFace[]): string {
   const faceList = resolved
     .map(
       (face) =>
-        `<li class="${face.role === "drew this sheet" ? "yes" : "no"}">${face.family} — ${face.role}</li>`,
+        `<li class="${face.role === "drew this" ? "yes" : "no"}">${face.family} — ${face.role}</li>`,
     )
     .join("\n      ");
 

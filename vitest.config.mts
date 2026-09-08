@@ -39,6 +39,13 @@ import { captureWindow, phone } from "./src/test/phone.mts";
  * Chromium instead, which is why this project alone needs
  * `npx playwright install chromium`.
  *
+ * **`.measure.tsx` — not a test either.** #151: how long each screen comes to at 390px,
+ * and what it is long because of. Like the contact sheet it has no baseline and asserts
+ * nothing about any height — ADR-0016's objection lands hardest on a height, which pinned
+ * loosely can never fail and pinned tightly fails on whichever face the runner
+ * substituted. It reports. `npm run screen-length`, and out of `npm test` by the same
+ * project filter.
+ *
  * **`.contact-sheet.tsx` — not a test at all.** #78: the same screens the `layout`
  * project measures, photographed into a contact sheet for a person to look at. It has no
  * baseline and asserts nothing about appearance, so it is excluded from `npm test` by the
@@ -129,6 +136,20 @@ export default defineConfig({
             // Not `__screenshots__`, which is where a *failed* assertion drops an image
             // and is gitignored as such. The sheet is the output here, not wreckage.
             screenshotDirectory: ".contact-sheet",
+          },
+        },
+      },
+      {
+        resolve: { tsconfigPaths: true },
+        test: {
+          name: "measure",
+          include: ["src/**/*.measure.tsx"],
+          setupFiles: ["./vitest.setup.layout.ts"],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: "chromium", viewport: phone }],
           },
         },
       },

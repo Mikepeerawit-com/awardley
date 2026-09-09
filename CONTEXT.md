@@ -111,6 +111,13 @@ _Avoid_: sourcer, responsible person, assigned user
 The user who created a Tender. Accountable for the client relationship and for the Bid
 going out on time; receives submission and decision reminders. Usually also an
 Assignee. A role, not a rank — every user can create Tenders and be an Assignee.
+
+**Ownership is accountability, not exclusive write access.** Under ten trusted users there
+is no editing gate beyond org membership: anyone who can see a Tender may correct it or its
+Tender Items. What ownership does confer is named elsewhere — comparing and the money
+(ADR-0020), and assigning somebody other than yourself. Said here because two documents have
+now called the edit surface "the Owner's screen" on the strength of the glossary not saying
+otherwise.
 _Label_: en "Owner" · zh 负责人 — held for this term alone.
 _Avoid_: manager, admin, lead
 

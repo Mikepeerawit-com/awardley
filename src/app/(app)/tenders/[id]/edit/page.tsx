@@ -74,6 +74,9 @@ export default async function EditTenderPage({
         <Section id="items" title={t("item.plural")}>
           <p className="text-muted-foreground text-sm">{t("item.hint")}</p>
 
+          {/* One fold per Item, summarised by the product name (ADR-0031). Both props
+              are the same count read twice, and both are derived here rather than
+              remembered: the reader is correcting one Item, so the rest stay shut. */}
           {tender.items.map((item) => (
             <EditTenderItemForm
               key={item.id}
@@ -82,6 +85,9 @@ export default async function EditTenderPage({
               // The last Item cannot go: a Tender that asks for nothing is a Tender
               // nobody can Bid on, and the server refuses it either way.
               removable={tender.items.length > 1}
+              // A fold over a list of one is a tap in front of the only thing there is
+              // to edit.
+              defaultOpen={tender.items.length === 1}
             />
           ))}
 

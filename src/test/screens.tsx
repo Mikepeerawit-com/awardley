@@ -137,14 +137,21 @@ export type Messages = typeof en;
  */
 export function screens(m: Messages) {
   /**
-   * The Owner's edit screen, drawn either at rest or with the add-an-item fold down.
+   * The Owner's edit screen, drawn at rest or with either kind of fold on it down.
    *
-   * A function rather than two literals because the pair differs by one prop, and the
-   * reason it is a pair at all is that a `<details>` the reader has not opened is
-   * invisible to `checkVisibility()` and therefore to every guard in the `layout`
+   * A function rather than three literals because the records differ by a prop apiece,
+   * and the reason there are three at all is that a `<details>` the reader has not opened
+   * is invisible to `checkVisibility()` and therefore to every guard in the `layout`
    * project (ADR-0026).
+   *
+   * **An options object rather than positional booleans.** There are two axes since
+   * ADR-0031 put each existing Item behind a fold of its own, and `editingATender(false,
+   * true)` at a call site says nothing about which fold is which.
    */
-  const editingATender = (addingItem: boolean) => (
+  const editingATender = ({
+    addingItem = false,
+    openingItems = false,
+  }: { addingItem?: boolean; openingItems?: boolean } = {}) => (
     <Body location={editBar}>
       <ScreenHeader eyebrow={tender.reference} heading={m.tenders.edit}>
         <p className="text-muted-foreground text-sm">{m.tenders.editDescription}</p>
@@ -161,9 +168,18 @@ export function screens(m: Messages) {
           {/* All three Items, and `removable` on every one — the Tender has more than
               one, so the destructive Remove is drawn per row. A fixture with a single
               Item would compose the one shape of this screen that has no Remove on it
-              at all. */}
+              at all — and, since ADR-0031, the one shape that arrives with a fold open.
+              `openingItems` opens all three rather than one: the forms are interchangeable
+              only until somebody makes them not, and a record that opened one would pass
+              in silence while two went unwalked. */}
           {tender.items.map((item) => (
-            <EditTenderItemForm key={item.id} tenderId={tender.id} item={item} removable />
+            <EditTenderItemForm
+              key={item.id}
+              tenderId={tender.id}
+              item={item}
+              removable
+              defaultOpen={openingItems}
+            />
           ))}
 
           <AddTenderItemForm tenderId={tender.id} defaultOpen={addingItem} />
@@ -529,19 +545,32 @@ export function screens(m: Messages) {
     // the Tender's own fields, one form per Item, an uploader, a gallery of the client's
     // pictures with a picker on every one, and the Assignee controls under all of it.
     //
-    // **Two records off one body, unlike the Tender detail's pair.** That screen's
+    // **Three records off one body, unlike the Tender detail's pair.** That screen's
     // folds-open twin is written out in full because it is a different screen — the
     // Owner's rather than the Assignee's, with the working sheet in place of the sourcing
-    // list. This pair differs in one boolean, so a second copy of sixty lines would be
-    // sixty lines that could drift apart while both kept passing.
-    "editing a tender": { measure: 768, body: editingATender(false) },
+    // list. These three differ in one prop each, so a second and third copy of sixty
+    // lines would be a hundred and twenty lines that could drift apart while all three
+    // kept passing.
+    //
+    // **The screen as it is arrived at**: every Item shut behind its product name
+    // (ADR-0031) and the add-an-item fold shut under them, which is what a reader who
+    // came to correct one thing scrolls past.
+    "editing a tender": { measure: 768, body: editingATender() },
     // **The same screen with the add-an-item fold open**, and it exists for the reason
     // ADR-0026 gives: a shut `<details>` fails `checkVisibility()`, so with the fold down
     // the contrast walk, the tap floor and the 390px measure all stop at its summary bar
     // and four inputs and a submit go unwalked.
     "editing a tender, adding an item": {
       measure: 768,
-      body: editingATender(true),
+      body: editingATender({ addingItem: true }),
+    },
+    // **And with all three existing Items open**, for the same reason again and about the
+    // forms ADR-0031 folded: three Save buttons, three Removes and twelve inputs that
+    // every guard walked before the fold went in front of them, and would silently stop
+    // walking now. All three, because a record that opened one would leave two unwalked.
+    "editing a tender, with every item open": {
+      measure: 768,
+      body: editingATender({ openingItems: true }),
     },
     "sourcing an item": {
       measure: 768,

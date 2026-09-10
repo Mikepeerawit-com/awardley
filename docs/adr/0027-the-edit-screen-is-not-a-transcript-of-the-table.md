@@ -82,6 +82,13 @@ are still open, still all four fields each, still individually saved.
 
 ## What was considered and not done
 
+> **Since answered by [ADR-0031](0031-the-edit-screen-is-a-list-of-items-you-open-one-at-a-time.md),
+> through [#152](https://github.com/Mikepeerawit-com/tender-tracker/issues/152).** The
+> decision was taken deliberately and it is yes: each Item's form is behind a fold
+> summarised by its product name, which took 804px — 28% — off the screen. The property
+> named below as the reason not to act, "everything about this Tender, editable", is
+> retired there. The paragraph below stands as the question that was asked.
+
 **Folding the Item forms themselves** would take another ~1000px — three 324px forms
 behind three summaries showing the product name. It is not obviously wrong; the forms are
 already independent units of work with their own Save. It is left alone because it changes

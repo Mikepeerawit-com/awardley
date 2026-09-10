@@ -47,7 +47,7 @@ export function Section({
     <section
       id={id}
       aria-labelledby={headingId}
-      className="flex min-w-0 scroll-mt-20 flex-col gap-3"
+      className="flex min-w-0 scroll-mt-20 flex-col gap-field"
     >
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h2

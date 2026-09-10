@@ -43,13 +43,13 @@ export default async function PeoplePage() {
       </ScreenHeader>
 
       <Measure>
-        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
           <h2 className="type-subhead">{t("invite.title")}</h2>
           <InviteForm />
         </section>
       </Measure>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-field">
         <h2 className="type-subhead">{t("members")}</h2>
         <MembershipList members={members} />
       </section>

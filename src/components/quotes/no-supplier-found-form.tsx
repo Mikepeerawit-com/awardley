@@ -53,8 +53,8 @@ export function NoSupplierFoundForm({
   const t = useTranslations("quotes.noSupplier");
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-field">
+      <div className="flex flex-col gap-label">
         <h3 className="type-subhead">{t("title")}</h3>
         <p className="type-quiet">{t("hint")}</p>
       </div>
@@ -94,13 +94,13 @@ function RecordForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form action={formAction} className="flex flex-col gap-field">
       <input type="hidden" name="tenderId" value={tenderId} />
       <input type="hidden" name="tenderItemId" value={tenderItemId} />
 
       <QuoteProblemNotice error={state.error} />
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor={`nsf-note-${tenderItemId}`}>{t("note")}</Label>
         <Input
           id={`nsf-note-${tenderItemId}`}
@@ -140,7 +140,7 @@ function ClearForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form action={formAction} className="flex flex-col gap-field">
       <input type="hidden" name="tenderId" value={tenderId} />
       <input type="hidden" name="tenderItemId" value={tenderItemId} />
 

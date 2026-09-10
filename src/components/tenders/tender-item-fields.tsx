@@ -28,9 +28,9 @@ export function TenderItemInputs({
   const t = useTranslations("tenders.item");
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-field">
+      <div className="grid gap-field sm:grid-cols-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor={`${domId}-productName`}>{t("productName")}</Label>
           <Input
             id={`${domId}-productName`}
@@ -40,7 +40,7 @@ export function TenderItemInputs({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor={`${domId}-description`}>{t("description")}</Label>
           <Input
             id={`${domId}-description`}
@@ -60,8 +60,8 @@ export function TenderItemInputs({
           At 390px each half is about 165px, which is wide enough for `box of 50` and for
           单位 with room over, and far past the 44px floor `target.layout.test.tsx`
           holds every control to. */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-field">
+        <div className="flex flex-col gap-label">
           <Label htmlFor={`${domId}-quantity`}>{t("quantity")}</Label>
           <Input
             id={`${domId}-quantity`}
@@ -75,7 +75,7 @@ export function TenderItemInputs({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor={`${domId}-unit`}>{t("unit")}</Label>
           <Input
             id={`${domId}-unit`}

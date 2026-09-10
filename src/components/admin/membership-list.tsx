@@ -24,11 +24,11 @@ export function MembershipList({ members }: { members: Membership[] }) {
   const t = useTranslations("people");
 
   return (
-    <ul className="flex flex-col gap-4">
+    <ul className="flex flex-col gap-field">
       {members.map((member) => (
         <li
           key={member.id}
-          className="bg-card rounded-surface shadow-surface flex flex-col gap-3 p-4"
+          className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4"
         >
           <div className="flex flex-wrap items-baseline gap-2">
             <span className="font-medium">{member.name}</span>

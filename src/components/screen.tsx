@@ -1,11 +1,7 @@
 import type { ReactNode } from "react";
 
 import { AppHeader, type AppLocation } from "@/components/app-header";
-import {
-  ScreenBody,
-  type MeasureWidth,
-  type ScreenGap,
-} from "@/components/ui/screen-body";
+import { ScreenBody, type MeasureWidth } from "@/components/ui/screen-body";
 
 /**
  * The frame every screen behind the login sits in — the app bar, then the body's wrapper.
@@ -40,20 +36,18 @@ import {
 export function Screen({
   location,
   measure,
-  gap,
   children,
 }: {
   /** The shape the bar draws. Omitted on the screens that are not about one record. */
   location?: AppLocation;
   /** How wide this screen's prose and fields are allowed to be. Its default is the app's. */
   measure?: MeasureWidth;
-  gap?: ScreenGap;
   children: ReactNode;
 }) {
   return (
     <>
       <AppHeader location={location} />
-      <ScreenBody measure={measure} gap={gap}>
+      <ScreenBody measure={measure}>
         {children}
       </ScreenBody>
     </>

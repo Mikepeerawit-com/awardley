@@ -87,7 +87,7 @@ export function WorkingSheet({
     // and therefore will not offer — a wrapper that cost a landmark and bought nothing.
     // The heading is the `Section`'s now, and it is the first this half of the screen has
     // ever had.
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-field">
       {/* "2 of 4 Items still need a Quote selected" — the sentence that tells somebody
           landing here what the page is currently about. */}
       <div className="bg-muted/60 flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-surface px-4 py-3">
@@ -340,7 +340,7 @@ function ItemPanel({
   const banners = itemBanners(item, item.quotes);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-field">
       {/* What the *client* sent, at the top of the panel and so within a glance of the
           Quote Photos it exists to be compared against — which on an Alternative is often
           the only way to judge how far the substitute really is. A count opening a
@@ -437,7 +437,7 @@ function QuoteTable({
             <th className="w-[13%] px-2 py-2" />
           </tr>
         </thead>
-        <tbody className="max-md:flex max-md:flex-col max-md:gap-2">
+        <tbody className="max-md:flex max-md:flex-col max-md:gap-field">
           {ranked.map((row) => (
             <QuoteRow
               key={row.quote.id}

@@ -116,8 +116,8 @@ export function ItemPricing({
   );
 
   return (
-    <div className="flex min-w-0 flex-[1_1_18rem] flex-col gap-2">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="flex min-w-0 flex-[1_1_18rem] flex-col gap-field">
+      <div className="grid grid-cols-2 gap-field">
         <PriceField
           action={setLandedCostAction}
           name="landedCostPerUnit"

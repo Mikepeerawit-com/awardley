@@ -92,9 +92,9 @@ export function SettingsFrame({
   return (
     // A block above the screen on a phone, a column beside it from `md`. 390px has no
     // room for a column next to anything, and a monitor has no reason to stack.
-    <div className="flex flex-col gap-8 md:flex-row md:gap-10">
+    <div className="flex flex-col gap-landmark md:flex-row">
       <SettingsNav isOrgAdmin={isOrgAdmin} />
-      <div className="flex min-w-0 flex-1 flex-col gap-8">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col gap-landmark">{children}</div>
     </div>
   );
 }
@@ -110,7 +110,7 @@ export function SettingsNav({ isOrgAdmin }: { isOrgAdmin: boolean }) {
   return (
     <nav
       aria-label={t("nav.settingsGroups")}
-      className="flex shrink-0 flex-col gap-6 md:w-56"
+      className="flex shrink-0 flex-col gap-group md:w-56"
     >
       {drawn.map((group) => (
         <div key={group.heading ?? "preferences"} className="flex flex-col gap-1">

@@ -36,10 +36,10 @@ export function CurrencyConversionForm({ percent }: { percent: number }) {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-field">
       <p className="type-quiet">{t("current", { percent })}</p>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="percent">{t("label")}</Label>
         <div className="flex items-center gap-2">
           <Input

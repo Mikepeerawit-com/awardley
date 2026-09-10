@@ -78,8 +78,8 @@ export function TenderGroup({
   }
 
   return (
-    <section className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 flex-col gap-1">
+    <section className="flex min-w-0 flex-col gap-field">
+      <div className="flex min-w-0 flex-col gap-label">
         <div className="flex min-w-0 items-center gap-2.5 px-0.5">
           <h2 className="type-group min-w-0 break-words">{heading}</h2>
           <ProgressScale progress={section.group} />

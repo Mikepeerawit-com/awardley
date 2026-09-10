@@ -36,7 +36,7 @@ export function NewTenderForm({
   const [nextRowId, setNextRowId] = useState(1);
 
   return (
-    <form action={formAction} className="flex flex-col gap-8">
+    <form action={formAction} className="flex flex-col gap-group">
       <TenderProblemNotice error={state.error} />
 
       <TenderFieldInputs
@@ -61,8 +61,8 @@ export function NewTenderForm({
         }
       />
 
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
+      <section className="flex flex-col gap-field">
+        <div className="flex flex-col gap-label">
           <h2 className="type-subhead">{t("item.plural")}</h2>
           <p className="type-quiet">{t("item.hint")}</p>
         </div>
@@ -70,7 +70,7 @@ export function NewTenderForm({
         {rowIds.map((rowId, index) => (
           <div
             key={rowId}
-            className="bg-card rounded-surface shadow-surface flex flex-col gap-3 p-4"
+            className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4"
           >
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-xs">

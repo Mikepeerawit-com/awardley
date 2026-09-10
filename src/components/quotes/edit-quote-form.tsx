@@ -54,7 +54,7 @@ export function EditQuoteForm({
   const fields = state.submitted ?? defaults;
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-group">
       <input type="hidden" name="tenderId" value={tenderId} />
       <input type="hidden" name="tenderItemId" value={tenderItemId} />
       <input type="hidden" name="quoteId" value={quoteId} />

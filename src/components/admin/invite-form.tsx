@@ -15,7 +15,7 @@ export function InviteForm() {
   const [state, formAction, isPending] = useActionState(inviteAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-field">
       {state.status ? (
         <p
           role="status"
@@ -29,13 +29,13 @@ export function InviteForm() {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="flex flex-1 flex-col gap-2">
+      <div className="flex flex-col gap-field sm:flex-row sm:items-end">
+        <div className="flex flex-1 flex-col gap-label">
           <Label htmlFor="invite-name">{t("name")}</Label>
           <Input id="invite-name" name="name" required className="h-11" />
         </div>
 
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-1 flex-col gap-label">
           <Label htmlFor="invite-email">{t("email")}</Label>
           <Input
             id="invite-email"

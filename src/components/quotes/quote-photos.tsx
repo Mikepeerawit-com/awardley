@@ -47,7 +47,7 @@ export function QuotePhotoControls({
   const { error, progress, busy, upload } = useImageUpload();
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-label">
       <div className="flex flex-wrap items-center gap-2">
         <ImageCountBadge
           openLabel={t("openCount", { count: photos.length })}

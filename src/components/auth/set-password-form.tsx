@@ -15,7 +15,7 @@ export function SetPasswordForm() {
   const [state, formAction, isPending] = useActionState(setPasswordAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-field">
       {state.error ? (
         <p
           role="alert"
@@ -25,7 +25,7 @@ export function SetPasswordForm() {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"
@@ -39,7 +39,7 @@ export function SetPasswordForm() {
         <p className="type-quiet">{t("requirement")}</p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="confirmation">{t("confirmation")}</Label>
         <Input
           id="confirmation"

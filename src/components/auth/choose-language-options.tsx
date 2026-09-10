@@ -26,7 +26,7 @@ export function ChooseLanguageOptions() {
   const t = useTranslations("chooseLanguage");
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-field">
       {locales.map((locale) => (
         <form key={locale} action={chooseLanguageAction}>
           <input type="hidden" name="locale" value={locale} />

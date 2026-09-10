@@ -23,9 +23,9 @@ export function TenderFieldInputs({
   const t = useTranslations("tenders");
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-field">
+      <div className="grid gap-field sm:grid-cols-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor="clientName">{t("client")}</Label>
           <Input
             id="clientName"
@@ -36,7 +36,7 @@ export function TenderFieldInputs({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor="title">{t("tenderTitle")}</Label>
           <Input
             id="title"
@@ -48,8 +48,8 @@ export function TenderFieldInputs({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
+      <div className="grid gap-field sm:grid-cols-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor="dateReceived">{t("dateReceived")}</Label>
           <Input
             id="dateReceived"
@@ -61,7 +61,7 @@ export function TenderFieldInputs({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor="ownerUserId">{t("owner")}</Label>
           <NativeSelect
             id="ownerUserId"
@@ -79,8 +79,8 @@ export function TenderFieldInputs({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
+      <div className="grid gap-field sm:grid-cols-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor="internalQuoteDeadline">{t("internalQuoteDeadline")}</Label>
           <Input
             id="internalQuoteDeadline"
@@ -93,7 +93,7 @@ export function TenderFieldInputs({
           <p className="type-quiet">{t("internalQuoteHint")}</p>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-label">
           <Label htmlFor="clientSubmissionDeadline">
             {t("clientSubmissionDeadline")}
           </Label>
@@ -109,7 +109,7 @@ export function TenderFieldInputs({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="expectedDecisionDate">{t("expectedDecisionDate")}</Label>
         <Input
           id="expectedDecisionDate"
@@ -121,7 +121,7 @@ export function TenderFieldInputs({
         <p className="type-quiet">{t("expectedDecisionHint")}</p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="notes">{t("notes")}</Label>
         <Textarea id="notes" name="notes" defaultValue={defaults.notes} rows={3} />
       </div>

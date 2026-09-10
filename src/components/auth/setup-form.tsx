@@ -18,7 +18,7 @@ export function SetupForm() {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-field">
       {state.error ? (
         <p
           role="alert"
@@ -28,7 +28,7 @@ export function SetupForm() {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="name">{t("name")}</Label>
         <Input
           id="name"
@@ -40,7 +40,7 @@ export function SetupForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="email">{t("email")}</Label>
         <Input
           id="email"
@@ -56,7 +56,7 @@ export function SetupForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"
@@ -70,7 +70,7 @@ export function SetupForm() {
         <p className="type-quiet">{t("requirement")}</p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="confirmation">{t("confirmation")}</Label>
         <Input
           id="confirmation"
@@ -83,7 +83,7 @@ export function SetupForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="secret">{t("secret")}</Label>
         <Input
           id="secret"

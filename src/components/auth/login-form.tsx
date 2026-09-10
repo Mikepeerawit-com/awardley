@@ -17,7 +17,7 @@ export function LoginForm({ linkError = false }: { linkError?: boolean }) {
   const error = state.error ?? (linkError ? ("link" as const) : undefined);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-field">
       {error ? (
         <p
           role="alert"
@@ -27,7 +27,7 @@ export function LoginForm({ linkError = false }: { linkError?: boolean }) {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="email">{t("email")}</Label>
         <Input
           id="email"
@@ -43,7 +43,7 @@ export function LoginForm({ linkError = false }: { linkError?: boolean }) {
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="password">{t("password")}</Label>
         <Input
           id="password"

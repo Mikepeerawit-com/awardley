@@ -49,7 +49,6 @@ import {
   Measure,
   type MeasureWidth,
   ScreenBody,
-  type ScreenGap,
 } from "@/components/ui/screen-body";
 import { ScreenError } from "@/components/ui/screen-error";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -310,9 +309,7 @@ export function screens(m: Messages) {
     "recording a tender": {
       measure: 768,
       body: (
-        // `gap-6` because the page sets it: this screen is one long form, and the wider
-        // rhythm every other screen uses would push the submit off a phone.
-        <Body gap="gap-6">
+        <Body>
           <ScreenHeader heading={m.tenders.record}>
             <p className="type-quiet">{m.tenders.recordDescription}</p>
           </ScreenHeader>
@@ -637,7 +634,7 @@ export function screens(m: Messages) {
             }
           />
 
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-field">
             {/* "2 quotes from you", never "2 quotes recorded": the heading counts this
                 reader's own work rather than making a claim about the Item that ADR-0020
                 has just decided they do not get told. */}
@@ -657,8 +654,8 @@ export function screens(m: Messages) {
           </section>
 
           <Measure>
-            <section className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
+            <section className="flex flex-col gap-field">
+              <div className="flex flex-col gap-label">
                 <h2 className="type-subhead">{m.quotes.add}</h2>
                 <p className="type-quiet">{m.quotes.addHint}</p>
               </div>
@@ -747,13 +744,13 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
               <h2 className="type-subhead">{m.people.invite.title}</h2>
               <InviteForm />
             </section>
           </Measure>
 
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-field">
             <h2 className="type-subhead">{m.people.members}</h2>
             <MembershipList members={memberships} />
           </section>
@@ -769,7 +766,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
               {/* Set up, which is the fuller of the two shapes: it draws the sentence
                   saying when it was last changed and the control that removes it, neither
                   of which exists on an org that has never saved one. */}
@@ -788,7 +785,7 @@ export function screens(m: Messages) {
           </ScreenHeader>
 
           <Measure>
-            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
               <CurrencyConversionForm percent={2.5} />
             </section>
           </Measure>
@@ -1041,13 +1038,10 @@ export function Ground({
 export function Body({
   measure,
   location,
-  gap,
   children,
 }: {
   measure?: MeasureWidth;
   location?: AppLocation;
-  /** What `@/components/screen`'s `Screen` takes and this did not. One screen sets it. */
-  gap?: ScreenGap;
   children: React.ReactNode;
 }) {
   return (
@@ -1056,7 +1050,7 @@ export function Body({
           and `Sign out` for everybody, so there is one bar rather than an admin's and a
           member's, and this composition is the one every member gets. */}
       <AppHeader location={location} />
-      <ScreenBody measure={measure} gap={gap}>
+      <ScreenBody measure={measure}>
         {children}
       </ScreenBody>
     </>
@@ -1108,7 +1102,7 @@ function preferences(m: Messages) {
       </ScreenHeader>
 
       <Measure>
-        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
           <h2 className="type-subhead">{m.localeSwitcher.label}</h2>
           <LocaleSwitcher />
         </section>
@@ -1117,7 +1111,7 @@ function preferences(m: Messages) {
             and because it is the widest of the three in both scripts — 跟随系统 is four Han
             glyphs against two. A fixture pinned to a shorter answer would measure the easy
             case of a row that has to fit three thumb-sized targets at 390px. */}
-        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
+        <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
           <h2 className="type-subhead">{m.themeSwitcher.label}</h2>
           <ThemeSwitcher current="system" />
         </section>

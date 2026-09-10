@@ -184,7 +184,7 @@ export function TenderFacts({ tender }: { tender: Tender }) {
     format.dateTime(calendarDate(value), calendarDateFormat);
 
   return (
-    <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <dl className="grid gap-field sm:grid-cols-2 lg:grid-cols-3">
       <Fact label={t("owner")} value={tender.ownerName} />
       <Fact label={t("dateReceived")} value={day(tender.dateReceived)} />
       <Fact

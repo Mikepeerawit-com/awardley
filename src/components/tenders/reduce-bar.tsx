@@ -90,7 +90,7 @@ export function ReduceBar({
     view === null && (filter.mine || filter.progress.length > 0 || filter.notYetSourced);
 
   return (
-    <div className="flex min-w-0 flex-col gap-2.5">
+    <div className="flex min-w-0 flex-col gap-field">
       <SearchField
         filter={filter}
         label={t("searchLabel")}
@@ -116,7 +116,7 @@ export function ReduceBar({
           {t("refine")}
         </summary>
 
-        <div className="flex min-w-0 flex-col gap-3 pt-1 pb-1">
+        <div className="flex min-w-0 flex-col gap-field pt-1 pb-1">
           {/* The two plain yes/no narrowings, which need no legend to say what they ask. */}
           <Fieldset legend={null}>
             <Chip

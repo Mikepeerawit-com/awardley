@@ -56,7 +56,7 @@ export function QuoteRowControls({
   const costsTheSelection = isSelected || state.error === "clears_selection";
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-label">
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"

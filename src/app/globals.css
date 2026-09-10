@@ -201,6 +201,64 @@
   --shadow-raised: var(--raised-shadow);
 }
 
+/*
+ * **The spacing rhythm: distance is proportional to relatedness** (ADR-0019, #154).
+ *
+ * The third time this app has been found with a scale none of whose steps meant anything,
+ * and the third time every call site had therefore reached for one near the middle — after
+ * the radius scale in ADR-0028 and the type scale in #153. Almost every stack in the app
+ * was `gap-3` or `gap-4`: a label sat 8px from its field, two unrelated fields 12px apart,
+ * a section heading 12px above the first thing under it, and two whole sections of a screen
+ * 16px apart. **Those distances are close enough that they separate nothing**, which is why
+ * a screen read as one undifferentiated column even after #149 gave it headings — the
+ * headings said where the parts were, and the spacing did not agree with them.
+ *
+ * Four steps, each named for **what is on either side of it**, so a call site says which
+ * boundary it is drawing and how far apart that puts things is decided here:
+ *
+ * | step               | separates                                              | px |
+ * | ------------------ | ------------------------------------------------------ | -- |
+ * | `label`    | a label from the field it names — inside one control           |  8 |
+ * | `field`    | one field from the next, and a heading from what it names      | 14 |
+ * | `group`    | one group from the next, inside one part of a screen           | 24 |
+ * | `landmark` | one landmark from the next, and the last one from the page's end | 40 |
+ *
+ * **A landmark is not a taste, it is what the accessibility tree already says it is.** The
+ * region's own children are the screen's `header`, the jump `nav`, and every `Section` —
+ * each a named landmark a screen reader lists and `TenderSections` links to (ADR-0026). A
+ * group is a thing *inside* one: a card, a `<fieldset>`, a run of rows. So the four steps
+ * are the four levels of nesting a screen really has, one distance per level, and nothing
+ * has to remember which of two numbers the middle of a screen wanted.
+ *
+ * **They are steps the numeric scale already had** — 8, 14, 24 and 40 are `2`, `3.5`, `6`
+ * and `10` — which is ADR-0028's line about the radius scale, true of a third scale now:
+ * *the visual system did not need more numbers, it needed the numbers to mean something.*
+ * What has changed is which of them get used. The old rhythm sat inside 8–16 and used three
+ * steps of it; this one spends the whole range and every rung is 1.7× the one below, which
+ * is the ratio at which a reader can see that two distances are different distances.
+ *
+ * **One scale, and not two.** #153 split the type scale per script because Han fills its em
+ * box and every tier that carries a sentence has to open its leading up in `zh-Hans`. A gap
+ * has no glyphs in it: what the script changes is the rhythm *inside* the blocks, and that
+ * is already answered where it lives. The margin is arithmetic and
+ * `spacing.layout.test.tsx` holds it — the most `zh-Hans` moves a line of type by is
+ * smaller than the closest two of these steps are apart, so a gap that separates in Fira
+ * Sans separates in PingFang. Four more numbers would be four more things to keep in step
+ * for a difference nobody could see. The day the type scale closes that margin, that suite
+ * goes red and this becomes two scales.
+ *
+ * **The scale starts at `label` and nothing below it is a grouping distance.** The 4px and
+ * 6px gaps in the app hold an icon beside its word or a chip beside a count — they are
+ * inside one line rather than between two things — so they stay raw numbers and are not a
+ * fifth step to choose from.
+ */
+@theme {
+  --spacing-label: 8px;
+  --spacing-field: 14px;
+  --spacing-group: 24px;
+  --spacing-landmark: 40px;
+}
+
 :root {
   /*
    * A warm paper ground with a blue-black ink over it, and the sheets a shade lighter

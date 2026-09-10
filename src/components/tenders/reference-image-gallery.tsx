@@ -70,9 +70,9 @@ export function ReferenceImageGallery({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-group">
       {groups.map((group) => (
-        <section key={group.key} className="flex flex-col gap-2">
+        <section key={group.key} className="flex flex-col gap-field">
           {/* `min-w-0 break-words`, the way every other client-supplied string in the app
               carries it (#56, and the note in `my-work-list.tsx`). The label is a product
               name — whatever the client called it — and a run with nothing in it to break

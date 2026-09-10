@@ -218,7 +218,7 @@ export function QuoteForm({
 
   return (
     <>
-      <form action={formAction} className="flex flex-col gap-4">
+      <form action={formAction} className="flex flex-col gap-group">
         <input type="hidden" name="tenderId" value={tenderId} />
         <input type="hidden" name="tenderItemId" value={tenderItemId} />
 
@@ -249,7 +249,9 @@ export function QuoteForm({
         {/* The file inputs carry no `name`, so nothing about a photo is posted with the
             price. They are held in this component and uploaded afterwards, against the id
             the submit gives back. */}
-        <fieldset className="flex flex-col gap-2">
+        {/* The legend is the fieldset's own first child, for the reason
+            `quote-fields.tsx` gives at its own: nested, it stops naming the group. */}
+        <fieldset className="flex flex-col gap-field">
           <legend className="type-subhead">{t("photos.attach")}</legend>
           <p className="type-quiet">{t("photos.attachHint")}</p>
 
@@ -334,7 +336,7 @@ export function QuoteForm({
       {outstanding.map((run) => (
         <div
           key={run.quoteId}
-          className="border-destructive/40 bg-destructive/10 flex flex-col items-start gap-2 rounded-surface border px-3 py-2"
+          className="border-destructive/40 bg-destructive/10 flex flex-col items-start gap-label rounded-surface border px-3 py-2"
         >
           <p role="alert" className="text-sm break-words">
             {t("photos.savedWithout", {

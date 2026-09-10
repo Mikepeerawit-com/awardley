@@ -64,7 +64,7 @@ export function ScreenHeader({
 }) {
   return (
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div className="flex min-w-0 grow flex-col gap-2">
+      <div className="flex min-w-0 grow flex-col gap-label">
         {eyebrow ? (
           <span className="text-muted-foreground font-mono text-xs break-words">
             {eyebrow}
@@ -72,7 +72,7 @@ export function ScreenHeader({
         ) : null}
         <h1 className="type-display break-words">{heading}</h1>
         {children ? (
-          <Measure className="flex flex-col gap-2">{children}</Measure>
+          <Measure className="flex flex-col gap-label">{children}</Measure>
         ) : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

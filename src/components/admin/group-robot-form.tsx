@@ -37,7 +37,7 @@ export function GroupRobotForm({
   const [state, formAction] = useActionState(setGroupRobotAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-field">
       <p className={configured ? "type-quiet" : "text-sm"}>
         {configured
           ? t("configured", {
@@ -46,7 +46,7 @@ export function GroupRobotForm({
           : t("notConfigured")}
       </p>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-label">
         <Label htmlFor="webhook">{t("label")}</Label>
         <Input
           id="webhook"

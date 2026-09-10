@@ -63,7 +63,7 @@ export function ItemBrief({
   // is the image badge, which is `w-fit` in its own right.
   return (
     <Measure>
-      <section className="bg-card rounded-surface shadow-surface flex min-w-0 flex-col gap-2 p-4">
+      <section className="bg-card rounded-surface shadow-surface flex min-w-0 flex-col gap-label p-4">
         <span className="field-label">{t("asked")}</span>
 
         <h1 className="type-display min-w-0 break-words">

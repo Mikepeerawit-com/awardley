@@ -74,11 +74,11 @@ export function ScreenSkeleton() {
           <Bar className="h-4 w-32" />
         </ScreenHeader>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-field">
           {[0, 1, 2].map((row) => (
             <div
               key={row}
-              className="bg-card rounded-surface shadow-surface flex flex-col gap-3 p-4"
+              className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4"
             >
               <Bar className="h-4 w-full" />
               <Bar className="h-4 w-1/2" />

@@ -44,13 +44,14 @@ export function AssigneeControls({
   // No heading and no `<section>` of its own since the Tender detail put this behind a
   // `Fold`: the fold's summary *is* the heading, and it carries the count of Assignees as
   // well. Two headings one line apart at two different weights is what the old screen
-  // had. The block keeps its own `gap-4` — how it lays itself out is still its business.
+  // had. The block still lays itself out — at `gap-group` since #154, because the list of
+  // Assignees and the control that adds one are two different things inside one fold.
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-group">
       {assignees.length === 0 ? (
         <p className="type-quiet">{t("none")}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-field">
           {assignees.map((assignee) => (
             <li key={assignee.id} className="flex items-center gap-3">
               <span className="text-sm">{assignee.name}</span>
@@ -102,7 +103,7 @@ function AddForm({
   const [state, formAction, isPending] = useActionState(addAssigneeAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form action={formAction} className="flex flex-col gap-label">
       <input type="hidden" name="tenderId" value={tenderId} />
       <input type="hidden" name="userId" value={userId} />
 
@@ -120,7 +121,7 @@ function AddPicker({ tenderId, members }: { tenderId: string; members: Member[] 
   const [state, formAction, isPending] = useActionState(addAssigneeAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form action={formAction} className="flex flex-col gap-label">
       <input type="hidden" name="tenderId" value={tenderId} />
 
       <TenderProblemNotice error={state.error} />

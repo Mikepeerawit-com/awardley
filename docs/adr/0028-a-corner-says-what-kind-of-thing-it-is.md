@@ -101,3 +101,11 @@ measurements.
 
 **The spacing rhythm.** Gaps are still a fairly uniform 12 and 16px. Grouping distances that
 say what belongs with what would be the third pass, after type.
+
+> **Both passes have since been taken**, and both are amendments to
+> [ADR-0019](0019-the-visual-system-is-built-for-a-chinese-reader-on-a-phone.md) rather than
+> to this one, because what they move is that ADR's subject: the type scale in
+> [#153](https://github.com/Mikepeerawit-com/tender-tracker/issues/153) and the spacing scale
+> in [#154](https://github.com/Mikepeerawit-com/tender-tracker/issues/154). The finding above
+> — a scale existed, no step of it meant anything, so every call site took the middle one —
+> held for all three, which is why both answers are named steps rather than new numbers.

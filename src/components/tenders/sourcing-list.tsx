@@ -48,14 +48,14 @@ export function SourcingList({
     // `Section`. This was a `<section>` with no heading, holding a box whose first line
     // was `t("title")` — the same string the `Section` above it now draws as the actual
     // `<h2>`. One of the two had to go and it is the one that was not a heading.
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-field">
       {/* Says what is missing and whose it is, rather than leaving somebody who has seen
           the Owner's screen wondering what broke. */}
       <p className="type-quiet">{t("hint")}</p>
 
       <ul className="bg-card divide-hairline-soft rounded-surface shadow-surface divide-y overflow-hidden text-sm">
         {items.map((item) => (
-          <li key={item.id} className="flex min-w-0 flex-col gap-2 p-4">
+          <li key={item.id} className="flex min-w-0 flex-col gap-label p-4">
             <Item
               tenderId={tenderId}
               item={item}

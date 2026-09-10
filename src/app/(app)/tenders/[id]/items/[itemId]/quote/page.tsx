@@ -135,7 +135,7 @@ export default async function ItemSourcingPage({
         }
       />
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-field">
         {/* The heading counts what is in the list beneath it, and says whose it is. A
             non-Owner reads "2 quotes from you" over their two, rather than "2 quotes
             recorded" — which would be this screen making a claim about the Item that
@@ -168,8 +168,8 @@ export default async function ItemSourcingPage({
       {isAssignee ? (
         <>
           <Measure>
-            <section className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
+            <section className="flex flex-col gap-field">
+              <div className="flex flex-col gap-label">
                 <h2 className="type-subhead">{t("add")}</h2>
                 <p className="type-quiet">{t("addHint")}</p>
               </div>
@@ -195,7 +195,7 @@ export default async function ItemSourcingPage({
         </>
       ) : (
         <Measure>
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-field">
             <p className="bg-muted/60 rounded-surface px-3 py-2 text-sm">
               {t("notAssignee")}
             </p>

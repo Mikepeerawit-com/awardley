@@ -19,7 +19,7 @@ export default async function NewTenderPage() {
   const members = await listMembers(store);
 
   return (
-    <Screen gap="gap-6">
+    <Screen>
       <ScreenHeader heading={t("record")}>
         <p className="type-quiet">{t("recordDescription")}</p>
       </ScreenHeader>

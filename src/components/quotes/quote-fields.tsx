@@ -60,7 +60,7 @@ export function QuoteFieldInputs({
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-field sm:grid-cols-2">
         <Field id="supplierName" label={t("supplier")}>
           <Input
             id="supplierName"
@@ -82,7 +82,7 @@ export function QuoteFieldInputs({
         </Field>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-field sm:grid-cols-3">
         <Field id="unitPrice" label={t("unitPrice")}>
           <Input
             id="unitPrice"
@@ -110,7 +110,13 @@ export function QuoteFieldInputs({
         </Field>
       </div>
 
-      <fieldset className="flex flex-col gap-2">
+      {/* The legend stays the fieldset's own first child — nested in anything it is no
+          longer the group's name, and a `<fieldset>` whose caption is an ordinary
+          paragraph is a group a screen reader will not announce. It is also drawn as the
+          box's caption rather than as a flex item, so the gap below is the one between
+          the line under it and the controls: the hint belongs to the legend, and the
+          radios sit a step out from both. */}
+      <fieldset className="flex flex-col gap-field">
         <legend className="type-subhead">{t("matchType.label")}</legend>
         <p className="type-quiet">{t("matchType.hint")}</p>
 
@@ -149,7 +155,7 @@ export function QuoteFieldInputs({
         </Field>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-field sm:grid-cols-2">
         <Field id="leadTimeDays" label={t("leadTimeDays")}>
           <Input
             id="leadTimeDays"
@@ -193,7 +199,7 @@ export function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-label">
       <Label htmlFor={id}>{label}</Label>
       {children}
     </div>

@@ -144,3 +144,90 @@ Going the *other* way, into a Light for the quiet tier, was considered and rejec
 **Unchanged, and load-bearing:** no CJK webfont is fetched, and the extra Latin weight is affordable for exactly the reason a Han one is not — Latin can be subset and Han cannot. The `var()` fallbacks still name the Latin family, and `type.layout.test.tsx` still asserts it. `:lang(zh)` still matches `lang="zh-Hans"` by prefix, so every split follows the locale the app is already rendering in with nothing to pass down.
 
 **What this deliberately does not reach.** Grouping distances are read against the type they separate, so the spacing rhythm is [#154](https://github.com/Mikepeerawit-com/tender-tracker/issues/154)'s and follows this rather than preceding it. And the screens are taller than they were — the display tier and the quiet tier's leading both add height — which is a fact `screen-length.measure.tsx` reports and no guard pins, exactly as [ADR-0030](0030-the-sheet-is-long-because-the-owner-reads-every-quote.md) left it.
+
+## Amendment, 10 September 2026 — the gaps say what belongs with what ([#154](https://github.com/Mikepeerawit-com/tender-tracker/issues/154))
+
+[ADR-0028](0028-a-corner-says-what-kind-of-thing-it-is.md) closed by naming three passes and taking one: *"Gaps are still a fairly uniform 12 and 16px. Grouping distances that say what belongs with what would be the third pass, after type."* The amendment above is the second. This is the third, and it is the last of the three.
+
+**The fault is the one this project has now found three times in three different scales, and it is not a fault in any number.** Almost every stack in the app was `gap-3` or `gap-4`. A label sat 8px from its field, two unrelated fields 12px apart, a section heading 12px above the first thing under it, and two whole sections of a screen 16px apart. **Those distances are close enough that they separate nothing** — which is why a screen still read as one undifferentiated column after [#149](https://github.com/Mikepeerawit-com/tender-tracker/issues/149) gave it headings. The headings said where the parts were and the spacing did not agree with them, so the reader had a table of contents and no paragraphs.
+
+That is exactly what ADR-0028 found in the radius scale — 68 of the app's 84 rounded corners were `rounded-lg` — and what #153 found in the type scale, where `text-sm font-medium` had been written for a heading twelve times. **A scale whose steps mean nothing is a scale every call site picks the middle of**, and the answer each time has been the same one: not more numbers, names.
+
+### Four steps, each named for what is on either side of it
+
+| step | separates | px |
+| --- | --- | --- |
+| `label` | a label from the field it names, and anything else that is one thing written on two lines | 8 |
+| `field` | one field from the next, one row of a run from the next, and a heading from the block it names | 14 |
+| `group` | one group from the next, inside one part of a screen | 24 |
+| `landmark` | one landmark from the next, and the last one from the bottom of the page | 40 |
+
+Stated once in `globals.css`, in a `@theme` block beside the radius aliases, so that they are ordinary Tailwind utilities and a call site says which boundary it is drawing: `gap-field`, `mt-group`, `pb-landmark`. **They are steps the numeric scale already had** — 8, 14, 24 and 40 are `2`, `3.5`, `6` and `10` — which is ADR-0028's line arriving intact a third time: *the visual system did not need more numbers, it needed the numbers to mean something.* What changed is which of them get used. The old rhythm lived inside 8–16 and spent three steps on it; this one spends the whole range, and every rung is about 1.7× the one below.
+
+**A landmark is not a matter of taste here — it is what the accessibility tree already says it is.** The region's own children are the screen's `header`, the jump `nav` and every `Section`, each a named landmark a screen reader will list and [ADR-0026](0026-the-tender-detail-has-parts.md)'s jump bar links to. A group is a thing *inside* one: a card, a `<fieldset>`, a run of rows. So the four steps are the four levels of nesting a screen really has, one distance per level, and nothing has to decide which of two numbers the middle of a screen wanted. `ScreenBody` states the region's rhythm and **no screen hands in its own any more** — `/tenders/new` did, at `gap-6`, which is this ticket's own fault arriving one layer up. `ScreenGap` and the prop that carried it are gone.
+
+This is the one place #154 is answered differently from the way it was asked. It puts *"two sections of one screen"* at the between-groups step; here a `Section` is a landmark and takes the step above, and what takes the group step is two blocks inside one part — the Language card and the Appearance card on Preferences, which were the pair really sitting 16px apart. The reading is the accessibility tree's rather than the ticket's wording, and it is written down here rather than quietly substituted.
+
+### One scale, not two, and the claim that makes that safe
+
+This ADR's standing instruction is to judge in `zh-Hans` first, and #153 answered it by splitting the type scale in two: Han fills its em box, so every tier carrying a sentence opens its leading up in `zh-Hans`. **The spacing scale is deliberately not split, and the reason is arithmetic rather than taste.** A gap has no glyphs in it. What the script changes is the rhythm *inside* the blocks a gap separates, and that is already answered where it lives — so the question is whether the most `zh-Hans` moves a line of type by is smaller than the closest two steps of this scale are apart. It is: at most 3.4px against 6px, so a gap that separates in Fira Sans separates in PingFang. A second reading per script would be four more numbers to keep in step for a difference no reader could see.
+
+`spacing.layout.test.tsx` holds that as a measurement rather than as a sentence, against the same probe `type.layout.test.tsx` uses — which is why that probe moved into `@/test/layout` and is `typeTier` now, for the reason that file gives about every question it answers: two copies of it would be two suites quietly disagreeing about what they measured. **The day the type scale opens Han's leading far enough to close the margin, that suite goes red and this becomes two scales**, and the warning arrives there rather than on somebody's phone.
+
+That the two locales' before-and-after deltas below are *identical, screen for screen*, is what one scale looks like from the outside.
+
+### And the scale has a check that can fail (ADR-0016)
+
+`spacing.layout.test.tsx` pins the shape and not one pixel, the way the type suite does: that the four steps ascend in the order they are stated, that each is at least **1.6×** the one below, and that each one really draws — a `gap-*` utility that was never generated computes to `normal`, and a suite asserting only ratios would pass a scale with nothing in it at all.
+
+**1.6 comes from the failure rather than from taste.** The scale being replaced ran 8 / 12 / 16, ratios of 1.5 and 1.33; 1.6 is the floor that fails on both of those joints and passes on the one that replaced them. It was confirmed by producing the failure — putting 12 and 16 back turns the rung assertion red, naming which pair it is and what they separate — and a fifth step squeezed between two of these would fail there rather than quietly refilling the crowded middle this ticket was raised to empty.
+
+### What it cost, measured
+
+Every screen in `@/test/screens`, at 390px, in both locales, from `npm run screen-length` before and after. **The screens are taller, and that is the trade being made** — stated rather than discovered: parts that finally separate take room to separate in.
+
+| Screen | `en` before | after | Δ | `zh-Hans` before | after | Δ |
+|---|---|---|---|---|---|---|
+| my work | 572 | 580 | +8 | 577 | 585 | +8 |
+| my work, finished | 155 | 163 | +8 | 143 | 151 | +8 |
+| the tender list | 1,506 | 1,558 | +52 | 1,358 | 1,410 | +52 |
+| recording a tender | 1,422 | 1,414 | -8 | 1,403 | 1,395 | -8 |
+| a tender | 4,200 | 4,292 | +92 | 4,103 | 4,195 | +92 |
+| a tender with its folds open | 4,719 | 4,825 | +106 | 4,628 | 4,734 | +106 |
+| a tender somebody else owns | 1,506 | 1,552 | +46 | 1,489 | 1,535 | +46 |
+| editing a tender | 2,132 | 2,192 | +60 | 2,136 | 2,196 | +60 |
+| editing a tender, adding an item | 2,443 | 2,509 | +66 | 2,447 | 2,513 | +66 |
+| editing a tender, with every item open | 3,101 | 3,185 | +84 | 3,105 | 3,189 | +84 |
+| sourcing an item | 2,241 | 2,305 | +64 | 2,232 | 2,296 | +64 |
+| sourcing an item on a tender somebody else owns | 2,557 | 2,639 | +82 | 2,513 | 2,595 | +82 |
+| correcting a quote | 1,030 | 1,076 | +46 | 973 | 1,019 | +46 |
+| the Preferences screen | 619 | 639 | +20 | 629 | 649 | +20 |
+| the Preferences screen, for a member who is not an Org Admin | 431 | 451 | +20 | 441 | 461 | +20 |
+| the People screen | 1,468 | 1,502 | +34 | 1,478 | 1,512 | +34 |
+| the WeCom group screen | 661 | 673 | +12 | 658 | 670 | +12 |
+| the converting-foreign-prices screen | 869 | 889 | +20 | 758 | 778 | +20 |
+| the loading fallback | 368 | 386 | +18 | 368 | 386 | +18 |
+| a screen that threw | 201 | 201 | +0 | 150 | 150 | +0 |
+| the sign-in screen | 391 | 419 | +28 | 397 | 425 | +28 |
+| the set-a-password screen | 399 | 427 | +28 | 405 | 433 | +28 |
+| the first-admin setup screen | 748 | 770 | +22 | 704 | 726 | +22 |
+| the choose-a-language screen | 269 | 303 | +34 | 270 | 304 | +34 |
+| **All twenty-four** | **34,008** | **34,950** | **+942** | **33,365** | **34,307** | **+942** |
+
+**Twenty-four screens, and it took a change to that tool to say so.** `screen-length.measure.tsx` walked `screens()` alone — the twenty behind the login — and the four `signedOutScreens()` were not in any reading it had ever produced. This ticket moves `AuthScreen`, all three of its forms and the language options, so those four move too, and a report that omitted them would have understated the change while claiming to cover the record. **It is the same shape a third time**: the working sheet was outside every shared guard in [#135](https://github.com/Mikepeerawit-com/tender-tracker/issues/135), the page body was in [#142](https://github.com/Mikepeerawit-com/tender-tracker/issues/142), and the CJK half of the type scale was in #153 — *the values were never wrong, the list of things anybody measured was too short.* The tool walks both lists now.
+
+**+2.8%, and it does not give back what #149 took off.** That ticket took the Tender detail from 4786px to 4200; this puts 92 of them back, so the screen is still 494px shorter than it was and the 92 buys the separation between its seven parts. The three that move most are the three with the most structure to separate — the Owner's Tender detail with its folds open (+106), the same screen shut (+92), and the edit screen with every Item open (+84). On the Owner's sheet the largest single item is the run of competing Quotes, which below 768px is one stacked card each and had them 8px apart; they are a step of the scale apart now, because telling one offer from the next is what that screen is for.
+
+**The only screen that got *shorter* is `/tenders/new`, and not because it kept a rhythm of its own.** It gave that up — its region went from the `gap-6` it handed in to the app's 40px, which costs it 16. What more than paid for it is that the form's own stack came *down*: 32px between the Tender's fields and its Items is the group step's 24 now, and the field grids inside came from 16 to 14. A screen whose parts were already separated had been spending its height on separating fields.
+
+**The page's bottom padding is in none of those numbers**, because what is measured is `main` and the padding is on the wrapper outside it. It moved too: 24px was the last thing on a screen sitting closer to the bottom bar than two fields of one form sit to each other, and it is a landmark distance now — which `spacing.layout.test.tsx` pins, because `p-6 pb-landmark` only reads that way while Tailwind emits the shorthand ahead of the longhand.
+
+### What this deliberately does not reach
+
+**Horizontal distance.** Every step above is the vertical rhythm of a screen, because grouping is read down a page and *one undifferentiated column* is the complaint. The `gap-2` and `gap-3` holding an icon beside its word, a chip beside its count, or two buttons on one row are untouched, and whether a row has a rhythm of its own is a separate question with its own measurements.
+
+**Anything tighter than the `label` step.** The 4px and 6px gaps in the app are inside one line rather than between two things. They stay raw numbers, and are deliberately not a fifth step for a call site to choose from.
+
+**Container padding.** A card's `p-4` and a fold's panel are how much air a container holds around what is in it, not how far apart two things are. Nothing here moved them, and the one place the two meet — a card at `p-4` holding blocks at `gap-field` — is 16px of padding around 14px of rhythm, which is the right way round.
+
+**The screen record carries its own copies.** `@/test/screens` composes the settings screens and the sourcing screen from markup of its own rather than from the pages, so the scale had to be applied there too or every guard and every number above would be measuring a page the app does not draw. That is the shape [#143](https://github.com/Mikepeerawit-com/tender-tracker/issues/143) left, and it is worth knowing about whenever a screen's layout moves.

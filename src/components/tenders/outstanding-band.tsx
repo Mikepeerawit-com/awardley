@@ -40,20 +40,24 @@ export function OutstandingBand({
   if (items.length === 0) return null;
 
   return (
-    <section className="border-signal-edge bg-signal-wash flex min-w-0 flex-col gap-2 rounded-surface border p-3.5">
-      <div className="flex min-w-0 items-center gap-2">
-        <IndicatorLamp tone="signal" size={15} />
-        <h2 className="type-group text-signal-ink min-w-0 break-words">
-          {t("outstanding.title")}
-        </h2>
-        <span className="text-signal-ink ml-auto shrink-0 font-mono text-[13px] font-medium">
-          {items.length}
-        </span>
-      </div>
+    <section className="border-signal-edge bg-signal-wash flex min-w-0 flex-col gap-field rounded-surface border p-3.5">
+      {/* The band's name, its count and the line explaining it are one heading block, so
+          they sit at the tightest step and the work sits a step out from all three. */}
+      <div className="flex min-w-0 flex-col gap-label">
+        <div className="flex min-w-0 items-center gap-2">
+          <IndicatorLamp tone="signal" size={15} />
+          <h2 className="type-group text-signal-ink min-w-0 break-words">
+            {t("outstanding.title")}
+          </h2>
+          <span className="text-signal-ink ml-auto shrink-0 font-mono text-[13px] font-medium">
+            {items.length}
+          </span>
+        </div>
 
-      <p className="type-quiet text-signal-ink/85 min-w-0 break-words">
-        {t("outstanding.hint")}
-      </p>
+        <p className="type-quiet text-signal-ink/85 min-w-0 break-words">
+          {t("outstanding.hint")}
+        </p>
+      </div>
 
       <ul className="flex min-w-0 flex-col gap-1.5">
         {items.map((item) => (

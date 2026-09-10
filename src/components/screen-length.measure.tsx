@@ -4,7 +4,7 @@ import { commands, page, server } from "vitest/browser";
 
 // `@/test/screens` brings the app's stylesheet with it, so nothing is imported here for
 // it — the contact sheet, which this file is modelled on, does the same.
-import { locales, Screen, screens } from "@/test/screens";
+import { locales, Screen, screens, signedOutScreens, SignedOut } from "@/test/screens";
 import { column, phone, resolvedFaces, type ResolvedFace } from "@/test/layout";
 
 /**
@@ -31,6 +31,16 @@ import { column, phone, resolvedFaces, type ResolvedFace } from "@/test/layout";
  * the reason ADR-0029 asserted on a computed font size rather than a width. Latin heights
  * here are therefore indicative; `zh-Hans` is the closer of the two to what ships, which
  * is also the locale #68 says to judge first. The report says which faces resolved.
+ *
+ * **All twenty-four screens the record holds, not the twenty behind the login.** This
+ * walked `screens()` alone until [#154](https://github.com/Mikepeerawit-com/tender-tracker/issues/154)
+ * needed a before-and-after for a change that moves the signed-out screens too — and the
+ * four of them were as invisible to this as the working sheet was to every shared guard
+ * before #135 and the page body was before #142. It is the same shape a third time: **the
+ * values were never wrong, the list of things anybody measured was too short.** They are
+ * rendered through `SignedOut` rather than `Screen`, which is the only thing about them
+ * that differs here: `AuthScreen` draws its own `main`, so {@link column} finds the same
+ * element on them that it finds everywhere else.
  *
  * **No size is being set anywhere.** Every screen in this app is fluid below ADR-0022's
  * measure and reflows at ADR-0009's 768px breakpoint. What is printed below is what that
@@ -97,6 +107,32 @@ describe("how long each screen is", () => {
     // Every quote card this screen happened to draw, so the per-card cost is measured on
     // the real screen rather than on a card built here to be measured.
     cardRows.push(...quoteCards(locale));
+
+    cleanup();
+  });
+
+  // The four with no app bar above them, measured through their own wrapper. A second
+  // `it.each` rather than one list of both, because the two render differently and a
+  // record entry carrying a flag saying which would be this file deciding something about
+  // the screens rather than reporting on them.
+  it.each(
+    locales.flatMap(([locale, messages]) =>
+      Object.entries(signedOutScreens(messages)).map(
+        ([name, entry]) => [`${name}, in ${locale}`, name, locale, messages, entry.body] as const,
+      ),
+    ),
+  )("measures %s", async (_case, name, locale, messages, body) => {
+    await page.viewport(phone.width, phone.height);
+
+    render(
+      <SignedOut locale={locale} messages={messages}>
+        {body}
+      </SignedOut>,
+    );
+
+    if (faces.length === 0) faces = resolvedFaces();
+
+    screenRows.push({ screen: name, locale, height: pageHeight(), blocks: topLevelBlocks() });
 
     cleanup();
   });

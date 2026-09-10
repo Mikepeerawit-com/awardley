@@ -32,7 +32,7 @@ export function EditTenderForm({
   const [state, formAction, isPending] = useActionState(updateTenderAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form action={formAction} className="flex flex-col gap-group">
       <input type="hidden" name="tenderId" value={tenderId} />
 
       <TenderProblemNotice error={state.error} />

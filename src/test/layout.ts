@@ -182,6 +182,80 @@ function describeBox(element: Element): string {
   return `${element.tagName.toLowerCase()}.${element.getAttribute("class")} — "${text}"`;
 }
 
+/** One tier of the type scale, as one script really draws it. */
+export type TypeTier = { size: number; weight: number; tracking: number; leading: number };
+
+/**
+ * **The type scale as `globals.css` states it, loudest first**, with `null` for body — the
+ * tier every other one is measured against and the one thing in the scale deliberately not
+ * a class (#153).
+ *
+ * Beside the probe rather than in either suite that walks it. `type.layout.test.tsx` holds
+ * the shape of the table and `spacing.layout.test.tsx` asks the same tiers how far the two
+ * scripts move a line apart; a tier added to the scale and to only one of those lists is a
+ * tier one of them silently stops measuring.
+ */
+export const typeScale = [
+  "type-display",
+  "type-section",
+  "type-subhead",
+  null,
+  "type-group",
+] as const;
+
+/** The tiers that recede: supporting prose, and the name of a field. */
+export const quietTiers = ["type-quiet", "field-label"] as const;
+
+/**
+ * What one tier of the type scale computes to under a given `lang` (ADR-0019, #153).
+ *
+ * **The element is drawn rather than the stylesheet read.** Half the scale is a second
+ * rule per script and `:lang()` matches by prefix against an ancestor's attribute, so a
+ * rule that stopped matching — a renamed class, a `lang` that never arrived — is invisible
+ * to anything that only reads the rule text. That is exactly the fault #153 found: the
+ * ground in `@/test/screens` carried no `lang`, so the CJK half had never been drawn by
+ * anything in this project.
+ *
+ * `null` is body: a bare `text-sm`, the tier every other one is measured against and the
+ * one thing in the scale deliberately not a class.
+ *
+ * **Here rather than in `type.layout.test.tsx`, because two suites now ask it.** That one
+ * holds the shape of the table; `spacing.layout.test.tsx` asks it how much the script moves
+ * a line of text by, which is the number that decides whether the spacing scale needs a
+ * second reading per script or gets away with one. Two copies of this probe would be two
+ * suites quietly disagreeing about what they measured, which is what this file exists to
+ * stop.
+ */
+export function typeTier(locale: "en" | "zh-Hans", tier: string | null): TypeTier {
+  const ground = document.createElement("div");
+
+  ground.lang = locale;
+  ground.className = "font-sans";
+
+  const line = document.createElement("p");
+
+  line.className = tier ?? "text-sm";
+  // Han, so that nothing here can pass by measuring a face the script never reaches.
+  line.textContent = "招标 Tender";
+  ground.append(line);
+  document.body.append(ground);
+
+  const style = getComputedStyle(line);
+  const measured = {
+    size: Number.parseFloat(style.fontSize),
+    weight: Number(style.fontWeight),
+    tracking: style.letterSpacing === "normal" ? 0 : Number.parseFloat(style.letterSpacing),
+    // Leading is the only thing that separates the two readings of `.type-quiet` — Han is
+    // denser per line and opens up — so a probe that left it out would report that tier
+    // unsplit and would be the one hole in the checks that use this.
+    leading: Number.parseFloat(style.lineHeight),
+  };
+
+  ground.remove();
+
+  return measured;
+}
+
 /**
  * A font stack token as the browser really substitutes it.
  *

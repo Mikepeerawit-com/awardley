@@ -114,8 +114,8 @@ export function EditTenderItemForm({
     // No surface of its own: `Fold` already draws the card this form used to draw for
     // itself, and its panel already spends the padding.
     <Fold level={3} title={item.productName} defaultOpen={defaultOpen || refused}>
-      <div className="flex flex-col gap-3">
-        <form id={saveId} action={formAction} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-field">
+        <form id={saveId} action={formAction} className="flex flex-col gap-field">
           <input type="hidden" name="tenderId" value={tenderId} />
           <input type="hidden" name="itemId" value={item.id} />
 
@@ -208,7 +208,7 @@ export function AddTenderItemForm({
 
   return (
     <Fold level={3} title={t("item.add")} defaultOpen={defaultOpen || wasRefused(state)}>
-      <form action={formAction} className="flex flex-col gap-3">
+      <form action={formAction} className="flex flex-col gap-field">
         <input type="hidden" name="tenderId" value={tenderId} />
 
         <TenderProblemNotice error={state.error} />

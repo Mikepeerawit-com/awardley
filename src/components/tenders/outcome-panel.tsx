@@ -43,7 +43,7 @@ export async function OutcomePanel({
     // `text-sm font-medium`, which is how a screen ends up with no heading level a reader
     // can navigate by. The hint stays — it is prose about this block, not a second name
     // for it.
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-field">
       <p className="type-quiet">{t("hint")}</p>
 
       <div className="bg-card rounded-surface shadow-surface flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3">

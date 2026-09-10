@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import "@/app/globals.css";
 
-import { familiesIn, fontStack } from "@/test/layout";
+import { familiesIn, fontStack, quietTiers, typeScale, typeTier } from "@/test/layout";
 
 /**
  * **The two facts about type that are invisible until they break** (ADR-0019).
@@ -88,18 +88,18 @@ function fontFaces(): string[] {
  * Latin one that was never split — fails here rather than on somebody's phone.
  */
 
-/** The scale as `globals.css` states it, loudest first. Body is the tier with no class. */
-const scale = ["type-display", "type-section", "type-subhead", null, "type-group"] as const;
+// The scale and the quiet tiers are `@/test/layout`'s, since `spacing.layout.test.tsx`
+// walks the same list: a tier added to `globals.css` and to only one of two copies is a
+// tier one suite silently stops measuring.
+const scale = typeScale;
+const quiet = quietTiers;
 
 /** The tiers that are a heading, and so must sit above body weight in both scripts. */
 const headings = ["type-display", "type-section", "type-subhead", "type-group"];
 
-/** The tiers that recede: supporting prose, and the name of a field. */
-const quiet = ["type-quiet", "field-label"];
-
 describe.each(["en", "zh-Hans"] as const)("the scale as %s reads it", (locale) => {
   it("descends, loudest first, and takes a real step at every tier", () => {
-    const tiers = scale.map((tier) => drawn(locale, tier));
+    const tiers = scale.map((tier) => typeTier(locale, tier));
     const sizes = tiers.map((tier) => tier.size);
 
     expect(sizes).toEqual([...sizes].sort((a, b) => b - a));
@@ -114,24 +114,24 @@ describe.each(["en", "zh-Hans"] as const)("the scale as %s reads it", (locale) =
   });
 
   it("puts the display tier alone at the top of the weight ladder", () => {
-    const display = drawn(locale, "type-display").weight;
+    const display = typeTier(locale, "type-display").weight;
     const others = headings
       .filter((tier) => tier !== "type-display")
-      .map((tier) => drawn(locale, tier).weight);
+      .map((tier) => typeTier(locale, tier).weight);
 
     for (const weight of others) expect(display).toBeGreaterThan(weight);
   });
 
   it("draws every heading above body weight, and everything quiet at or below it", () => {
-    const body = drawn(locale, null).weight;
+    const body = typeTier(locale, null).weight;
 
     for (const tier of headings) {
-      expect(drawn(locale, tier).weight, tier).toBeGreaterThan(body);
+      expect(typeTier(locale, tier).weight, tier).toBeGreaterThan(body);
     }
 
     for (const tier of quiet) {
-      expect(drawn(locale, tier).weight, tier).toBeLessThanOrEqual(body + 100);
-      expect(drawn(locale, tier).size, tier).toBeLessThan(drawn(locale, null).size);
+      expect(typeTier(locale, tier).weight, tier).toBeLessThanOrEqual(body + 100);
+      expect(typeTier(locale, tier).size, tier).toBeLessThan(typeTier(locale, null).size);
     }
   });
 });
@@ -140,7 +140,7 @@ describe("the half of the scale that is a second rule per script", () => {
   it.each([...scale.filter((tier) => tier !== null), ...quiet])(
     "reads %s differently in zh-Hans than in en",
     (tier) => {
-      expect(drawn("zh-Hans", tier)).not.toEqual(drawn("en", tier));
+      expect(typeTier("zh-Hans", tier)).not.toEqual(typeTier("en", tier));
     },
   );
 
@@ -150,68 +150,25 @@ describe("the half of the scale that is a second rule per script", () => {
    * to survive being drawn at all, so the bottom goes up.
    */
   it("comes down at the top of the scale and up at the bottom", () => {
-    expect(drawn("zh-Hans", "type-display").size).toBeLessThan(
-      drawn("en", "type-display").size,
+    expect(typeTier("zh-Hans", "type-display").size).toBeLessThan(
+      typeTier("en", "type-display").size,
     );
-    expect(drawn("zh-Hans", "field-label").size).toBeGreaterThan(
-      drawn("en", "field-label").size,
+    expect(typeTier("zh-Hans", "field-label").size).toBeGreaterThan(
+      typeTier("en", "field-label").size,
     );
   });
 
   /** Tracking is a Latin device: it only crowds glyphs already on a fixed body. */
   it("tracks nothing in zh-Hans", () => {
     for (const tier of [...scale.filter((t) => t !== null), ...quiet]) {
-      expect(drawn("zh-Hans", tier).tracking, tier).toBe(0);
+      expect(typeTier("zh-Hans", tier).tracking, tier).toBe(0);
     }
   });
 
   /** PingFang has a Semibold and nothing above it; asking for more gets a faux bold. */
   it("asks PingFang for no weight it does not have", () => {
     for (const tier of [...scale, ...quiet]) {
-      expect(drawn("zh-Hans", tier).weight, tier ?? "body").toBeLessThanOrEqual(600);
+      expect(typeTier("zh-Hans", tier).weight, tier ?? "body").toBeLessThanOrEqual(600);
     }
   });
 });
-
-/**
- * What one tier really computes to, under the `lang` the app writes on `<html>`.
- *
- * The element is drawn rather than the stylesheet read: `:lang()` matches by prefix
- * against an ancestor's attribute, so a rule that stopped matching — a renamed class, a
- * `lang` that never arrived — is invisible to anything that only reads the rule text.
- *
- * `null` is body: a bare `text-sm`, which is the tier every other one is measured against
- * and the one thing in the scale that is deliberately not a class.
- */
-function drawn(
-  locale: "en" | "zh-Hans",
-  tier: string | null,
-): { size: number; weight: number; tracking: number; leading: number } {
-  const ground = document.createElement("div");
-
-  ground.lang = locale;
-  ground.className = "font-sans";
-
-  const line = document.createElement("p");
-
-  line.className = tier ?? "text-sm";
-  // Han, so that nothing here can pass by measuring a face the script never reaches.
-  line.textContent = "招标 Tender";
-  ground.append(line);
-  document.body.append(ground);
-
-  const style = getComputedStyle(line);
-  const measured = {
-    size: Number.parseFloat(style.fontSize),
-    weight: Number(style.fontWeight),
-    tracking: style.letterSpacing === "normal" ? 0 : Number.parseFloat(style.letterSpacing),
-    // Leading is the only thing that separates the two readings of `.type-quiet` — Han is
-    // denser per line and opens up — so a probe that left it out would report that tier
-    // unsplit and would be the one hole in the check below.
-    leading: Number.parseFloat(style.lineHeight),
-  };
-
-  ground.remove();
-
-  return measured;
-}

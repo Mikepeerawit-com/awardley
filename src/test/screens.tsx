@@ -154,7 +154,7 @@ export function screens(m: Messages) {
   }: { addingItem?: boolean; openingItems?: boolean } = {}) => (
     <Body location={editBar}>
       <ScreenHeader eyebrow={tender.reference} heading={m.tenders.edit}>
-        <p className="text-muted-foreground text-sm">{m.tenders.editDescription}</p>
+        <p className="type-quiet">{m.tenders.editDescription}</p>
       </ScreenHeader>
 
       <Measure>
@@ -163,7 +163,7 @@ export function screens(m: Messages) {
 
       <Measure>
         <Section id="items" title={m.tenders.item.plural}>
-          <p className="text-muted-foreground text-sm">{m.tenders.item.hint}</p>
+          <p className="type-quiet">{m.tenders.item.hint}</p>
 
           {/* All three Items, and `removable` on every one — the Tender has more than
               one, so the destructive Remove is drawn per row. A fixture with a single
@@ -220,7 +220,7 @@ export function screens(m: Messages) {
       body: (
         <Body>
           <ScreenHeader heading={m.myWork.title}>
-            <p className="text-muted-foreground text-sm break-words">
+            <p className="type-quiet break-words">
               {m.myWork.description}
             </p>
           </ScreenHeader>
@@ -236,7 +236,7 @@ export function screens(m: Messages) {
       body: (
         <Body>
           <ScreenHeader heading={m.myWork.title}>
-            <p className="text-muted-foreground text-sm break-words">
+            <p className="type-quiet break-words">
               {m.myWork.description}
             </p>
           </ScreenHeader>
@@ -252,7 +252,7 @@ export function screens(m: Messages) {
             heading={m.tenders.title}
             actions={<Button className="h-11">{m.tenders.record}</Button>}
           >
-            <p className="text-muted-foreground text-sm break-words">
+            <p className="type-quiet break-words">
               {m.tenders.description}
             </p>
           </ScreenHeader>
@@ -314,7 +314,7 @@ export function screens(m: Messages) {
         // rhythm every other screen uses would push the submit off a phone.
         <Body gap="gap-6">
           <ScreenHeader heading={m.tenders.record}>
-            <p className="text-muted-foreground text-sm">{m.tenders.recordDescription}</p>
+            <p className="type-quiet">{m.tenders.recordDescription}</p>
           </ScreenHeader>
           <Measure>
             {/* The Owner recording it defaults to themselves, and the form opens on one
@@ -338,7 +338,7 @@ export function screens(m: Messages) {
               </Button>
             }
           >
-            <p className="text-muted-foreground text-sm break-words">{tender.title}</p>
+            <p className="type-quiet break-words">{tender.title}</p>
           </ScreenHeader>
           {/* The bar the page builds from the parts it actually drew. `outcome` is in
               this list and the panel it points at is not in this fixture, for the reason
@@ -437,7 +437,7 @@ export function screens(m: Messages) {
               </Button>
             }
           >
-            <p className="text-muted-foreground text-sm break-words">{tender.title}</p>
+            <p className="type-quiet break-words">{tender.title}</p>
           </ScreenHeader>
           <TenderSections sections={ownerSections} />
           <TenderDeadlines
@@ -494,7 +494,7 @@ export function screens(m: Messages) {
               </Button>
             }
           >
-            <p className="text-muted-foreground text-sm break-words">{tender.title}</p>
+            <p className="type-quiet break-words">{tender.title}</p>
           </ScreenHeader>
           {/* Three links rather than the Owner's five: no Outcome section, because
               ADR-0020 gives that panel to the Owner alone and the page builds this bar
@@ -659,8 +659,8 @@ export function screens(m: Messages) {
           <Measure>
             <section className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <h2 className="text-sm font-medium">{m.quotes.add}</h2>
-                <p className="text-muted-foreground text-xs">{m.quotes.addHint}</p>
+                <h2 className="type-subhead">{m.quotes.add}</h2>
+                <p className="type-quiet">{m.quotes.addHint}</p>
               </div>
               <QuoteForm
                 tenderId={tender.id}
@@ -743,18 +743,18 @@ export function screens(m: Messages) {
       body: (
         <SettingsBody>
           <ScreenHeader heading={m.people.title}>
-            <p className="text-muted-foreground text-sm">{m.people.description}</p>
+            <p className="type-quiet">{m.people.description}</p>
           </ScreenHeader>
 
           <Measure>
             <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
-              <h2 className="text-sm font-medium">{m.people.invite.title}</h2>
+              <h2 className="type-subhead">{m.people.invite.title}</h2>
               <InviteForm />
             </section>
           </Measure>
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-sm font-medium">{m.people.members}</h2>
+            <h2 className="type-subhead">{m.people.members}</h2>
             <MembershipList members={memberships} />
           </section>
         </SettingsBody>
@@ -765,7 +765,7 @@ export function screens(m: Messages) {
       body: (
         <SettingsBody>
           <ScreenHeader heading={m.groupRobot.title}>
-            <p className="text-muted-foreground text-sm">{m.groupRobot.description}</p>
+            <p className="type-quiet">{m.groupRobot.description}</p>
           </ScreenHeader>
 
           <Measure>
@@ -784,7 +784,7 @@ export function screens(m: Messages) {
       body: (
         <SettingsBody>
           <ScreenHeader heading={m.currencyConversion.title}>
-            <p className="text-muted-foreground text-sm">{m.currencyConversion.description}</p>
+            <p className="type-quiet">{m.currencyConversion.description}</p>
           </ScreenHeader>
 
           <Measure>
@@ -794,7 +794,7 @@ export function screens(m: Messages) {
           </Measure>
 
           <Measure>
-            <p className="text-muted-foreground text-sm">{m.currencyConversion.affects}</p>
+            <p className="type-quiet">{m.currencyConversion.affects}</p>
           </Measure>
         </SettingsBody>
       ),
@@ -915,7 +915,7 @@ export function SignedOut({
 }) {
   return (
     <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Bangkok">
-      <Ground theme={theme}>
+      <Ground locale={locale} theme={theme}>
         <div className="flex min-h-dvh flex-col">{children}</div>
       </Ground>
     </NextIntlClientProvider>
@@ -955,7 +955,7 @@ export function Screen({
 }) {
   return (
     <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Bangkok">
-      <Ground theme={theme}>
+      <Ground locale={locale} theme={theme}>
         <div className="flex min-h-dvh flex-col">
           {children}
           <BottomNav />
@@ -983,14 +983,37 @@ export type Theme = (typeof themes)[number];
  * point of it being one component.
  */
 export function Ground({
+  locale,
   theme,
   children,
 }: {
+  /**
+   * **What makes `:lang(zh)` match, and therefore what makes half the type system real**
+   * (#153).
+   *
+   * `app/layout.tsx` writes `lang` on `<html>` and the whole per-script half of
+   * `globals.css` hangs off it — the display, section, subhead, group and quiet tiers each
+   * have a second rule under `:lang(zh)`, and `.field-label` has had one since ADR-0019.
+   * This ground had no `lang` at all, so *nothing* in the layout project or the contact
+   * sheet had ever matched one of them: both locales were drawn with the Latin rules and
+   * told apart only by which strings they held. A contact sheet somebody eyeballs
+   * `zh-Hans` on first, under an ADR whose standing instruction is to judge that script
+   * first, was photographing the other script's type.
+   *
+   * It is the same fault ADR-0019 keeps finding one layer out each time — the values were
+   * never wrong, the list of things anybody measured was too short — and the fix is the
+   * same shape: it is a parameter of the shared wrapper, so a screen added to the record
+   * gets it from whatever already draws it.
+   */
+  locale: Locale;
   theme: Theme;
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${theme === "dark" ? "dark " : ""}bg-background text-foreground`}>
+    <div
+      lang={locale}
+      className={`${theme === "dark" ? "dark " : ""}bg-background text-foreground`}
+    >
       {children}
     </div>
   );
@@ -1081,12 +1104,12 @@ function preferences(m: Messages) {
   return (
     <>
       <ScreenHeader heading={m.preferences.title}>
-        <p className="text-muted-foreground text-sm">{m.preferences.description}</p>
+        <p className="type-quiet">{m.preferences.description}</p>
       </ScreenHeader>
 
       <Measure>
         <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
-          <h2 className="text-sm font-medium">{m.localeSwitcher.label}</h2>
+          <h2 className="type-subhead">{m.localeSwitcher.label}</h2>
           <LocaleSwitcher />
         </section>
 
@@ -1095,7 +1118,7 @@ function preferences(m: Messages) {
             glyphs against two. A fixture pinned to a shorter answer would measure the easy
             case of a row that has to fit three thumb-sized targets at 390px. */}
         <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
-          <h2 className="text-sm font-medium">{m.themeSwitcher.label}</h2>
+          <h2 className="type-subhead">{m.themeSwitcher.label}</h2>
           <ThemeSwitcher current="system" />
         </section>
       </Measure>
@@ -1116,7 +1139,7 @@ function YourQuotesHeading({ count }: { count: number }) {
   const t = useTranslations("quotes");
 
   return (
-    <h2 className="text-sm font-medium">{t("yours.recorded", { count })}</h2>
+    <h2 className="type-subhead">{t("yours.recorded", { count })}</h2>
   );
 }
 
@@ -1131,7 +1154,7 @@ function SourcedBy({ name }: { name: string }) {
   const t = useTranslations("quotes");
 
   return (
-    <p className="text-muted-foreground text-sm break-words">{t("sourcedBy", { name })}</p>
+    <p className="type-quiet break-words">{t("sourcedBy", { name })}</p>
   );
 }
 

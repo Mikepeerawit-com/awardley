@@ -36,7 +36,7 @@ export function SetPasswordForm() {
           required
           className="h-11"
         />
-        <p className="text-muted-foreground text-xs">{t("requirement")}</p>
+        <p className="type-quiet">{t("requirement")}</p>
       </div>
 
       <div className="flex flex-col gap-2">

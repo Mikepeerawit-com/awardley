@@ -55,12 +55,12 @@ export function NoSupplierFoundForm({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-medium">{t("title")}</h3>
-        <p className="text-muted-foreground text-xs">{t("hint")}</p>
+        <h3 className="type-subhead">{t("title")}</h3>
+        <p className="type-quiet">{t("hint")}</p>
       </div>
 
       {others.length > 0 ? (
-        <ul className="text-muted-foreground flex flex-col gap-1 text-sm">
+        <ul className="type-quiet flex flex-col gap-1">
           {others.map((other) => (
             <li key={other.userId}>
               {other.note

@@ -111,8 +111,8 @@ export function QuoteFieldInputs({
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{t("matchType.label")}</legend>
-        <p className="text-muted-foreground text-xs">{t("matchType.hint")}</p>
+        <legend className="type-subhead">{t("matchType.label")}</legend>
+        <p className="type-quiet">{t("matchType.hint")}</p>
 
         <div className="flex flex-wrap gap-2">
           {matchTypes.map((option) => (

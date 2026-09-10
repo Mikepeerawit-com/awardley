@@ -33,6 +33,13 @@ import { QuoteForm } from "./quote-form";
  * same muted line in a `<span>` elsewhere; a third one written tomorrow is counted whether
  * or not anybody thought to add it to this list.
  *
+ * **That class has a name now** (#153). It was `.text-muted-foreground.text-xs` — two
+ * utilities that happened to travel together, which is exactly the unnamed tier the type
+ * scale was opened to remove: the same job was being done at `text-xs` here and at
+ * `text-sm` two components away. `.type-quiet` is the tier, stated once in `globals.css`,
+ * and reading it by that name is what keeps this count pointed at *a hint* rather than at
+ * a pair of sizes somebody is free to re-choose.
+ *
  * It is a `.test.tsx` — the interactive seam — because half of what is being claimed is
  * about the Alternative branch, which exists only once somebody has clicked the radio and
  * the form owns that state. The other assertion needs no interaction and belongs beside
@@ -79,7 +86,7 @@ function renderForm(locale: string, messages: typeof en) {
 
 /** Every hint the form drew, in the order a reader meets them. */
 function hints(container: HTMLElement): string[] {
-  return [...container.querySelectorAll(".text-muted-foreground.text-xs")].map(
+  return [...container.querySelectorAll(".type-quiet")].map(
     (paragraph) => paragraph.textContent ?? "",
   );
 }

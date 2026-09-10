@@ -250,8 +250,8 @@ export function QuoteForm({
             price. They are held in this component and uploaded afterwards, against the id
             the submit gives back. */}
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium">{t("photos.attach")}</legend>
-          <p className="text-muted-foreground text-xs">{t("photos.attachHint")}</p>
+          <legend className="type-subhead">{t("photos.attach")}</legend>
+          <p className="type-quiet">{t("photos.attachHint")}</p>
 
           <div className="flex flex-wrap items-center gap-2">
             <QuotePhotoPicker disabled={isPending} onPicked={pick} />
@@ -265,7 +265,7 @@ export function QuoteForm({
 
           {held.length > 0 ? (
             <>
-              <p className="text-muted-foreground text-sm">
+              <p className="type-quiet">
                 {t("photos.waiting", { count: held.length })}
               </p>
 
@@ -303,7 +303,7 @@ export function QuoteForm({
           ) : null}
 
           {progress ? (
-            <p role="status" className="text-muted-foreground text-sm">
+            <p role="status" className="type-quiet">
               {t("photos.uploading", { done: progress.done, total: progress.total })}
             </p>
           ) : null}

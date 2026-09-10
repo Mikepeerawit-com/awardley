@@ -90,7 +90,7 @@ export function TenderFieldInputs({
             required
             className="h-11"
           />
-          <p className="text-muted-foreground text-xs">{t("internalQuoteHint")}</p>
+          <p className="type-quiet">{t("internalQuoteHint")}</p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -105,7 +105,7 @@ export function TenderFieldInputs({
             required
             className="h-11"
           />
-          <p className="text-muted-foreground text-xs">{t("clientSubmissionHint")}</p>
+          <p className="type-quiet">{t("clientSubmissionHint")}</p>
         </div>
       </div>
 
@@ -118,7 +118,7 @@ export function TenderFieldInputs({
           defaultValue={defaults.expectedDecisionDate}
           className="h-11 sm:max-w-64"
         />
-        <p className="text-muted-foreground text-xs">{t("expectedDecisionHint")}</p>
+        <p className="type-quiet">{t("expectedDecisionHint")}</p>
       </div>
 
       <div className="flex flex-col gap-2">

@@ -22,6 +22,14 @@ import { Measure } from "@/components/ui/screen-body";
  * shrink-to-fit and a measure inside it would report whatever the longest line happened to
  * need, which is not a width anybody committed to.
  *
+ * **The heading is the display tier, and this is the one place most screens draw it**
+ * (#153). `type-display` is 30px at 700 in Latin and 27px at 600 in Han — the tier
+ * `globals.css` opened so that a screen's own name is a different voice from the
+ * `Section` headings beneath it rather than a larger printing of one. `break-words` is
+ * what keeps it a heading rather than a horizontal scrollbar: a bigger heading is a wider
+ * heading, and a client name with no space in it was already the failure #56 was raised
+ * for at 24px.
+ *
  * **Why `min-w-0` is on the text column.** A flex item's `min-width` defaults to `auto`,
  * which means it refuses to shrink below its own longest unbroken word. A client name or
  * a product name with no space in it would otherwise hold this column wider than the
@@ -62,7 +70,7 @@ export function ScreenHeader({
             {eyebrow}
           </span>
         ) : null}
-        <h1 className="text-2xl font-semibold tracking-tight break-words">{heading}</h1>
+        <h1 className="type-display break-words">{heading}</h1>
         {children ? (
           <Measure className="flex flex-col gap-2">{children}</Measure>
         ) : null}

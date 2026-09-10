@@ -38,7 +38,7 @@ export function GroupRobotForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <p className={configured ? "text-muted-foreground text-sm" : "text-sm"}>
+      <p className={configured ? "type-quiet" : "text-sm"}>
         {configured
           ? t("configured", {
               when: updatedAt ? format.dateTime(new Date(updatedAt)) : "",
@@ -60,7 +60,7 @@ export function GroupRobotForm({
           spellCheck={false}
           className="h-11"
         />
-        <p className="text-muted-foreground text-xs">{t("help")}</p>
+        <p className="type-quiet">{t("help")}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

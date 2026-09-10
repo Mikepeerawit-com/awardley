@@ -81,7 +81,7 @@ export function EditQuoteForm({
         }
       />
 
-      <p className="text-muted-foreground text-xs">{t("editHint")}</p>
+      <p className="type-quiet">{t("editHint")}</p>
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={isPending} className="h-11">

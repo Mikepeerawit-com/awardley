@@ -27,9 +27,9 @@ export function AuthScreen({
     <div className="bg-background flex flex-1 flex-col items-center justify-center p-6">
       <main className="flex w-full max-w-sm flex-col gap-6">
         <header className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="type-display break-words">{title}</h1>
           {description ? (
-            <p className="text-muted-foreground text-sm">{description}</p>
+            <p className="type-quiet">{description}</p>
           ) : null}
         </header>
 

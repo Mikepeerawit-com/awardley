@@ -26,5 +26,15 @@ export const phone = { width: 390, height: 844 };
  * stacked card per Quote, so the Owner's screen is most of a Tender laid end to end. The
  * number is a window, not a claim — nothing is asserted about how tall a screen may be,
  * only that the tool photographed it at full size rather than scaling it down.
+ *
+ * It was 6000 until #157 raised `"a tender"` to the five Quotes an Item really carries,
+ * which is two more stacked cards on one Item and three on another: the tallest screen —
+ * the Tender detail with its folds open, in `en` — went to 6,367px and the assertion
+ * below said so, which is what it is for. 8000 is that plus about a quarter, which is the
+ * habitual case with room to move and deliberately **not** enough for the growth ADR-0030
+ * names as its open risk — eight Quotes apiece would come to roughly 8,100px at the card
+ * heights that ADR measures, and this would fail. That is the outcome to want: a window
+ * wide enough to swallow it would take the tool quietly past the point where somebody
+ * should be looking at the length again.
  */
-export const captureWindow = { width: 1200, height: 6000 };
+export const captureWindow = { width: 1200, height: 8000 };

@@ -17,7 +17,11 @@ question rather than being re-asked every time somebody scrolls it.
 ## The measurements
 
 At 390px, off `@/test/screens`' `"a tender"` record, in both locales. Reproduce with
-`npm run screen-length`.
+`npm run screen-length`. These are the page as it stood in early September, off a record
+holding three and two Quotes on its two undecided Items and before the type and spacing
+scales landed; [#157](https://github.com/Mikepeerawit-com/tender-tracker/issues/157) raised
+the record to the five a Tender really carries, and the amendment at the foot re-measures
+both changes at once. Re-running the tool today prints that page, not this one.
 
 | Block of the Owner's Tender detail | `en` | `zh-Hans` |
 |---|---|---|
@@ -29,9 +33,10 @@ At 390px, off `@/test/screens`' `"a tender"` record, in both locales. Reproduce 
 | The two folds, shut | 44px each | 44px each |
 | **Whole page** | **4,148px** | **4,005px** |
 
-**81% in both locales**, which is the finding that does not depend on anybody's handset:
-a phone screen is a different length on every model, so *how many screenfuls* is a fact
-about a device, and *what share of the page is quotes* is a fact about the page.
+**81% in both locales** — 84% since the amendment below — which is the finding that does
+not depend on anybody's handset: a phone screen is a different length on every model, so
+*how many screenfuls* is a fact about a device, and *what share of the page is quotes* is
+a fact about the page. The share is what is being claimed here, and it has only gone up.
 
 One ranked Quote below 768px is one stacked card, and a card costs:
 
@@ -50,19 +55,19 @@ card as the median beside them so that they add up to it. The range is narrow wi
 Item, so an Item's length really is close to `cards × card`; that is what makes the
 arithmetic below trustworthy rather than a guess.
 
-**The fixture draws fewer Quotes than a Tender carries.** `"a tender"` opens two
-undecided Items holding three and two Quotes. The real number is about **five per Item**
-— stated by the Owner during the triage session on
+**The fixture drew fewer Quotes than a Tender carries, and now it does not.** `"a
+tender"` opened two undecided Items holding three and two Quotes. The real number is about
+**five per Item** — stated by the Owner during the triage session on
 [#151](https://github.com/Mikepeerawit-com/tender-tracker/issues/151), which is the only
 source there is: nothing is in production yet, so no query answers this and both fixtures
-are inventions. ADR-0009's carries eight, `@/test/screens` carries three, and neither is
-the app.
+are inventions. ADR-0009's carries eight, and neither three nor eight is the app.
 
-At five apiece the page comes to **≈5,500px** and Items-and-quotes to **≈4,690px, about
-85% of it** — arithmetic on the measured card heights, not a measurement, until the
-fixture carries five. Raising it is [#157](https://github.com/Mikepeerawit-com/tender-tracker/issues/157), deliberately kept out of this
-decision: the record is drawn by roughly a dozen guards and the contact sheet, so what it
-holds is not this ticket's to alter in passing.
+[#157](https://github.com/Mikepeerawit-com/tender-tracker/issues/157) raised the record to
+five apiece, so the headline share is a **measurement** rather than a sum: the page comes
+to **5,656px** in `en` and **5,559px** in `zh-Hans`, and Items-and-quotes to **4,758px and
+4,675px — 84% of it in both locales**. The arithmetic this paragraph used to carry, over
+the median card heights above, predicted ≈5,500px and ≈4,690px at about 85%; it was close,
+and it is now spent. The amendment at the foot is the measured page.
 
 ## The length is a consequence of the act, not of the layout
 
@@ -133,7 +138,9 @@ that shortening the sheet by guesswork does not. It is [#158](https://github.com
 ## Consequences
 
 - **The measurement is re-derivable, which it has twice not been.** `npm run
-  screen-length` prints the tables above. Every figure in ADR-0009, ADR-0026 and #151 was
+  screen-length` prints these tables — the amendment's, since #157; the ones under _The
+  measurements_ are the same tool on the September page, and are kept as what this decision
+  was taken on rather than as what the tool prints today. Every figure in ADR-0009, ADR-0026 and #151 was
   produced by a scratch file that no longer exists, and two of them were wrong. ADR-0026's
   opening table said the tender list was 1100px when it was 1664px, corrected eighty
   minutes later by `1e43763`. ADR-0009's 189px per card was wrong for four weeks and was
@@ -161,3 +168,59 @@ that shortening the sheet by guesswork does not. It is [#158](https://github.com
   for eight, so an Item can hold more, and the page grows linearly with them. If Tenders
   routinely arrive with eight, the co-visibility question above stops being the better
   ticket and becomes the urgent one.
+
+## Amendment, 10 September 2026 — the fixture carries five, and the share is measured ([#157](https://github.com/Mikepeerawit-com/tender-tracker/issues/157))
+
+The decision holds unchanged and so does every claim in it. What changes is that its
+headline share stopped being arithmetic.
+
+`@/test/screens`' `"a tender"` record now draws **five Quotes on each of its two undecided
+Items**, the gloves and the syringes. The masks are decided, so they stay at two: a decided
+Item is folded away on the sheet, and rows behind a fold nobody opens lengthen the record
+without lengthening the screen. Re-measured with `npm run screen-length`, same 390px, same
+two locales, same caveat about the Latin face:
+
+| Block of the Owner's Tender detail | `en` | `zh-Hans` |
+|---|---|---|
+| The Tender's own header | 212px (4%) | 219px (4%) |
+| `TenderSections`, the jump bar | 54px (1%) | 54px (1%) |
+| The two deadlines | 71px (1%) | 44px (1%) |
+| The outstanding band | 234px (4%) | 240px (4%) |
+| **Items and quotes** | **4,758px (84%)** | **4,675px (84%)** |
+| The two folds, shut | 44px each | 44px each |
+| **Whole page** | **5,656px** | **5,559px** |
+
+| Item | Cards | Card (median) | Card (range) | identity | money |
+|---|---|---|---|---|---|
+| The gloves | 5 | 297px | 236–350px | 121px | 176px |
+| The syringes | 5 | 274px | 232–274px | 121px | 153px |
+
+Three things to read off it rather than past:
+
+- **84%, not 81%, and the direction is the point.** Every block above the sheet is fixed
+  in length — a header, a jump bar, two dates, a band naming two Items — so lengthening the
+  Items lengthens only the share that was already most of the page. The finding this ADR
+  records gets stronger with the fixture, which is the direction a finding held up by an
+  under-drawn fixture would not have gone.
+- **An ordinary Quote costs less than an exceptional one.** The gloves' median fell from
+  326px to 297px *as the Item grew*, because the two Quotes added to reach five deliberately
+  draw none of the marks the sheet has to make — no Alternative's own product name, no
+  stale-rate marking, no photo count. That fall is composition and nothing else: measured on
+  the same machine at the commit before the fixture changed, the cards were still 326px with
+  the same 297–350px spread, so the scales named in the next bullet moved the page *around*
+  the cards rather than the cards. The range widened to 236–350px, so `cards × median`
+  inside an Item is a rougher approximation than the original table implied. What the real
+  mix is nobody knows: five rows like the plain ones would be shorter than this page and
+  five like the Alternative longer.
+- **Part of the growth is not this ticket's.** Measured on the same machine at the commit
+  before the fixture changed, the page was 4,292px in `en` against the 4,148px in the table
+  above — the type and spacing scales ([#153](https://github.com/Mikepeerawit-com/tender-tracker/issues/153),
+  [#154](https://github.com/Mikepeerawit-com/tender-tracker/issues/154)) moved the header
+  and the outstanding band between the two runs. Both halves are in the 84%, and neither
+  changes what it says.
+
+**The capture window went from 6000px to 8000px** (`captureWindow`, `src/test/phone.mts`).
+The contact sheet asserts each screen was photographed at full size rather than scaled, and
+the Tender detail with its folds open now measures 6,367px, so that assertion failed —
+which is the assertion doing its job rather than a screen quietly shrinking. Nothing about
+how tall a screen may be is asserted anywhere; it is a window, not a bar.

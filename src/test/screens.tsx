@@ -1445,7 +1445,8 @@ const ownerSections = [
  * One entry, which is one below what {@link TenderSections} will draw anything for — so
  * the Assignee's screen gets no bar, and that is the assertion rather than an omission.
  *
- * Their screen is 1932px against the Owner's 4786px and its other two parts are folds,
+ * Their screen is 1,552px against the Owner's 5,656px — `npm run screen-length`, at 390px
+ * in `en`, rather than a figure written down here — and its other two parts are folds,
  * which are 44px each whether open or shut. `density.layout.test.tsx` holds this screen to
  * an exact count of control rows, and a bar here spent two of them in `en` on a screen with
  * no distance to cover. It is passed the real list anyway rather than being left out of
@@ -1484,13 +1485,30 @@ export const tender: Tender = {
 };
 
 /**
- * Every Quote on the Tender, from both of its Assignees — the Item's whole record, which
+ * Every Quote on the Tender, from each of its Assignees — the Item's whole record, which
  * is what the Owner is handed and what the two reduced screens are a subset of (ADR-0020).
  *
- * Several on each Item, and two people's on the Item both sourcing screens draw, because
- * that is the only arrangement in which the reduction is a visible thing at all: the
- * Owner's copy of the gloves screen lists three, and an Assignee's lists the two that are
- * theirs. A fixture with one Quote on it would photograph the same screen twice.
+ * **Five on each undecided Item, because five is what a Tender carries.** The number is
+ * the Owner's, given during the triage session on
+ * [#151](https://github.com/Mikepeerawit-com/tender-tracker/issues/151) and the only
+ * source there is — nothing is in production, so no query answers this. It was three and
+ * two until [#157](https://github.com/Mikepeerawit-com/tender-tracker/issues/157) raised
+ * it, which is why ADR-0030 could state its headline share as arithmetic on measured card
+ * heights and can now state it as a measurement. The masks stay at two: a decided Item is
+ * folded away on the sheet, so what it holds is a count on a chip rather than a column of
+ * cards, and inventing rows behind a fold nobody opens would lengthen the run without
+ * lengthening the screen.
+ *
+ * More than one person's on the Item both sourcing screens draw, because that is the only
+ * arrangement in which the reduction is a visible thing at all: the Owner's copy of the
+ * gloves screen lists five, and an Assignee's lists the two that are theirs. A fixture
+ * with one Quote on it would photograph the same screen twice.
+ *
+ * **The awkward rows are meant to stay the minority.** Every Quote below that carries
+ * something the sheet has to mark — a Stale Rate, an Alternative, a unit the Item is not
+ * counted in — says so where it sits, and the ones added to reach five deliberately draw
+ * none of those marks. An Item on which every row is exceptional is not the Item the Owner
+ * reads.
  *
  * Every rate is frozen into the row as a real one is, and the THB figure is
  * `unitPrice × fxRateApplied` — the product the database computes, so that nothing here
@@ -1565,6 +1583,55 @@ const everyQuote: Quote[] = [
     alternativeProductName: null,
     detailNotes: null,
     quotedAt: "2026-08-11",
+    sourcedByUserId: "user-wei",
+    sourcedByName: "Wei Zhang",
+  },
+  /* Two ordinary Quotes, and ordinary is what they are for.
+
+     The three above are each here because of something they carry — the Stale Rate, the
+     Alternative, the second Assignee's row — and a fixture made only of those would draw
+     an Item on which every row is exceptional. Real Items are mostly rows like these:
+     an exact match, in the Item's own unit, at a rate frozen the same week as the rest,
+     from a supplier nobody has quoted twice. They are priced above the pair the
+     `tooCloseToCall` banner is about, so the lead it warns on stays the 2.4% between
+     `q1c` and `q1a` and this Item still raises exactly the banner it did at three. */
+  {
+    id: "q1d",
+    tenderItemId: "item-gloves",
+    supplierName: "Zhejiang Yuanjin Medical Products Co., Ltd.",
+    unitPrice: 0.45,
+    currency: "CNY",
+    quotedUnit: "piece",
+    unitPriceThb: 2.27664,
+    fxRateMid: 4.96,
+    fxRateApplied: 5.0592,
+    fxRateAsOf: "2026-08-11",
+    fxRateIsStale: false,
+    leadTimeDays: 28,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-12",
+    sourcedByUserId: "user-wei",
+    sourcedByName: "Wei Zhang",
+  },
+  {
+    id: "q1e",
+    tenderItemId: "item-gloves",
+    supplierName: "Ansell (Thailand) Ltd.",
+    unitPrice: 2.31,
+    currency: "THB",
+    quotedUnit: "piece",
+    unitPriceThb: 2.31,
+    fxRateMid: 1,
+    fxRateApplied: 1,
+    fxRateAsOf: "2026-08-14",
+    fxRateIsStale: false,
+    leadTimeDays: 14,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-14",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
   },
@@ -1656,6 +1723,78 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-14",
     sourcedByUserId: "user-somchai",
     sourcedByName: "Somchai Prasertkul",
+  },
+  /* Three ordinary Quotes, for the reason the two on the gloves are ordinary — and here
+     they are also what keeps the refusal above readable as a refusal. An Item whose only
+     rows are the mismatched one and the one it poisons reads as a broken Item; an Item
+     with four rankable Quotes on it that the sheet still declines to rank reads as the
+     deliberate act ADR-0009 made it. The unit mismatch is unaffected by their number:
+     one Quote in a unit the Item is not counted in stops the whole Item being ranked. */
+  {
+    id: "q3c",
+    tenderItemId: "item-syringes",
+    supplierName: "Jiangsu Zhengkang Medical Apparatus Co., Ltd.",
+    unitPrice: 1.08,
+    currency: "CNY",
+    quotedUnit: "piece",
+    unitPriceThb: 5.463936,
+    fxRateMid: 4.96,
+    fxRateApplied: 5.0592,
+    fxRateAsOf: "2026-08-11",
+    fxRateIsStale: false,
+    leadTimeDays: 40,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-12",
+    sourcedByUserId: "user-wei",
+    sourcedByName: "Wei Zhang",
+  },
+  {
+    id: "q3d",
+    tenderItemId: "item-syringes",
+    supplierName: "Nipro (Thailand) Corporation Ltd.",
+    unitPrice: 6.15,
+    currency: "THB",
+    quotedUnit: "piece",
+    unitPriceThb: 6.15,
+    fxRateMid: 1,
+    fxRateApplied: 1,
+    fxRateAsOf: "2026-08-14",
+    fxRateIsStale: false,
+    leadTimeDays: 12,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-14",
+    sourcedByUserId: "user-somchai",
+    sourcedByName: "Somchai Prasertkul",
+  },
+  /* A second **Frozen Rate** in USD, and a live one. `q1c`'s is the app's other USD row
+     and it is a **Stale Rate** — the last rate this app had stored, kept because
+     Frankfurter could not be reached (`CONTEXT.md`), which is a fact about that morning
+     and not about the rate's age. With only that row on file, stale would read as how
+     this fixture stores dollars; with this one beside it, it reads as the exception it
+     is. */
+  {
+    id: "q3e",
+    tenderItemId: "item-syringes",
+    supplierName: "Shandong Weigao Group Medical Polymer Co., Ltd.",
+    unitPrice: 0.17,
+    currency: "USD",
+    quotedUnit: "piece",
+    unitPriceThb: 5.70486,
+    fxRateMid: 32.9,
+    fxRateApplied: 33.558,
+    fxRateAsOf: "2026-08-12",
+    fxRateIsStale: false,
+    leadTimeDays: 35,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-13",
+    sourcedByUserId: "user-wei",
+    sourcedByName: "Wei Zhang",
   },
 ];
 

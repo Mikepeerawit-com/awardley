@@ -63,8 +63,8 @@ export function NewTenderForm({
 
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-medium">{t("item.plural")}</h2>
-          <p className="text-muted-foreground text-xs">{t("item.hint")}</p>
+          <h2 className="type-subhead">{t("item.plural")}</h2>
+          <p className="type-quiet">{t("item.hint")}</p>
         </div>
 
         {rowIds.map((rowId, index) => (

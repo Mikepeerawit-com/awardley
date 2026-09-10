@@ -35,7 +35,7 @@ export default async function CurrencyConversionPage() {
   return (
     <>
       <ScreenHeader heading={t("title")}>
-        <p className="text-muted-foreground text-sm">{t("description")}</p>
+        <p className="type-quiet">{t("description")}</p>
       </ScreenHeader>
 
       <Measure>
@@ -49,7 +49,7 @@ export default async function CurrencyConversionPage() {
           surprise would have been told something false here. ADR-0018: correcting the day
           a Quote claims re-freezes that Quote against the new date. */}
       <Measure>
-        <p className="text-muted-foreground text-sm">{t("affects")}</p>
+        <p className="type-quiet">{t("affects")}</p>
       </Measure>
     </>
   );

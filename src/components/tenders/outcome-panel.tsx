@@ -44,7 +44,7 @@ export async function OutcomePanel({
     // can navigate by. The hint stays — it is prose about this block, not a second name
     // for it.
     <div className="flex min-w-0 flex-col gap-4">
-      <p className="text-muted-foreground text-sm">{t("hint")}</p>
+      <p className="type-quiet">{t("hint")}</p>
 
       <div className="bg-card rounded-surface shadow-surface flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3">
         <div className="flex flex-col gap-0.5">

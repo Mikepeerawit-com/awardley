@@ -43,7 +43,7 @@ export function OutstandingBand({
     <section className="border-signal-edge bg-signal-wash flex min-w-0 flex-col gap-2 rounded-surface border p-3.5">
       <div className="flex min-w-0 items-center gap-2">
         <IndicatorLamp tone="signal" size={15} />
-        <h2 className="text-signal-ink min-w-0 text-[13px] font-semibold break-words">
+        <h2 className="type-group text-signal-ink min-w-0 break-words">
           {t("outstanding.title")}
         </h2>
         <span className="text-signal-ink ml-auto shrink-0 font-mono text-[13px] font-medium">
@@ -51,7 +51,7 @@ export function OutstandingBand({
         </span>
       </div>
 
-      <p className="text-signal-ink/85 min-w-0 text-xs leading-relaxed break-words">
+      <p className="type-quiet text-signal-ink/85 min-w-0 break-words">
         {t("outstanding.hint")}
       </p>
 

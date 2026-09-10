@@ -61,14 +61,14 @@ export function TenderGroup({
         <div className="bg-alarm-wash flex min-w-0 flex-col gap-1 px-3.5 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <IndicatorLamp tone="alarm" size={15} />
-            <h2 className="text-alarm-ink min-w-0 text-[13px] font-semibold break-words">
+            <h2 className="type-group text-alarm-ink min-w-0 break-words">
               {heading}
             </h2>
             <span className="text-alarm-ink ml-auto shrink-0 font-mono text-[13px] font-medium">
               {section.tenders.length}
             </span>
           </div>
-          <p className="text-alarm-ink/85 min-w-0 text-xs leading-relaxed break-words">
+          <p className="type-quiet text-alarm-ink/85 min-w-0 break-words">
             {hint}
           </p>
         </div>
@@ -81,13 +81,13 @@ export function TenderGroup({
     <section className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex min-w-0 items-center gap-2.5 px-0.5">
-          <h2 className="min-w-0 text-[13px] font-semibold break-words">{heading}</h2>
+          <h2 className="type-group min-w-0 break-words">{heading}</h2>
           <ProgressScale progress={section.group} />
           <span className="text-ink-faint ml-auto shrink-0 font-mono text-[13px] font-medium">
             {section.tenders.length}
           </span>
         </div>
-        <p className="text-muted-foreground min-w-0 px-0.5 text-xs leading-relaxed break-words">
+        <p className="type-quiet min-w-0 px-0.5 break-words">
           {hint}
         </p>
       </div>

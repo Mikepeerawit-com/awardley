@@ -51,7 +51,7 @@ export function SourcingList({
     <div className="flex min-w-0 flex-col gap-4">
       {/* Says what is missing and whose it is, rather than leaving somebody who has seen
           the Owner's screen wondering what broke. */}
-      <p className="text-muted-foreground text-sm">{t("hint")}</p>
+      <p className="type-quiet">{t("hint")}</p>
 
       <ul className="bg-card divide-hairline-soft rounded-surface shadow-surface divide-y overflow-hidden text-sm">
         {items.map((item) => (
@@ -137,7 +137,7 @@ function Item({
           `CONTEXT.md` gives for No Supplier Found, and the same wording the sourcing
           screen uses so the two screens do not describe one record two ways. */}
       {item.yourNoSupplierFound ? (
-        <p className="text-muted-foreground text-xs">
+        <p className="type-quiet">
           <NoSupplierFoundLine note={item.yourNoSupplierFound.note} />
         </p>
       ) : null}

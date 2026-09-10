@@ -48,7 +48,7 @@ export function AssigneeControls({
   return (
     <div className="flex min-w-0 flex-col gap-4">
       {assignees.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{t("none")}</p>
+        <p className="type-quiet">{t("none")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {assignees.map((assignee) => (

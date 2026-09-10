@@ -65,10 +65,10 @@ export function ReferenceImageUploader({ tenderId }: { tenderId: string }) {
         />
       </label>
 
-      <p className="text-muted-foreground text-xs">{t("hint")}</p>
+      <p className="type-quiet">{t("hint")}</p>
 
       {progress ? (
-        <p role="status" className="text-muted-foreground text-sm">
+        <p role="status" className="type-quiet">
           {t("uploading", { done: progress.done, total: progress.total })}
         </p>
       ) : null}

@@ -43,17 +43,17 @@ export default async function PreferencesPage() {
   return (
     <>
       <ScreenHeader heading={t("title")}>
-        <p className="text-muted-foreground text-sm">{t("description")}</p>
+        <p className="type-quiet">{t("description")}</p>
       </ScreenHeader>
 
       <Measure>
         <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
-          <h2 className="text-sm font-medium">{language("label")}</h2>
+          <h2 className="type-subhead">{language("label")}</h2>
           <LocaleSwitcher />
         </section>
 
         <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
-          <h2 className="text-sm font-medium">{appearance("label")}</h2>
+          <h2 className="type-subhead">{appearance("label")}</h2>
           <ThemeSwitcher current={theme} />
         </section>
       </Measure>

@@ -89,7 +89,7 @@ export default async function EditQuotePage({
         eyebrow={`${tender.reference} · ${item.productName}`}
         heading={t("editTitle")}
       >
-        <p className="text-muted-foreground text-sm break-words">
+        <p className="type-quiet break-words">
           {t("sourcedBy", { name: quote.sourcedByName })}
         </p>
       </ScreenHeader>

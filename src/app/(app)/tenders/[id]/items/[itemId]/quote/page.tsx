@@ -144,7 +144,7 @@ export default async function ItemSourcingPage({
             No sentence here explaining the rule: #92 says it on the Tender detail, one
             tap back, and this is the screen somebody opens several times per Item. Said
             on every visit it would be furniture. */}
-        <h2 className="text-sm font-medium">
+        <h2 className="type-subhead">
           {yourQuotesOnly
             ? t("yours.recorded", { count: quotes.length })
             : t("recorded", { count: quotes.length })}
@@ -170,8 +170,8 @@ export default async function ItemSourcingPage({
           <Measure>
             <section className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <h2 className="text-sm font-medium">{t("add")}</h2>
-                <p className="text-muted-foreground text-xs">{t("addHint")}</p>
+                <h2 className="type-subhead">{t("add")}</h2>
+                <p className="type-quiet">{t("addHint")}</p>
               </div>
 
               <QuoteForm

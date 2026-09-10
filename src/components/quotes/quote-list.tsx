@@ -70,7 +70,7 @@ export function QuoteList({
 
   if (quotes.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="type-quiet">
         {yourQuotesOnly ? t("yours.none") : t("none")}
       </p>
     );

@@ -79,7 +79,7 @@ export default async function TendersPage({
           </Button>
         }
       >
-        <p className="text-muted-foreground text-sm break-words">{t("description")}</p>
+        <p className="type-quiet break-words">{t("description")}</p>
       </ScreenHeader>
 
       {/*
@@ -108,7 +108,7 @@ export default async function TendersPage({
         // Mine — so asking about the filter first would offer them a Clear for a backlog
         // of nothing, next to a reduce bar that is not drawn at all.
         <Measure>
-          <p className="text-muted-foreground text-sm">
+          <p className="type-quiet">
             {total === 0
               ? t("empty")
               : onList === 0

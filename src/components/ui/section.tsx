@@ -12,10 +12,12 @@ import type { ReactNode } from "react";
  * structure between them.
  *
  * So the heading is stated once, here, and every part of that screen is drawn through
- * this. The tier is deliberate and it is the middle one: `text-2xl` is the screen's own
- * `<h1>` in {@link ScreenHeader}, this is `text-base`, and the field labels under it are
- * 10.5px `.field-label`. Three sizes far enough apart to be told apart at arm's length on
- * a phone, which is the thing the old two-size screen could not do.
+ * this. The tier is deliberate and it is the middle one of five: `.type-display` is the
+ * screen's own `<h1>` in {@link ScreenHeader}, this is `.type-section`, `.type-subhead`
+ * is a labelled block inside a part, and the field labels under it are `.field-label`.
+ * The scale and both of its per-script readings are stated once in `globals.css` (#153);
+ * what this component decides is which tier a part of a screen gets, which is the thing
+ * worth deciding here.
  *
  * **The `id` is what makes {@link TenderSections} possible**, and it is required rather
  * than optional: a section nobody can link to is one the jump bar silently drops, and a
@@ -50,7 +52,7 @@ export function Section({
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h2
           id={headingId}
-          className="min-w-0 text-base font-semibold tracking-tight break-words"
+          className="type-section min-w-0 break-words"
         >
           {title}
         </h2>

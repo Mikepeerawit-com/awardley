@@ -147,7 +147,7 @@ export default async function TenderPage({ params }: PageProps<"/tenders/[id]">)
           </Button>
         }
       >
-        <p className="text-muted-foreground text-sm break-words">{tender.title}</p>
+        <p className="type-quiet break-words">{tender.title}</p>
       </ScreenHeader>
 
       <TenderSections sections={sections} />

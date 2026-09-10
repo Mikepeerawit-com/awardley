@@ -37,7 +37,7 @@ export function CurrencyConversionForm({ percent }: { percent: number }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <p className="text-muted-foreground text-sm">{t("current", { percent })}</p>
+      <p className="type-quiet">{t("current", { percent })}</p>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="percent">{t("label")}</Label>
@@ -57,7 +57,7 @@ export function CurrencyConversionForm({ percent }: { percent: number }) {
             {t("percentSign")}
           </span>
         </div>
-        <p className="text-muted-foreground text-xs">{t("help")}</p>
+        <p className="type-quiet">{t("help")}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

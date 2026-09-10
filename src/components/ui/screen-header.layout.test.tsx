@@ -89,7 +89,7 @@ describe(`a screen header at ${phone.width}×${phone.height}`, () => {
               </Button>
             ))}
           >
-            <p className="text-muted-foreground text-sm break-words">{fixture.detail}</p>
+            <p className="type-quiet break-words">{fixture.detail}</p>
           </ScreenHeader>
         </main>
       </div>,

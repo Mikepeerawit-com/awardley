@@ -66,7 +66,7 @@ export function ItemBrief({
       <section className="bg-card rounded-surface shadow-surface flex min-w-0 flex-col gap-2 p-4">
         <span className="field-label">{t("asked")}</span>
 
-        <h1 className="min-w-0 text-xl leading-tight font-semibold tracking-tight break-words">
+        <h1 className="type-display min-w-0 break-words">
           {productName}
         </h1>
 
@@ -75,7 +75,7 @@ export function ItemBrief({
         </p>
 
         {description ? (
-          <p className="text-muted-foreground min-w-0 text-sm break-words">{description}</p>
+          <p className="type-quiet min-w-0 break-words">{description}</p>
         ) : null}
 
         {images}

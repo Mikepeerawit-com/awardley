@@ -45,7 +45,7 @@ export default async function MyWorkPage() {
   return (
     <Screen>
       <ScreenHeader heading={t("title")}>
-        <p className="text-muted-foreground text-sm break-words">{t("description")}</p>
+        <p className="type-quiet break-words">{t("description")}</p>
       </ScreenHeader>
 
       <MyWorkList items={items} />

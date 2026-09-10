@@ -59,8 +59,15 @@ export function ScreenSkeleton() {
       </p>
 
       <div aria-hidden className="contents">
+        {/* The heading bar stands where the display tier's line box will be, which is
+            ~34.5px in `en` and ~35.1px in `zh-Hans` (#153). It was `h-7` for the 24px
+            `text-2xl` this replaced, and a fallback seven pixels shorter than the heading
+            it stands in for is the column jumping when the fetch lands — the exact
+            disagreement this component's own note says it exists to prevent. `h-9` is the
+            one step that brackets both scripts; a `1lh` would say it exactly and is not a
+            unit WeCom's Android webview can be assumed to know (ADR-0024). */}
         <ScreenHeader
-          heading={<Bar className="h-7 w-48" />}
+          heading={<Bar className="h-9 w-48" />}
           actions={<Bar className="h-11 w-24" />}
         >
           <Bar className="h-4 w-40" />

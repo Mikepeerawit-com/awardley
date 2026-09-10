@@ -36,7 +36,7 @@ export default async function GroupRobotPage() {
   return (
     <>
       <ScreenHeader heading={t("title")}>
-        <p className="text-muted-foreground text-sm">{t("description")}</p>
+        <p className="type-quiet">{t("description")}</p>
       </ScreenHeader>
 
       <Measure>

@@ -54,7 +54,7 @@ export default async function EditTenderPage({
       }}
     >
       <ScreenHeader eyebrow={tender.reference} heading={t("edit")}>
-        <p className="text-muted-foreground text-sm">{t("editDescription")}</p>
+        <p className="type-quiet">{t("editDescription")}</p>
       </ScreenHeader>
 
       {/* The Owner this Tender already has, even if they have since been disabled and
@@ -72,7 +72,7 @@ export default async function EditTenderPage({
 
       <Measure>
         <Section id="items" title={t("item.plural")}>
-          <p className="text-muted-foreground text-sm">{t("item.hint")}</p>
+          <p className="type-quiet">{t("item.hint")}</p>
 
           {/* One fold per Item, summarised by the product name (ADR-0031). Both props
               are the same count read twice, and both are derived here rather than

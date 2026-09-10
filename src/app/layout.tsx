@@ -30,7 +30,19 @@ import "./globals.css";
 const firaSans = Fira_Sans({
   variable: "--font-fira-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  /*
+   * **700 is here for the display tier and for nothing else** (#153). The scale in
+   * `globals.css` spends its weight contrast at the top — 700 over 600 over 400 in Latin
+   * — and 600 was the heaviest thing this app had ever drawn, which is why a screen's own
+   * name read as a larger version of a section heading rather than as a different voice.
+   *
+   * One more Latin `woff2`, fetched on the path a Group Robot reminder takes, and it is
+   * the reason the scale takes no Light at the other end: a second file for a line of
+   * supporting prose buys a recession in `en` that has no answer in Han at all. Latin can
+   * be subset and a Han face cannot, which is the whole of why this is affordable here
+   * and was not affordable for the script the app is actually read in.
+   */
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 

@@ -21,7 +21,7 @@ export default async function NewTenderPage() {
   return (
     <Screen gap="gap-6">
       <ScreenHeader heading={t("record")}>
-        <p className="text-muted-foreground text-sm">{t("recordDescription")}</p>
+        <p className="type-quiet">{t("recordDescription")}</p>
       </ScreenHeader>
 
       {/* The Owner defaults to whoever is recording it — they are the one who has the

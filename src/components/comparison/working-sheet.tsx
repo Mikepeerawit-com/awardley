@@ -131,7 +131,7 @@ export function WorkingSheet({
       {/* The whole Tender's money, under the rows it is made of. */}
       <TotalsBar items={items} />
 
-      <p className="text-muted-foreground text-xs">{t("derivedNote")}</p>
+      <p className="type-quiet">{t("derivedNote")}</p>
     </div>
   );
 }
@@ -369,7 +369,7 @@ function ItemPanel({
       ))}
 
       {ranked.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{t("noQuotes")}</p>
+        <p className="type-quiet">{t("noQuotes")}</p>
       ) : (
         <QuoteTable tenderId={tenderId} item={item} ranked={ranked} photos={photos} />
       )}

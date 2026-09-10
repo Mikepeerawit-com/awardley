@@ -60,7 +60,7 @@ export function MyWorkList({ items }: { items: MyWorkRow[] }) {
     // read, and the rows above are a thing to scan (ADR-0022).
     return (
       <Measure>
-        <p className="text-muted-foreground text-sm">{t("empty")}</p>
+        <p className="type-quiet">{t("empty")}</p>
       </Measure>
     );
   }

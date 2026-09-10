@@ -479,13 +479,176 @@
 
 @layer components {
   /**
-   * A field label, under one rule per script rather than one rule stretched over both.
+   * **The type scale, stated once and split per script** (ADR-0019, #153).
+   *
+   * ADR-0026 gave the app three tiers so a screen could be *navigated* — `text-2xl` over
+   * `text-base` over a 10.5px field label — and that is all they were ever asked to do.
+   * Three tiers is not enough to give a screen a voice: a 24px title over a 16px heading
+   * over 14px body, with every weight in the app between 400 and 600, is one voice at
+   * several volumes, and it leaves nothing loud and nothing quiet.
+   *
+   * The tiers are named for the job rather than for the size, so a call site says what a
+   * line *is* and how loud that makes it is decided here:
+   *
+   * | tier             | what wears it                          | Latin        | CJK          |
+   * | ---------------- | -------------------------------------- | ------------ | ------------ |
+   * | `.type-display`  | the screen's own name — one per screen | 30px / 700   | 27px / 600   |
+   * | `.type-section`  | a named part of a screen (`Section`)   | 17px / 600   | 17px / 500   |
+   * | `.type-subhead`  | a labelled block inside a part         | 14px / 600   | 14px / 500   |
+   * | *(body)*         | `text-sm` — everything a screen says   | 14px / 400   | 14px / 400   |
+   * | `.type-group`    | the name of a run of rows, or a fold   | 13px / 600   | 13px / 500   |
+   * | `.type-quiet`    | prose that supports the line above it  | 13px / 400   | 13px / 400   |
+   * | `.field-label`   | the name of a field or a figure        | 10.5px / 500 | 11.5px / 500 |
+   *
+   * **Body is `text-sm` and deliberately not a class of its own.** It is the tier the
+   * others are measured against rather than a decision anybody makes, it is what a
+   * component gets for writing nothing, and naming it would mean editing a hundred and
+   * thirty call sites to say what they already say.
+   *
+   * **Each script's ladder is the top three weights its own face really has, with the
+   * display tier alone at the top.** Fira Sans gives Latin 700 / 600 / 400; PingFang has a
+   * Semibold and nothing above it, so `zh-Hans` reads 600 / 500 / 400 and the 600 is spent
+   * on the display tier and nowhere else. Asking Han for 700 gets either the same face
+   * back or a synthesised bold that smears the strokes on an Android handset. Going the
+   * *other* way, into a Light for the quiet tier, is rejected in the ADR rather than here:
+   * it is a second Latin font file on the WeCom webview's phone network, and a 300 on
+   * PingFang at 13px is a stroke that disappears.
+   *
+   * **Han needs fewer pixels at the top of a scale and more at the bottom**, which is why
+   * the two columns disagree in both directions. A Han glyph fills its em box where a
+   * Latin one spends most of its size above the x-height, so 30px of PingFang is
+   * optically larger and the display tier comes *down* to 27 — which also buys back the
+   * width a 50-character product name needs at 390px. At the other end a stroke has to
+   * survive being drawn at all, which is the 11.5px floor `.field-label` has had since
+   * ADR-0019 and which nothing here goes below in `zh-Hans`.
+   *
+   * **Tracking and leading are the other half of the split.** Negative tracking closes up
+   * Latin caps and only crowds glyphs already sitting on a fixed body, so every CJK rule
+   * takes it to zero. Leading goes the other way: Han is denser per line, so every tier
+   * that carries a sentence opens up in `zh-Hans`.
+   *
+   * `:lang(zh)` matches `lang="zh-Hans"` on the `html` element — CSS language matching is
+   * by prefix — so the switch follows the locale the app is already rendering in with
+   * nothing to pass down. `type.layout.test.tsx` is what holds the shape of this table:
+   * the order, the weight ladders, and that every tier really does read differently in the
+   * two scripts.
+   *
+   * **Components rather than utilities on purpose.** A `@theme` entry would generate a
+   * `text-display` utility carrying a size, a weight and a leading, and it could not carry
+   * the second rule per script — which is the half ADR-0019 says is load-bearing. Being a
+   * component also means a call site can overrule one tier with a Tailwind utility, since
+   * utilities win the cascade, which is the escape hatch `.field-label` has always had.
+   */
+
+  /**
+   * The screen's own name, and the tier this scale was opened to add.
+   *
+   * One per screen: `ScreenHeader`'s `<h1>` on the screens that draw a header, and the
+   * product name in `ItemBrief` on the one screen whose name *is* the thing being priced.
+   * A second one on a screen is a screen with two names.
+   */
+  .type-display {
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  :lang(zh) .type-display {
+    font-size: 27px;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  /** A named part of a long screen: what `Section` draws, and what the jump bar links to. */
+  .type-section {
+    font-size: 17px;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  :lang(zh) .type-section {
+    line-height: 1.55;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  /**
+   * A labelled block *inside* a part — Invite, Members, Add a quote, Language, and the two
+   * `<legend>`s that name a group of fields.
+   *
+   * It existed before it was named: twelve places writing `text-sm font-medium` for
+   * themselves, which is one tier of the scale chosen per component and the thing this
+   * block is here to stop. Named, it is also the tier that carries weight alone — it is
+   * body size, and the step above body's 400 is the whole of what makes it a heading.
+   */
+  .type-subhead {
+    font-size: 14px;
+    line-height: 1.45;
+    font-weight: 600;
+  }
+
+  :lang(zh) .type-subhead {
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  /**
+   * The name of a run of rows, or of a fold that contains them — a progress band on the
+   * tender list, *Outstanding for you*, an Item on the edit screen.
+   *
+   * **The one tier smaller than body that is still a heading**, which is why it is named
+   * rather than folded into `.type-subhead`. It labels a run of rows from beside them
+   * rather than from above a block, so it has to stay out of the way of the rows it is
+   * counting; what makes it a heading is the weight step and the position, not the size.
+   * It was `text-[13px] font-semibold` written four times over in three components.
+   */
+  .type-group {
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+
+  :lang(zh) .type-group {
+    line-height: 1.55;
+    font-weight: 500;
+  }
+
+  /**
+   * Prose that supports the line above it: the sentence under a screen's name, the hint
+   * under a field, the empty state where a list would be, the line under a group heading.
+   *
+   * It carries its own ink, which is the half that already existed — most of these were
+   * `text-muted-foreground text-sm` — and the size and the leading, which are the half
+   * that did not. It also swallowed a second, smaller supporting-prose tier that had grown
+   * up beside it at `text-xs`: two sizes for one job, chosen per component, with no CJK
+   * reading between them.
+   *
+   * Not `--ink-faint`: that is the field labels' tier and the lightest ink that clears
+   * 4.5:1 anywhere in this app (#135). A sentence is read along rather than glanced at, so
+   * it takes the darker of the two quiet inks. The three call sites that carry a hue of
+   * their own — a hint inside a signal or alarm band — overrule this with a utility, which
+   * is what utilities winning the cascade is for.
+   */
+  .type-quiet {
+    font-size: 13px;
+    line-height: 1.55;
+    font-weight: 400;
+    color: var(--muted-foreground);
+  }
+
+  :lang(zh) .type-quiet {
+    line-height: 1.75;
+  }
+
+  /**
+   * A field label — the bottom of the scale, and the split that was here first.
    *
    * Latin is uppercase with 0.055em tracking at 10.5px. Chinese has no case to change and
    * tracking hurts a script whose glyphs are already on a fixed body, so the CJK reading
-   * is sentence case at 11.5px with no tracking. `:lang(zh)` matches `lang="zh-Hans"` on
-   * the `html` element — CSS language matching is by prefix — so the switch follows the
-   * locale the app is already rendering in, with nothing to pass down.
+   * is sentence case at 11.5px with no tracking.
    */
   .field-label {
     font-size: 10.5px;

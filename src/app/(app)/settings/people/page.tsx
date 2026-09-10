@@ -39,18 +39,18 @@ export default async function PeoplePage() {
   return (
     <>
       <ScreenHeader heading={t("title")}>
-        <p className="text-muted-foreground text-sm">{t("description")}</p>
+        <p className="type-quiet">{t("description")}</p>
       </ScreenHeader>
 
       <Measure>
         <section className="bg-card rounded-surface shadow-surface flex flex-col gap-4 p-4">
-          <h2 className="text-sm font-medium">{t("invite.title")}</h2>
+          <h2 className="type-subhead">{t("invite.title")}</h2>
           <InviteForm />
         </section>
       </Measure>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-sm font-medium">{t("members")}</h2>
+        <h2 className="type-subhead">{t("members")}</h2>
         <MembershipList members={members} />
       </section>
     </>

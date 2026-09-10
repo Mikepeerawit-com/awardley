@@ -66,7 +66,7 @@ export function ReferenceImageGallery({
   const ordered = groups.flatMap((group) => group.images);
 
   if (images.length === 0) {
-    return <p className="text-muted-foreground text-sm">{t("none")}</p>;
+    return <p className="type-quiet">{t("none")}</p>;
   }
 
   return (

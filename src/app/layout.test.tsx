@@ -74,3 +74,27 @@ describe("the class the server writes on the document", () => {
     );
   });
 });
+
+/**
+ * **The other line a whole half of the visual system rests on** (#153).
+ *
+ * `globals.css` states the type scale twice — once for Latin and once under `:lang(zh)` —
+ * and `.field-label` has been split that way since ADR-0019. Every one of those second
+ * rules matches on this one attribute, and nothing asserted that anything ever wrote it.
+ * `@/test/screens` did not, which is how the layout project and the contact sheet came to
+ * draw `zh-Hans` in the Latin script's type for as long as anybody had been looking at
+ * them.
+ *
+ * The suite above's own argument, applied to the sibling claim: a rendering test proves
+ * what a rule paints and cannot prove that anything turns it on.
+ */
+describe("the language the server writes on the document", () => {
+  it("is the locale the app is rendering in", async () => {
+    const html = await RootLayout({ children: null, params: Promise.resolve({}) });
+
+    // `next-intl/server` is stubbed to `zh-Hans` at the head of this file, which is the
+    // working language of the app and the half of the type scale with the most riding on
+    // it: CSS matches `:lang(zh)` against this by prefix.
+    expect(html.props.lang).toBe("zh-Hans");
+  });
+});

@@ -53,7 +53,7 @@ export function ScreenError({
           </Button>
         }
       >
-        <p className="text-muted-foreground text-sm break-words">{t("explain")}</p>
+        <p className="type-quiet break-words">{t("explain")}</p>
         {digest ? (
           <p className="text-muted-foreground font-mono text-xs break-all">
             {t("reference", { digest })}

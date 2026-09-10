@@ -50,8 +50,16 @@ import {
  * WCAG 2.2's minimums, which are the floor this app is held to rather than a target.
  *
  * 4.5:1 for body text and 3:1 for text large enough to survive less — 24px, or 18.66px at
- * bold, the standard's own allowance, stated here rather than assumed because this app's
- * headings are 21px and therefore do *not* get it.
+ * bold, the standard's own allowance, stated here rather than assumed because it is this
+ * file that decides which side of the line a size falls on and nothing else does.
+ *
+ * **Which tiers get it moved in #153**, and the direction is the safe one: the display
+ * tier crossed *upward* past 24px in both scripts — 30px in `en`, 27px in `zh-Hans` — so a
+ * screen's own name now takes the 3:1 allowance where it used to take 4.5:1. Every other
+ * tier in the scale is under the line and was already held to 4.5:1, which is a floor that
+ * does not move with size, so a scale whose only downward steps are below 24px cannot lose
+ * contrast by stepping. That is a fact this file established rather than one the scale
+ * assumed: the tiers were chosen and then walked here.
  *
  * 3:1 again for the boundary of a field, under 1.4.11: the hairline round an input is how
  * a reader knows it is an input, so it is information and not decoration. The rules

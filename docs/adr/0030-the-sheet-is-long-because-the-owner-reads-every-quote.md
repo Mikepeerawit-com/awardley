@@ -119,6 +119,11 @@ an open question."_
 
 ## What is still open is co-visibility, not length
 
+_Answered on 10 September 2026 by
+[ADR-0032](0032-the-owner-rules-a-quote-out-and-the-sheet-shortens-because-they-did.md),
+which does not make the two Quotes co-visible but lets the Owner rule offers out until the
+ones left are adjacent. This section is the question it was written from._
+
 ADR-0009 accepted one cost deliberately: **below 768px, rank 1 and rank 8 are never on
 screen together.** It accepted it as a cost about *prices* — comparing the cheapest
 against the dearest means scrolling.

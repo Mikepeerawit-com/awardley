@@ -143,6 +143,8 @@ vi.mock("@/app/actions/quotes", () => ({
   deleteQuoteAction: () => new Promise(() => {}),
   recordNoSupplierFoundAction: () => new Promise(() => {}),
   clearNoSupplierFoundAction: () => new Promise(() => {}),
+  ruleOutQuoteAction: () => new Promise(() => {}),
+  reopenQuoteAction: () => new Promise(() => {}),
 }));
 vi.mock("@/app/actions/quote-photos", () => ({
   recordQuotePhotosAction: () => new Promise(() => {}),

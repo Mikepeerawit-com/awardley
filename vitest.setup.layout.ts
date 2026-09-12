@@ -75,6 +75,8 @@ vi.mock("@/app/actions/quotes", () => ({
   deleteQuoteAction: async () => ({}),
   recordNoSupplierFoundAction: async () => ({}),
   clearNoSupplierFoundAction: async () => ({}),
+  ruleOutQuoteAction: async () => ({}),
+  reopenQuoteAction: async () => ({}),
 }));
 vi.mock("@/app/actions/quote-photos", () => ({
   recordQuotePhotosAction: async () => ({}),

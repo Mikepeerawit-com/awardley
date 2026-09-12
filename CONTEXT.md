@@ -149,6 +149,9 @@ none of them fit.
 _Label_: en "Rule out" · zh 排除 — a plain instruction like "Select" rather than the
 first person No Supplier Found uses, because only the Owner ever sees it. The state reads
 en "Ruled out" · zh 已排除报价, against 已选定报价.
+The stub is its own undo, and the word for pressing it is en "Reopen" · zh 重新纳入 — the
+Quote is put back among the offers under consideration, and nothing is handed back to the
+Item, which is why it is not "Select".
 _Avoid_: rejected, declined, passed — all three say the supplier was told, and nobody is;
 discounted, which is money on a screen made of prices; unsuitable, which is a status where
 this is an act.

@@ -484,7 +484,19 @@
       "requested": "Requested: {product}",
       "lowest": "lowest",
       "notComparable": "Not comparable",
-      "openPhotos": "Open {count, plural, =1 {# photo} other {# photos}} from {supplier}"
+      "openPhotos": "Open {count, plural, =1 {# photo} other {# photos}} from {supplier}",
+      "ruleOut": "Rule out",
+      "ruleOutQuote": "Rule out {supplier}",
+      "rulingOut": "Ruling out…",
+      "rulingOutQuote": "Ruling out {supplier}…",
+      "ruleOutPrompt": "Rule out {supplier}?",
+      "ruleOutClearsSelection": "This is the selected quote for this item, and ruling it out clears that selection.",
+      "ruleOutConfirm": "Rule it out",
+      "ruleOutCancel": "Keep it",
+      "ruledOut": "Ruled out",
+      "reopen": "Reopen the quote from {supplier}",
+      "reopening": "Reopening…",
+      "reopeningQuote": "Reopening the quote from {supplier}…"
     },
     "banner": {
       "unitMismatch": {

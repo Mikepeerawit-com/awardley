@@ -338,9 +338,10 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
  * the stubs of the ones the Owner has ruled out.
  *
  * **This is where ADR-0032's one rule lives.** A ruled-out Quote is not passed to
- * `rankQuotes`, so ranks renumber, `isLowest` moves and all four banners recompute over
- * what is left. `ranking.ts` is arithmetic over an array and does not change; what decides
- * this is which array arrives, and this is the only caller that hands it one.
+ * `rankQuotes`, so ranks renumber, `isLowest` moves and the four ranking banners
+ * recompute over what is left. `ranking.ts` is arithmetic over an array and does not
+ * change; what decides this is which array arrives, and this is the only caller that
+ * hands it one.
  *
  * What that buys is that the sheet stops making claims the Owner has already overruled —
  * `too_close_to_call` naming a leader they discarded, `duplicate_supplier` firing about a
@@ -350,6 +351,12 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
  * ordering back. `working-sheet.test.tsx` pins exactly that, at this boundary rather than
  * as a comment here — a caller that forgets the filter silently ranks offers the Owner
  * discarded, and the sheet looks authoritative while being wrong.
+ *
+ * **The stubs are handed to `itemBanners` as well as drawn.** The fifth banner is the one
+ * thing on the sheet that has to count them: an Item whose field is empty because every
+ * offer was ruled out is a different sentence from one nobody has sourced, and from one
+ * somebody could not source. Nothing else here needs them, which is why it is one extra
+ * argument rather than a state on the Item.
  *
  * **The stubs sit under the table rather than in it.** The rows above are ordered by price
  * and a ruled-out Quote has no place in that order any more; interleaving would draw it as
@@ -372,7 +379,7 @@ function ItemPanel({
   const competing = item.quotes.filter((quote) => quote.ruledOut === null);
   const ruledOut = item.quotes.filter((quote) => quote.ruledOut !== null);
   const ranked = rankQuotes(item, competing);
-  const banners = itemBanners(item, competing);
+  const banners = itemBanners(item, competing, ruledOut);
 
   return (
     <div className="flex flex-col gap-field">
@@ -396,17 +403,18 @@ function ItemPanel({
         </div>
       ) : null}
 
-      {/* Item-level, stacked, and never on a row or a card. Two of the three are
-          statements about the ranking, which is a property of the Item and not of any one
-          supplier — so the reflow moves them not at all. */}
+      {/* Item-level, stacked, and never on a row or a card. Most of them are statements
+          about the ranking, which is a property of the Item and not of any one supplier —
+          so the reflow moves them not at all. `all_ruled_out` is the one that is not, and
+          it says there is no ranking left to make a statement about. */}
       {banners.map((banner, index) => (
         <Banner key={`${banner.kind}-${index}`} banner={banner} item={item} />
       ))}
 
       {/* "Nothing recorded against this item yet" is a statement about the Item, not about
           the ranking, so it is false the moment a stub is standing below — five offers
-          arrived and the Owner judged none of them fit is a different sentence, and it is
-          #167's. An empty table is simply not drawn. */}
+          arrived and the Owner judged none of them fit is a different sentence, and the
+          `all_ruled_out` banner above is saying it. An empty table is simply not drawn. */}
       {ranked.length === 0 && ruledOut.length === 0 ? (
         <p className="type-quiet">{t("noQuotes")}</p>
       ) : null}
@@ -862,6 +870,27 @@ function Banner({ banner, item }: { banner: ItemBanner; item: SheetItem }) {
           count: banner.quoteCount,
           product: item.productName,
         })}
+      </Notice>
+    );
+  }
+
+  // Amber rather than the refusal's red: nothing here is the app declining to compute,
+  // which is what that tone is kept for. It is the Item that is stuck, and what it is
+  // asking for is a person — the Assignee, for more Quotes.
+  //
+  // **The only banner written in the second person**, where the other four are impersonal.
+  // What separates this state from Not Yet Sourced and from No Supplier Found is *who said
+  // it*, and here that is the Owner — the one person who can see this screen and the one
+  // reading the sentence. "Every quote has been ruled out" would put the judgement in the
+  // passive and lose exactly the distinction the copy exists to hold.
+  if (banner.kind === "all_ruled_out") {
+    return (
+      // No `product` here, where the four others interpolate one: this banner sits three
+      // lines under the Item's own name with nothing between them, and the contact sheet
+      // is what settled it — a 62-character product name in the middle of the sentence
+      // buried the sentence.
+      <Notice tone="warn" title={t("allRuledOut.title")}>
+        {t("allRuledOut.body", { count: banner.quoteCount })}
       </Notice>
     );
   }

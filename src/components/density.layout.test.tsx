@@ -104,10 +104,16 @@ const budget = {
   //
   // **A number going down is the direction this file exists to record**, and the opening
   // note is explicit that it must be written down by hand rather than ratcheted in
-  // silence. Worth saying plainly: it is not seven because the work got smaller. It is
+  // silence. Worth saying plainly: it was not seven because the work got smaller. It was
   // seven because one row of it is now one tap away, which `controlRows` cannot tell
   // apart from a reduction — the limit this file's own header states.
-  tenderDetail: { en: 7, "zh-Hans": 7 },
+  //
+  // **Eight since #167**, and this one is a fixture moving rather than the screen: the
+  // record gained a fourth Item, the one every offer on which the Owner ruled out, so the
+  // Assignee's screen draws a fourth *Source this item*. One row per Item is the rate this
+  // screen has always charged, which is the thing worth checking when this number moves —
+  // a budget that rose by two on one Item would be the screen getting denser.
+  tenderDetail: { en: 8, "zh-Hans": 8 },
   sourcingScreen: { en: 10, "zh-Hans": 9 },
   quoteForm: { en: 2, "zh-Hans": 2 },
 } satisfies Record<string, Record<Locale, number>>;
@@ -118,9 +124,10 @@ describe(`the control-row budgets at ${phone.width}×${phone.height}`, () => {
    *
    * ADR-0020's screen: the comparison sheet and the Outcome panel are gone, and in their
    * place is a list of this reader's own work on each Item. What is left, on a Tender of
-   * three Items, is eight rows — the header's own control, the one Item the outstanding
-   * band still names for them, two image-count badges, one *Source this item* per Item,
-   * and the control that takes them off the Tender.
+   * four Items, is eight rows — the header's own control, the one Item the outstanding
+   * band still names for them, two image-count badges, and one *Source this item* per
+   * Item. The control that takes them off the Tender is behind the `Fold` and is not
+   * counted until somebody opens it.
    *
    * The fixture is the several-Item, several-Quote one #94 built, so the number is the
    * answer to a real Tender rather than to a Tender with one thing on it.
@@ -136,7 +143,7 @@ describe(`the control-row budgets at ${phone.width}×${phone.height}`, () => {
 
       // The Items are really drawn, so a fixture that had quietly stopped reaching this
       // screen would fail here rather than pass by counting an empty column.
-      expect(screen.getAllByText(m.tenders.sourcing.source)).toHaveLength(3);
+      expect(screen.getAllByText(m.tenders.sourcing.source)).toHaveLength(4);
 
       expect(controlRows(column())).toBe(budget.tenderDetail[locale]);
     },

@@ -64,10 +64,16 @@ export type RankedQuote<Q extends ComparedQuote> = {
 /**
  * The Item-level banners, in the order they stack above the quote table.
  *
- * Never on rows. A row-level warning is read as being about that supplier, and two of
- * these three are statements about the *ranking* — which is a property of the Item.
+ * Never on rows. A row-level warning is read as being about that supplier, and most of
+ * these are statements about the *ranking* — which is a property of the Item.
+ *
+ * `all_ruled_out` leads because it is the odd one: the four below it qualify a ranking,
+ * and it says there is no ranking, because there is nothing left under consideration to
+ * rank. It never stacks with any of them — see `itemBanners`. It is computed here rather
+ * than stored, which keeps ADR-0032's schema change to one set of columns on one table.
  */
 export type ItemBanner =
+  | { kind: "all_ruled_out"; quoteCount: number }
   | { kind: "unit_mismatch" }
   | { kind: "all_alternatives"; quoteCount: number }
   | {
@@ -140,9 +146,36 @@ export function isRankable(item: ComparedItem, quotes: ComparedQuote[]): boolean
   );
 }
 
-/** The banners this Item raises, refusal first. */
-export function itemBanners(item: ComparedItem, quotes: ComparedQuote[]): ItemBanner[] {
+/**
+ * The banners this Item raises, refusal first.
+ *
+ * `quotes` is the field still under consideration — the caller has already taken the
+ * Quotes the Owner ruled out out of it (ADR-0032), which is what makes every banner below
+ * a statement about the Quotes still in play. `ruledOut` is those the Owner took out, and
+ * this is the one thing on the sheet that has to count them: an Item with an empty field
+ * because every Quote on it was judged unsuitable is a different sentence from one nobody
+ * has sourced, and the count is the only way to tell them apart from here.
+ *
+ * **`ruledOut` has no default on purpose.** Passing a caller's whole list as `quotes` and
+ * forgetting the rest is the one mistake this module cannot see — it would rank offers the
+ * Owner overruled and look authoritative doing it — so the second array is required and the
+ * compiler asks for it. `[]` at a call site is a caller saying nothing has been taken out.
+ */
+export function itemBanners(
+  item: ComparedItem,
+  quotes: ComparedQuote[],
+  ruledOut: ComparedQuote[],
+): ItemBanner[] {
   const banners: ItemBanner[] = [];
+
+  // Offers arrived and the Owner judged none of them fit — which is neither Not Yet
+  // Sourced (nobody tried) nor No Supplier Found (the Assignee could not source it), and
+  // must not be allowed to read as either. It ends up alone by construction rather than by
+  // an ordering rule: every banner below needs a Quote still under consideration, and
+  // there are none.
+  if (quotes.length === 0 && ruledOut.length > 0) {
+    banners.push({ kind: "all_ruled_out", quoteCount: ruledOut.length });
+  }
 
   if (quotes.length > 0 && !isRankable(item, quotes)) {
     banners.push({ kind: "unit_mismatch" });

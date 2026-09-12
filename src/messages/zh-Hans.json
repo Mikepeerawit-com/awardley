@@ -484,7 +484,19 @@
       "requested": "客户要求：{product}",
       "lowest": "最低",
       "notComparable": "无法比较",
-      "openPhotos": "查看 {supplier} 的 {count, plural, other {# 张照片}}"
+      "openPhotos": "查看 {supplier} 的 {count, plural, other {# 张照片}}",
+      "ruleOut": "排除",
+      "ruleOutQuote": "排除 {supplier} 的报价",
+      "rulingOut": "排除中…",
+      "rulingOutQuote": "正在排除 {supplier} 的报价…",
+      "ruleOutPrompt": "确定排除来自 {supplier} 的报价吗？",
+      "ruleOutClearsSelection": "该报价是本产品项当前选定的报价，排除它会同时取消该选定。",
+      "ruleOutConfirm": "确认排除",
+      "ruleOutCancel": "保留",
+      "ruledOut": "已排除报价",
+      "reopen": "重新纳入 {supplier} 的报价",
+      "reopening": "重新纳入中…",
+      "reopeningQuote": "正在重新纳入 {supplier} 的报价…"
     },
     "banner": {
       "unitMismatch": {

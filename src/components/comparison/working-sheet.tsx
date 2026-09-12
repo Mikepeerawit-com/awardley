@@ -4,6 +4,10 @@ import { useFormatter, useTranslations } from "next-intl";
 
 import { ItemDisclosure } from "@/components/comparison/item-disclosure";
 import { ItemPricing } from "@/components/comparison/item-pricing";
+import {
+  ReopenQuoteButton,
+  RuleOutQuoteButton,
+} from "@/components/comparison/rule-out-quote";
 import { SelectQuoteButton } from "@/components/comparison/select-quote-button";
 import { ImageCountBadge } from "@/components/images/image-count-badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +64,12 @@ import type { ItemSourcing, Quote } from "@/lib/quotes/quotes";
  * at all. A sheet that silently divided "box of 50" by fifty to get a comparable price
  * would not look broken — it would look authoritative, and send somebody to the wrong
  * supplier.
+ *
+ * **The sheet shortens because the Owner said so, never because the app decided** (ADR-0032).
+ * A Quote ruled out folds to a one-line stub and leaves the ranking; the stub is also the
+ * undo, so nothing is hidden and nothing needs a mode to get back. Nothing is ever removed
+ * from view on a price basis, which is ADR-0030's hard constraint and is untouched by this:
+ * a ranked Quote is still drawn, still readable, still one tap from its photographs.
  *
  * Rendered on the server, which is why it is sync rather than `async`: `useTranslations`
  * and `useFormatter` work in a Server Component, and keeping the tree synchronous is what
@@ -323,7 +333,29 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
   );
 }
 
-/** Everything under the twisty: the client's pictures, the banners, then the ranked Quotes. */
+/**
+ * Everything under the twisty: the client's pictures, the banners, the ranked Quotes, and
+ * the stubs of the ones the Owner has ruled out.
+ *
+ * **This is where ADR-0032's one rule lives.** A ruled-out Quote is not passed to
+ * `rankQuotes`, so ranks renumber, `isLowest` moves and all four banners recompute over
+ * what is left. `ranking.ts` is arithmetic over an array and does not change; what decides
+ * this is which array arrives, and this is the only caller that hands it one.
+ *
+ * What that buys is that the sheet stops making claims the Owner has already overruled —
+ * `too_close_to_call` naming a leader they discarded, `duplicate_supplier` firing about a
+ * duplicate no longer in play. The case that shows it clearest is `isRankable`, which
+ * refuses **Item-wide** on a unit mismatch: rule out the one Quote priced "box of 50" among
+ * seven priced per piece and the Item gets its rank numbers, its `lowest` chip and its
+ * ordering back. `working-sheet.test.tsx` pins exactly that, at this boundary rather than
+ * as a comment here — a caller that forgets the filter silently ranks offers the Owner
+ * discarded, and the sheet looks authoritative while being wrong.
+ *
+ * **The stubs sit under the table rather than in it.** The rows above are ordered by price
+ * and a ruled-out Quote has no place in that order any more; interleaving would draw it as
+ * still holding a position it has left. They are in entry order, which is the order they
+ * arrived in and the one order that claims nothing.
+ */
 function ItemPanel({
   tenderId,
   item,
@@ -336,8 +368,11 @@ function ItemPanel({
   referenceImages: ReferenceImage[];
 }) {
   const t = useTranslations("comparison");
-  const ranked = rankQuotes(item, item.quotes);
-  const banners = itemBanners(item, item.quotes);
+  // The field still under consideration, and the offers the Owner has taken out of it.
+  const competing = item.quotes.filter((quote) => quote.ruledOut === null);
+  const ruledOut = item.quotes.filter((quote) => quote.ruledOut !== null);
+  const ranked = rankQuotes(item, competing);
+  const banners = itemBanners(item, competing);
 
   return (
     <div className="flex flex-col gap-field">
@@ -368,11 +403,31 @@ function ItemPanel({
         <Banner key={`${banner.kind}-${index}`} banner={banner} item={item} />
       ))}
 
-      {ranked.length === 0 ? (
+      {/* "Nothing recorded against this item yet" is a statement about the Item, not about
+          the ranking, so it is false the moment a stub is standing below — five offers
+          arrived and the Owner judged none of them fit is a different sentence, and it is
+          #167's. An empty table is simply not drawn. */}
+      {ranked.length === 0 && ruledOut.length === 0 ? (
         <p className="type-quiet">{t("noQuotes")}</p>
-      ) : (
+      ) : null}
+
+      {ranked.length > 0 ? (
         <QuoteTable tenderId={tenderId} item={item} ranked={ranked} photos={photos} />
-      )}
+      ) : null}
+
+      {ruledOut.length > 0 ? (
+        <ul className="flex flex-col gap-label">
+          {ruledOut.map((quote) => (
+            <li key={quote.id} className="min-w-0">
+              <ReopenQuoteButton
+                tenderId={tenderId}
+                quoteId={quote.id}
+                supplierName={quote.supplierName}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -549,8 +604,24 @@ function QuoteRow({
         </span>
       </td>
 
-      <Cell besideRank className="font-medium">
-        {quote.supplierName}
+      {/* **Rule out sits with the supplier name, in the card's identity half** — above the
+          hairline, against the evidence the fit judgement is actually made from (ADR-0030
+          measured the card in those two halves and named this one). Not the corner:
+          ADR-0028 gives a corner to saying what kind of thing something is, and a control
+          there reads as a kind marker. Not beside `Select` at the foot: that would make
+          ruling out look co-equal with selecting, and it is not — `Select` is the terminal
+          decision and this is a sorting move on the way to it.
+
+          Under the supplier name specifically, because the supplier name is what the stub
+          it leaves behind carries. The control and the line it folds to say the same word. */}
+      <Cell besideRank>
+        <span className="block font-medium">{quote.supplierName}</span>
+        <RuleOutQuoteButton
+          tenderId={tenderId}
+          quoteId={quote.id}
+          supplierName={quote.supplierName}
+          isSelected={isSelected}
+        />
       </Cell>
 
       <Cell className="text-muted-foreground text-xs">

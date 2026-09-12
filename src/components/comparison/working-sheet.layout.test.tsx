@@ -39,6 +39,13 @@ import { WorkingSheet } from "./working-sheet";
  * third, and long real supplier and product names throughout — the awkward cases are what
  * push a layout over, not the tidy ones.
  *
+ * A ninth Quote on the first Item is **ruled out** (#166), so the stub it folds to is
+ * measured here too. It carries the longest unbreakable supplier name in the fixture on
+ * purpose: a stub is one line with a chip on the left, which is the shape a long name runs
+ * out of soonest — and `Button` is `whitespace-nowrap`, so the line is a plain `<button>`
+ * and nothing but this suite would notice if it stopped being one. Eight Quotes still
+ * compete, which is the count every claim above is about.
+ *
  * The two server actions are the seam's edge and are stubbed; nothing here presses
  * anything, it only measures what was drawn.
  *
@@ -242,6 +249,7 @@ function quote({
   quotedUnit,
   rate = freshRate,
   alternativeProductName = null,
+  ruledOut = null,
 }: {
   id: string;
   tenderItemId: string;
@@ -252,6 +260,7 @@ function quote({
   quotedUnit: string;
   rate?: { asOf: string; stale: boolean };
   alternativeProductName?: string | null;
+  ruledOut?: Quote["ruledOut"];
 }): Quote {
   const rateMid = mid[currency][rate.stale ? "stale" : "fresh"];
   const applied = rateMid * 1.02;
@@ -275,7 +284,7 @@ function quote({
     quotedAt: "2026-08-12",
     sourcedByUserId: `user-${sourcedByName}`,
     sourcedByName,
-    ruledOut: null,
+    ruledOut,
   };
 }
 
@@ -298,8 +307,11 @@ const gloves: SheetItem = {
     quote({ id: "q1f", tenderItemId: "item-gloves", supplierName: "Zhende Medical", sourcedByName: "Wei Zhang", unitPrice: 0.405, currency: "CNY", quotedUnit: "piece", alternativeProductName: "Zhende nitrile glove, size M, 3.0 g (lighter gauge)" }),
     quote({ id: "q1g", tenderItemId: "item-gloves", supplierName: "Siam Pharma Supply", sourcedByName: "Wei Zhang", unitPrice: 2.28, currency: "THB", quotedUnit: "piece" }),
     quote({ id: "q1h", tenderItemId: "item-gloves", supplierName: "Jiangsu Kanghua", sourcedByName: "Nok W.", unitPrice: 0.389, currency: "CNY", quotedUnit: "piece" }),
+    /* Ruled out, and so a stub rather than a card — carrying the run with nowhere to break
+       that #135 found overflowing the banners. */
+    quote({ id: "q1i", tenderItemId: "item-gloves", supplierName: "GuangzhouImproveMedicalInstrumentsCoLtd", sourcedByName: "Somchai P.", unitPrice: 0.061, currency: "USD", quotedUnit: "piece", ruledOut: { byUserId: "user-owner", at: "2026-08-14T03:00:00.000Z", note: "Cuff length short of the specification" } }),
   ],
-  sourcing: { quoteCount: 8, noSupplierFound: [] },
+  sourcing: { quoteCount: 9, noSupplierFound: [] },
 };
 
 /** One Quote in "box of 50" among two in pieces — the Item nothing on it may rank. */

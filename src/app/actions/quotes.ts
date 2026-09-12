@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import {
@@ -12,15 +12,18 @@ import {
 } from "@/lib/quotes/quote-form";
 import {
   clearNoSupplierFound,
+  clearRuledOut,
   createQuote,
   deleteQuote,
   recordNoSupplierFound,
+  ruleOutQuote,
   updateQuote,
   type MatchType,
   type QuoteCorrection,
   type QuoteFields,
   type QuoteProblem,
 } from "@/lib/quotes/quotes";
+import { runInstantFromHeaders } from "@/lib/run-instant";
 
 /**
  * The request boundary for Quotes. `cookies()` is resolved here and handed down, so
@@ -106,6 +109,56 @@ export async function deleteQuoteAction(
     },
     await cookies(),
   );
+
+  return afterQuoteWrite(result, text(formData, "tenderId"));
+}
+
+/**
+ * The Owner's judgement that a Quote is unsuitable, from the working sheet's card.
+ *
+ * The Quote boundary rather than the sheet's, because this is a write on a `quotes` row and
+ * everything under `@/lib/quotes` is reached from here — which is also what lets the card
+ * report a refusal through the same `QuoteProblemNotice` every other Quote form uses.
+ *
+ * `clearingSelection` is the caller having been told what the discard costs and come back.
+ * Ruling out an Item's Selected Quote clears that selection, so `ruleOutQuote` refuses the
+ * first press and the card asks; a press carrying this flag is the answer.
+ *
+ * The instant is resolved here and handed down, as ADR-0010 has every clock resolved at the
+ * request boundary: the stamp records a human act, at the moment the request carrying it
+ * arrived.
+ */
+export async function ruleOutQuoteAction(
+  _previous: QuoteFormState,
+  formData: FormData,
+): Promise<QuoteFormState> {
+  const result = await ruleOutQuote(
+    {
+      quoteId: text(formData, "quoteId"),
+      // Nothing on the sheet posts one yet. The column, the lib and the schema all take an
+      // optional note; what is missing is a place to type it that does not turn the tap
+      // into a form, which is the friction ADR-0032 keeps off this act.
+      note: optionalText(formData, "note"),
+      ruledOutAt: runInstantFromHeaders(await headers()),
+      clearingSelection: formData.get("clearingSelection") === "true",
+    },
+    await cookies(),
+  );
+
+  return afterQuoteWrite(result, text(formData, "tenderId"));
+}
+
+/**
+ * The stub pressed: the Quote rejoins the ranking and the sheet gets longer again.
+ *
+ * Nothing to confirm and nothing to carry — `clearRuledOut` argues why, and why the Item
+ * does not get its selection back on the way through.
+ */
+export async function reopenQuoteAction(
+  _previous: QuoteFormState,
+  formData: FormData,
+): Promise<QuoteFormState> {
+  const result = await clearRuledOut(text(formData, "quoteId"), await cookies());
 
   return afterQuoteWrite(result, text(formData, "tenderId"));
 }

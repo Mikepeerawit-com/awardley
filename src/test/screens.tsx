@@ -1808,6 +1808,44 @@ const everyQuote: Quote[] = [
     sourcedByName: "Wei Zhang",
     ruledOut: null,
   },
+  /* **Ruled out** (ADR-0032), and so the one Quote in this record the sheet draws as a
+     stub rather than a card — which is the whole of what that decision buys and cannot be
+     judged from a fixture that has none. A card is 232-350px and this is a line, and the
+     contact sheet is where the difference is looked at on a device.
+
+     On the syringes rather than the gloves, for two reasons. The gloves are the Item both
+     sourcing screens draw, and a Quote added there lengthens two screens that are about
+     something else. And the syringes keep their `stop` banner this way: they are
+     unrankable because `q3a` is priced by the box, so ruling *that* one out would take the
+     app's only `--destructive` surface out of the record. Five still compete here, which is
+     the count the note above is about. */
+  {
+    id: "q3f",
+    tenderItemId: "item-syringes",
+    supplierName: "GuangzhouImproveMedicalInstrumentsCoLtd",
+    unitPrice: 0.16,
+    currency: "USD",
+    quotedUnit: "piece",
+    unitPriceThb: 5.36928,
+    fxRateMid: 32.9,
+    fxRateApplied: 33.558,
+    fxRateAsOf: "2026-08-12",
+    fxRateIsStale: false,
+    leadTimeDays: 40,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-13",
+    sourcedByUserId: "user-somchai",
+    sourcedByName: "Somchai Prasertkul",
+    // The run with nowhere to break, on the line that has least room for one: a stub is a
+    // chip and a name, and `Button`'s `whitespace-nowrap` would take the page sideways.
+    ruledOut: {
+      byUserId: "user-owner",
+      at: "2026-08-15T02:30:00Z",
+      note: "Luer slip, not the luer lock the client specified",
+    },
+  },
 ];
 
 /** One Item's Quotes in entry order — unranked, the way `listQuotes` leaves them. */

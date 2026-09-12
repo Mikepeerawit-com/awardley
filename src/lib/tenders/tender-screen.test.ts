@@ -16,7 +16,7 @@ import {
 } from "@/lib/supabase/session-client";
 import { createStorageClient } from "@/lib/supabase/storage-client";
 import { respondingRates } from "@/lib/fx/rate-stub";
-import { createQuote, recordNoSupplierFound } from "@/lib/quotes/quotes";
+import { createQuote, recordNoSupplierFound, ruleOutQuote } from "@/lib/quotes/quotes";
 import {
   recordQuotePhotos,
   signQuotePhotoUploads,
@@ -668,6 +668,36 @@ describe("what each viewer is handed", () => {
     expect(everything).not.toContain("Rival Imports");
     expect(everything).not.toContain("333.33");
     expect([...screen.photos.keys()]).toEqual([first.yourQuotes[0].id]);
+  });
+
+  it("hands a non-Owner Assignee no sign that the Owner ruled their Quote out", async () => {
+    // The other reduced screen makes the same subtraction, and this is the one that proves
+    // it is made in `yourQuotes` rather than remembered twice: ADR-0032 leaves the Assignee
+    // who sourced a ruled-out Quote untold until #168 gives them somewhere to be told.
+    const ownersCopy = ownersScreen(
+      await loadTenderScreen(viewed.tenderId, owner.id, store),
+    );
+    const theirs = ownersCopy.sheet.items[0].quotes.find(
+      (quote) => quote.sourcedByUserId === mate.id,
+    );
+
+    const ruled = await ruleOutQuote(
+      {
+        quoteId: theirs!.id,
+        note: "Wrong voltage",
+        ruledOutAt: new Date("2026-09-12T04:00:00.000Z"),
+      },
+      store,
+    );
+
+    expect(ruled.ok).toBe(true);
+
+    const screen = reducedScreen(
+      await loadTenderScreen(viewed.tenderId, mate.id, mateStore),
+    );
+
+    expect(screen.items[0].yourQuotes[0].ruledOut).toBeNull();
+    expect(everythingIn(screen)).not.toContain("Wrong voltage");
   });
 
   it("hands a non-Owner Assignee no money figure at all", async () => {

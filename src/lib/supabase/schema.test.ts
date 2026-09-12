@@ -308,6 +308,132 @@ describe("the Selected Quote", () => {
   });
 });
 
+describe("the Ruled Out Quote", () => {
+  // ADR-0032 could not reuse the Selected Quote's shape: a pointer on `tender_items` is
+  // one-per-Item by construction, and the Owner may rule out four of five offers. So the
+  // mark is columns on the Quote itself, and `ruled_out_at` is what carries the boolean —
+  // there is no `is_ruled_out` beside it to disagree with.
+  const judgedAt = "2026-09-12T04:00:00Z";
+
+  /** A fresh Quote, marked as the argument says, and whatever the database made of it. */
+  async function markedQuote(mark: Record<string, unknown>) {
+    const quoteId = await insert("quotes", quote());
+    const { error } = await service.from("quotes").update(mark).eq("id", quoteId);
+
+    return { quoteId, error };
+  }
+
+  it("records who ruled it out, when, and why", async () => {
+    const { quoteId, error } = await markedQuote({
+      ruled_out_by_user_id: fixture.userId,
+      ruled_out_at: judgedAt,
+      ruled_out_note: "Wrong voltage",
+    });
+
+    expect(error).toBeNull();
+
+    const { data } = await service
+      .from("quotes")
+      .select("ruled_out_by_user_id, ruled_out_at, ruled_out_note")
+      .eq("id", quoteId)
+      .single();
+
+    expect(data?.ruled_out_by_user_id).toBe(fixture.userId);
+    expect(new Date(data!.ruled_out_at!).toISOString()).toBe(
+      new Date(judgedAt).toISOString(),
+    );
+    expect(data?.ruled_out_note).toBe("Wrong voltage");
+  });
+
+  it("accepts a mark with no note", async () => {
+    // The note must never be what stops the discard: the judgement is made several times
+    // per Item on a screen the Owner is already scrolling.
+    const { error } = await markedQuote({
+      ruled_out_by_user_id: fixture.userId,
+      ruled_out_at: judgedAt,
+    });
+
+    expect(error).toBeNull();
+  });
+
+  it("clears the Item's selection as the mark goes on", async () => {
+    // The same division `deleteQuote` runs on, where the composite foreign key's `on delete
+    // set null` is what makes "nothing dangles" true whatever the app does. A Quote both
+    // Selected and Ruled Out is a sentence the sheet cannot render, so the database is what
+    // stops it existing rather than two app writes that could half-land.
+    const quoteId = await insert("quotes", quote());
+
+    await service
+      .from("tender_items")
+      .update({ selected_quote_id: quoteId })
+      .eq("id", fixture.tenderItemId);
+
+    const { error } = await service
+      .from("quotes")
+      .update({ ruled_out_by_user_id: fixture.userId, ruled_out_at: judgedAt })
+      .eq("id", quoteId);
+
+    expect(error).toBeNull();
+
+    const { data } = await service
+      .from("tender_items")
+      .select("selected_quote_id")
+      .eq("id", fixture.tenderItemId)
+      .single();
+
+    expect(data?.selected_quote_id).toBeNull();
+  });
+
+  it("hands nothing back to the Item when the mark comes off", async () => {
+    // Reopening a Quote says it is under consideration again, not that anybody chose it.
+    const quoteId = await insert("quotes", quote());
+
+    await service
+      .from("tender_items")
+      .update({ selected_quote_id: quoteId })
+      .eq("id", fixture.tenderItemId);
+    await service
+      .from("quotes")
+      .update({ ruled_out_by_user_id: fixture.userId, ruled_out_at: judgedAt })
+      .eq("id", quoteId);
+
+    const { error } = await service
+      .from("quotes")
+      .update({ ruled_out_by_user_id: null, ruled_out_at: null })
+      .eq("id", quoteId);
+
+    expect(error).toBeNull();
+
+    const { data } = await service
+      .from("tender_items")
+      .select("selected_quote_id")
+      .eq("id", fixture.tenderItemId)
+      .single();
+
+    expect(data?.selected_quote_id).toBeNull();
+  });
+
+  it("refuses a note with nothing ruled out", async () => {
+    // A reason on a Quote that is not ruled out is the same species of stale claim as an
+    // Alternative's product name on a row that no longer offers one.
+    const { error } = await markedQuote({ ruled_out_note: "Wrong voltage" });
+
+    expect(error?.message).toContain("ruled_out_together");
+  });
+
+  it("refuses a time with nobody attached to it", async () => {
+    const { error } = await markedQuote({ ruled_out_at: judgedAt });
+
+    expect(error?.message).toContain("ruled_out_together");
+  });
+
+  it("refuses somebody with no time attached to them", async () => {
+    const { error } = await markedQuote({ ruled_out_by_user_id: fixture.userId });
+
+    expect(error?.message).toContain("ruled_out_together");
+  });
+});
+
 describe("prices", () => {
   it("refuses a negative unit price", async () => {
     // A typo'd -125 ranks first in a comparison view that sorts by cheapest THB, and

@@ -18,7 +18,7 @@ import {
 import { createStorageClient } from "@/lib/supabase/storage-client";
 import { addAssignee, createTender, getTender } from "@/lib/tenders/tenders";
 
-import { createQuote, recordNoSupplierFound } from "./quotes";
+import { createQuote, recordNoSupplierFound, ruleOutQuote } from "./quotes";
 import { loadItemSourcingScreen } from "./item-sourcing-screen";
 
 /**
@@ -505,6 +505,38 @@ describe("what each viewer is handed", () => {
 
     expect(screen.referenceImages).toHaveLength(1);
     expect(screen.timezone).toBe("Asia/Bangkok");
+  });
+
+  it("keeps the Owner's judgement off the Quote its Assignee is shown", async () => {
+    // ADR-0032 leaves the Assignee who sourced a ruled-out Quote untold, and #168 is where
+    // telling them is parked. The mark reaches this loader on the Assignee's own Quote — it
+    // is theirs, so no filter drops it — and what subtracts it is the same reduction that
+    // drops a rival's price and the Selected Quote.
+    const ruled = await ruleOutQuote(
+      {
+        quoteId: photographedQuoteId,
+        note: "Wrong voltage",
+        ruledOutAt: new Date("2026-09-12T04:00:00.000Z"),
+      },
+      ownerViewer.store,
+    );
+
+    expect(ruled.ok).toBe(true);
+
+    const owners = await load(ownerViewer, itemId);
+    const theirs = await load(assigneeViewer, itemId);
+
+    expect(
+      owners.quotes.find((quote) => quote.id === photographedQuoteId)?.ruledOut,
+    ).toMatchObject({ note: "Wrong voltage" });
+
+    const own = theirs.quotes.find((quote) => quote.id === photographedQuoteId);
+
+    // Their own Quote, still in their list, carrying nothing about having been judged —
+    // the note least of all.
+    expect(own).toBeDefined();
+    expect(own?.ruledOut).toBeNull();
+    expect(JSON.stringify(theirs.quotes)).not.toContain("Wrong voltage");
   });
 
   it("hands somebody enrolled on neither an empty list rather than everybody's", async () => {

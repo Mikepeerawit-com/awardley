@@ -1534,6 +1534,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-12",
     sourcedByUserId: "user-nok",
     sourcedByName: "Nok Wattanapong",
+    ruledOut: null,
   },
   /* An alternative, which is the widest row either quote list has: it carries a second
      product name under the supplier's — what the supplier actually priced, in their
@@ -1559,6 +1560,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-13",
     sourcedByUserId: "user-nok",
     sourcedByName: "Nok Wattanapong",
+    ruledOut: null,
   },
   /* The other Assignee's, on the same Item — the row the Owner reads and the reduced
      screen never receives. It is here to be subtracted. */
@@ -1585,6 +1587,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-11",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
   /* Two ordinary Quotes, and ordinary is what they are for.
 
@@ -1614,6 +1617,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-12",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
   {
     id: "q1e",
@@ -1634,6 +1638,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-14",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
   {
     id: "q2a",
@@ -1654,6 +1659,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-12",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
   {
     id: "q2b",
@@ -1674,6 +1680,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-14",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
   {
     id: "q3a",
@@ -1694,6 +1701,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-12",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
   /* The Owner's own, and the only Item they have priced — which is what leaves them
      owing the two the outstanding band names on their screen.
@@ -1723,6 +1731,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-14",
     sourcedByUserId: "user-somchai",
     sourcedByName: "Somchai Prasertkul",
+    ruledOut: null,
   },
   /* Three ordinary Quotes, for the reason the two on the gloves are ordinary — and here
      they are also what keeps the refusal above readable as a refusal. An Item whose only
@@ -1749,6 +1758,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-12",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
   {
     id: "q3d",
@@ -1769,6 +1779,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-14",
     sourcedByUserId: "user-somchai",
     sourcedByName: "Somchai Prasertkul",
+    ruledOut: null,
   },
   /* A second **Frozen Rate** in USD, and a live one. `q1c`'s is the app's other USD row
      and it is a **Stale Rate** — the last rate this app had stored, kept because
@@ -1795,6 +1806,7 @@ const everyQuote: Quote[] = [
     quotedAt: "2026-08-13",
     sourcedByUserId: "user-wei",
     sourcedByName: "Wei Zhang",
+    ruledOut: null,
   },
 ];
 

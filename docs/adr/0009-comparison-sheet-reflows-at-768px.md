@@ -30,7 +30,8 @@ This is accepted rather than solved. Three alternatives were built and set aside
 - **`buildspec_2` states the 768px rule and the cost together.** A builder who knows only "make it responsive" will reach for a horizontally-scrolling table, which is the one outcome ruled out.
 - **The reflow is the general answer, not a working-sheet special case.** The comparison sheet is the densest screen in v1 by a wide margin; if reflow carries it, login, the tender list, add/edit tender and add-quote need no separate phone design. Add-quote still gets `accept="image/*" capture` on the Quote Photo input — a camera affordance, not a layout.
 - **Judge at 390px on a real phone, not a narrowed desktop window.** Tap targets are floored at 44px, which is a constraint a resized browser will not surface.
-- **Nothing in the schema moves.** This is a rendering decision end to end.
+- **Nothing in the schema moves.** This is a rendering decision end to end. — *No longer
+  true; see the amendment of 10 September 2026 at the foot.*
 
 ## Amendment, 25 August 2026 — what building it settled ([#30](https://github.com/Mikepeerawit-com/tender-tracker/issues/30))
 
@@ -78,3 +79,27 @@ so what this ADR was decided on stays visible beside what is true now.
 **The cost accepted in *The cost, accepted deliberately* is therefore larger than stated**
 — rank 1 and rank 8 are further apart than 2.7 screens. ADR-0030 takes that up: it holds
 that the length is correct and that co-visibility, not length, is the question left open.
+
+## Amendment, 10 September 2026 — the schema moves after all ([#158](https://github.com/Mikepeerawit-com/tender-tracker/issues/158))
+
+Everything above holds. One **consequence** does not.
+
+*Consequences* claims **"Nothing in the schema moves. This is a rendering decision end to
+end."** That was true of the reflow and stayed true through both amendments above, and it
+is the reason this screen could be reasoned about by reading components alone.
+[ADR-0032](0032-the-owner-rules-a-quote-out-and-the-sheet-shortens-because-they-did.md)
+ends it: the Owner can now rule a Quote out, and that judgement is stored on `quotes`.
+
+**What is not amended is the part this ADR actually argued.** *The cost, accepted
+deliberately* set aside three designs — a cut-down rank table with drawers, a two-level
+drill-down, a swipe deck — because each *"buys back co-visibility by introducing a
+phone-only interaction the desktop screen does not have."* ADR-0032 does not overturn that
+and does not need to. Ruling out is a data act: the control renders identically at 390px
+and at 1280px, so one responsive design survives intact and the three designs stay
+rejected. The rule this ADR exists to hold is untouched; only the boast at the end of it
+is spent.
+
+**The cost itself is now addressed rather than accepted.** Rank 1 and rank 8 are still
+never on screen together, and ADR-0032 does not put them there. It makes the distance
+shrink instead, by letting the Owner discard offers until the ones left are adjacent —
+which ADR-0030 argues is what the Owner was doing anyway.

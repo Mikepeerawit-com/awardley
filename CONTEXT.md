@@ -129,10 +129,29 @@ _Label_: en "Mine" · zh 我的.
 _Avoid_: my work — which is narrower and already taken, naming the Items you are Not Yet
 Sourced on rather than the Tenders you are working; my tenders, assigned to me, involved
 
-**Selected**:
+**Selected Quote**:
 The Quote we chose to build our Bid from, per Tender Item. Different Tender Items on
 the same Tender may be Selected from different suppliers.
 _Avoid_: chosen, winning quote, accepted
+
+**Ruled Out Quote**:
+A Quote the Owner has judged unsuitable — the wrong product, an Alternative that is not
+near enough, photographs that do not show what the client described. Faces the opposite
+way to the Selected Quote, and the Owner may rule out as many as they like on one Tender
+Item. Ruled out on **fit**, never on price: it survives a correction to the price and is
+cleared by one to the product, and the Quote leaves the ranking and the Item's banners
+because a ranking is a statement about the offers still under consideration (ADR-0032).
+Collapses to a stub on the Working Sheet and comes back on one tap, which is how the
+sheet shortens without anything being hidden by price.
+**Not No Supplier Found**, which is an Assignee saying they could not source the Item at
+all. Every Quote on an Item being ruled out is a third thing again: offers arrived, and
+none of them fit.
+_Label_: en "Rule out" · zh 排除 — a plain instruction like "Select" rather than the
+first person No Supplier Found uses, because only the Owner ever sees it. The state reads
+en "Ruled out" · zh 已排除报价, against 已选定报价.
+_Avoid_: rejected, declined, passed — all three say the supplier was told, and nobody is;
+discounted, which is money on a screen made of prices; unsuitable, which is a status where
+this is an act.
 
 ### State
 

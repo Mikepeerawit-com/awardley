@@ -507,6 +507,10 @@
         "title": "No exact match.",
         "body": "{count, plural, =1 {# quote, and it is an alternative} other {# quotes, and all of them are alternatives}} to {product}. The ranking is comparing different products."
       },
+      "allRuledOut": {
+        "title": "Every quote ruled out.",
+        "body": "{count, plural, =1 {# quote arrived and you ruled it out} other {# quotes arrived and you ruled out every one}}. This is not a sourcing failure — somebody sourced {product}, the offers came in, and none of them fit. Ask the assignee for more, or reopen one below."
+      },
       "tooClose": {
         "title": "Too close to call on frozen rates.",
         "body": "{leader} leads {runnerUp} by {gap}%, but {supplier}'s rate was frozen on {date}. The gap is smaller than the drift between two rates frozen on different days — check both before choosing on price alone."

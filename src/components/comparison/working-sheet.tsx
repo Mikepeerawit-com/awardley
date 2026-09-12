@@ -338,9 +338,10 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
  * the stubs of the ones the Owner has ruled out.
  *
  * **This is where ADR-0032's one rule lives.** A ruled-out Quote is not passed to
- * `rankQuotes`, so ranks renumber, `isLowest` moves and all four banners recompute over
- * what is left. `ranking.ts` is arithmetic over an array and does not change; what decides
- * this is which array arrives, and this is the only caller that hands it one.
+ * `rankQuotes`, so ranks renumber, `isLowest` moves and the four ranking banners
+ * recompute over what is left. `ranking.ts` is arithmetic over an array and does not
+ * change; what decides this is which array arrives, and this is the only caller that
+ * hands it one.
  *
  * What that buys is that the sheet stops making claims the Owner has already overruled —
  * `too_close_to_call` naming a leader they discarded, `duplicate_supplier` firing about a
@@ -350,6 +351,12 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
  * ordering back. `working-sheet.test.tsx` pins exactly that, at this boundary rather than
  * as a comment here — a caller that forgets the filter silently ranks offers the Owner
  * discarded, and the sheet looks authoritative while being wrong.
+ *
+ * **The stubs are handed to `itemBanners` as well as drawn.** The fifth banner is the one
+ * thing on the sheet that has to count them: an Item whose field is empty because every
+ * offer was ruled out is a different sentence from one nobody has sourced, and from one
+ * somebody could not source. Nothing else here needs them, which is why it is one extra
+ * argument rather than a state on the Item.
  *
  * **The stubs sit under the table rather than in it.** The rows above are ordered by price
  * and a ruled-out Quote has no place in that order any more; interleaving would draw it as
@@ -372,7 +379,7 @@ function ItemPanel({
   const competing = item.quotes.filter((quote) => quote.ruledOut === null);
   const ruledOut = item.quotes.filter((quote) => quote.ruledOut !== null);
   const ranked = rankQuotes(item, competing);
-  const banners = itemBanners(item, competing);
+  const banners = itemBanners(item, competing, ruledOut);
 
   return (
     <div className="flex flex-col gap-field">
@@ -405,8 +412,8 @@ function ItemPanel({
 
       {/* "Nothing recorded against this item yet" is a statement about the Item, not about
           the ranking, so it is false the moment a stub is standing below — five offers
-          arrived and the Owner judged none of them fit is a different sentence, and it is
-          #167's. An empty table is simply not drawn. */}
+          arrived and the Owner judged none of them fit is a different sentence, and the
+          `all_ruled_out` banner above is saying it. An empty table is simply not drawn. */}
       {ranked.length === 0 && ruledOut.length === 0 ? (
         <p className="type-quiet">{t("noQuotes")}</p>
       ) : null}
@@ -859,6 +866,20 @@ function Banner({ banner, item }: { banner: ItemBanner; item: SheetItem }) {
     return (
       <Notice tone="warn" title={t("allAlternatives.title")}>
         {t("allAlternatives.body", {
+          count: banner.quoteCount,
+          product: item.productName,
+        })}
+      </Notice>
+    );
+  }
+
+  // Amber rather than the refusal's red: nothing here is the app declining to compute,
+  // which is what that tone is kept for. It is the Item that is stuck, and what it is
+  // asking for is a person — the Assignee, for more offers.
+  if (banner.kind === "all_ruled_out") {
+    return (
+      <Notice tone="warn" title={t("allRuledOut.title")}>
+        {t("allRuledOut.body", {
           count: banner.quoteCount,
           product: item.productName,
         })}

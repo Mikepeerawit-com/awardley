@@ -285,6 +285,55 @@ describe("the same supplier, quoted twice", () => {
   });
 });
 
+describe("the banner for an Item every offer of which was ruled out", () => {
+  const judged = [quote({ id: "a" }), quote({ id: "b" }), quote({ id: "c" })];
+
+  it("is raised when offers arrived and the Owner took every one of them out", () => {
+    // Three different sentences, and this is the third: nobody tried, nobody could supply
+    // this, and — here — somebody sourced, offers came in, and none of them fit.
+    expect(itemBanners(item, [], judged)).toEqual([
+      { kind: "all_ruled_out", quoteCount: 3 },
+    ]);
+  });
+
+  it("is not raised on an Item nobody has quoted", () => {
+    // The same empty field, and not the same condition. An Item with nothing on it is Not
+    // Yet Sourced and this banner would be a claim about offers that never existed.
+    expect(itemBanners(item, [])).toEqual([]);
+  });
+
+  it("is not raised while one offer is still standing", () => {
+    const standing = [quote({ id: "d" })];
+
+    expect(itemBanners(item, standing, judged)).toEqual([]);
+  });
+
+  it("counts what was ruled out, which is the whole of what arrived", () => {
+    expect(itemBanners(item, [], [quote({ id: "a" })])).toEqual([
+      { kind: "all_ruled_out", quoteCount: 1 },
+    ]);
+  });
+
+  it("is the only banner an Item in this state can raise", () => {
+    // Not an ordering rule but a consequence: every other banner is a statement about the
+    // field under consideration, and there is no field left to make one about. The offers
+    // here would raise three between them if any of them were still standing.
+    const wouldHaveBanners = [
+      quote({
+        id: "a",
+        supplierName: "Ace Medical",
+        quotedUnit: "piece",
+        matchType: "alternative",
+      }),
+      quote({ id: "b", supplierName: "Ace Medical", matchType: "alternative" }),
+    ];
+
+    expect(itemBanners(item, [], wouldHaveBanners).map((banner) => banner.kind)).toEqual([
+      "all_ruled_out",
+    ]);
+  });
+});
+
 describe("banners stack, refusal first", () => {
   it("puts the one that refuses to rank above the ones that qualify a ranking", () => {
     const both = [

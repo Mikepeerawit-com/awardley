@@ -166,6 +166,38 @@ describe("a ruled-out quote is a stub", () => {
   });
 });
 
+describe("offers arrived and none of them fit", () => {
+  it("says so, in a sentence neither of the other two empty states could say", () => {
+    renderSheet(syringes({ ruleOut: ["all"] }));
+
+    expect(
+      screen.getByText(messages.comparison.banner.allRuledOut.title),
+    ).toBeDefined();
+    // Item-level and stacked above the quote list with the others, never on a row — and
+    // here there is no row left for it to sit on anyway.
+    expect(screen.queryByText(messages.comparison.noQuotes)).toBeNull();
+  });
+
+  it("does not raise it while one offer is still standing", () => {
+    renderSheet(syringes({ ruleOut: ["box-of-50"] }));
+
+    expect(
+      screen.queryByText(messages.comparison.banner.allRuledOut.title),
+    ).toBeNull();
+  });
+
+  it("leaves the item open, because this one needs going back to the assignee", () => {
+    // `derivedOpen` means *the work here is done* and this is the opposite, so it stays
+    // keyed on `selected_quote_id` alone. Folding would also shut the banner away inside
+    // the panel it lives in, which is the whole of what this Item has to say.
+    renderSheet(syringes({ ruleOut: ["all"] }));
+
+    const twisty = screen.getByRole("button", { name: /^Fold / });
+
+    expect(twisty.getAttribute("aria-expanded")).toBe("true");
+  });
+});
+
 /* =======================================================================
    One Item, eight offers, and one of them priced by the box.
    ======================================================================= */

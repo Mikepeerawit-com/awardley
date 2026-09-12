@@ -42,7 +42,7 @@ export function ownsTender({
 }
 
 /**
- * The Quotes among these that this reader sourced, and no others.
+ * The Quotes among these that this reader sourced, as much of each as is theirs to see.
  *
  * The other half of ADR-0020, and here for the reason `ownsTender` is: two screens
  * subtract, and a rule written out twice is a rule that gets fixed in one of the two.
@@ -55,13 +55,24 @@ export function ownsTender({
  * draws, so a rival's price is absent from the shape rather than sitting in it behind a
  * boolean somebody has to remember to read.
  *
+ * **One field is subtracted from the rows that survive**, which is why this does more than
+ * filter. A Quote the Owner has ruled out stays in its Assignee's list looking exactly like
+ * any other, because ADR-0032 leaves them untold: a ruled-out-for-fit judgement is worth
+ * hearing and is parked in #168 with the notification surface it needs, so until then the
+ * mark — and the reason, which is the readable half — is the Owner's alone. Done here rather
+ * than in each loader for the reason the filter is: the next reduced screen inherits it
+ * instead of remembering it.
+ *
  * Generic over the row rather than typed to `Quote`, so that asking it costs no import
  * from `@/lib/quotes/quotes` — which is `server-only`, and would drag this file into
- * being so too.
+ * being so too. `ruledOut` is required of the row for the same reason `sourcedByUserId` is:
+ * a caller handing rows that have no such field is a caller this cannot answer for.
  */
-export function yourQuotes<T extends { sourcedByUserId: string }>(
+export function yourQuotes<T extends { sourcedByUserId: string; ruledOut: R | null }, R>(
   quotes: T[],
   callerId: string,
 ): T[] {
-  return quotes.filter((quote) => quote.sourcedByUserId === callerId);
+  return quotes
+    .filter((quote) => quote.sourcedByUserId === callerId)
+    .map((quote) => ({ ...quote, ruledOut: null }));
 }

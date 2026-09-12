@@ -39,3 +39,40 @@ comment on column quotes.ruled_out_at is
   'When the judgement was made, and the whole of the state: `ruled_out_at is not null` is what "ruled out" means. Written by the app from the instant injected at the request boundary (ADR-0010), not by a trigger — it stamps a human act, not a row change, which is what `updated_at` is for.';
 comment on column quotes.ruled_out_note is
   'Optional, and never what stops the discard. A reason the Owner wrote for their own later reading; nobody else sees it (#168).';
+
+-- Ruling out an Item's Selected Quote clears the selection, and the database is what does
+-- it. That is the division `deleteQuote` already runs on: `selected_quote_id`'s composite
+-- foreign key carries `on delete set null`, so nothing dangles whatever the app does, and
+-- the app's only job there is to refuse the first press and report what it costs. A mark is
+-- not a delete and no foreign key fires for it, so this is where the same property has to
+-- come from.
+--
+-- The alternative was two statements in `ruleOutQuote`, and whichever order they went in,
+-- one of them could be the one that failed: the Owner told "refused" about a selection that
+-- had already gone, or a Quote left both Selected and Ruled Out — "a sentence the sheet
+-- cannot render" (ADR-0032). Holding both states at once was rejected as incoherent rather
+-- than as difficult, and this is what makes it impossible rather than merely avoided.
+--
+-- Only as the mark goes *on*. Clearing a mark — which a correction to the product does, and
+-- reopening a stub does — hands nothing back to the Item: the Quote is under consideration
+-- again, and that is not the Owner saying they chose it.
+create function public.clear_selection_of_ruled_out_quote()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  update tender_items
+     set selected_quote_id = null
+   where id = new.tender_item_id
+     and selected_quote_id = new.id;
+
+  return new;
+end
+$$;
+
+create trigger quotes_ruled_out_clears_selection
+  before update of ruled_out_at on quotes
+  for each row
+  when (new.ruled_out_at is not null and old.ruled_out_at is null)
+  execute function public.clear_selection_of_ruled_out_quote();

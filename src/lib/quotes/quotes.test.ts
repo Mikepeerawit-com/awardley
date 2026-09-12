@@ -241,6 +241,23 @@ async function storedQuote(quoteId: string) {
   return data;
 }
 
+/** The instant the request boundary would have handed a rule-out (ADR-0010). */
+const ruledOutAt = new Date("2026-09-12T04:00:00.000Z");
+
+/**
+ * What the judgement on one Quote reads as, through the interface a screen uses.
+ *
+ * Not read off the row: the mark exists to shorten a screen, and a column no screen can see
+ * would shorten nothing. `at` is normalised because `timestamptz` comes back in Postgres's
+ * own offset notation and the instant is the claim, not how it is spelled.
+ */
+async function ruledOutMark(quoteId: string, store: SessionCookieStore) {
+  const quotes = await listQuotes(itemId, store);
+  const mark = quotes.find((quote) => quote.id === quoteId)?.ruledOut;
+
+  return mark == null ? mark : { ...mark, at: new Date(mark.at).toISOString() };
+}
+
 /**
  * Which Quote the Item has Selected, read past the app.
  *
@@ -1509,18 +1526,6 @@ describe("taking a Quote back", () => {
  * past the app is `selected_quote_id`, which belongs to the Item rather than the Quote.
  */
 describe("ruling a Quote out", () => {
-  /** The instant the request boundary would have handed in (ADR-0010). */
-  const ruledOutAt = new Date("2026-09-12T04:00:00.000Z");
-
-  async function ruledOutMark(quoteId: string, store: SessionCookieStore) {
-    const quotes = await listQuotes(itemId, store);
-    const mark = quotes.find((quote) => quote.id === quoteId)?.ruledOut;
-
-    // `timestamptz` comes back in Postgres's own offset notation. The instant is the
-    // claim, not how it is spelled.
-    return mark == null ? mark : { ...mark, at: new Date(mark.at).toISOString() };
-  }
-
   it("records who judged it unsuitable, when, and why", async () => {
     const store = await signedInAs(assignee.email);
     const quoteId = await aWrittenQuote(store);
@@ -1666,8 +1671,6 @@ describe("ruling a Quote out", () => {
  * they priced it in.
  */
 describe("correcting a Quote that has been ruled out", () => {
-  const ruledOutAt = new Date("2026-09-12T04:00:00.000Z");
-
   /** An Alternative, so the substitute's own name is one of the fields a test can move. */
   const anAlternative = {
     matchType: "alternative" as const,
@@ -1704,9 +1707,7 @@ describe("correcting a Quote that has been ruled out", () => {
 
     if (!corrected.ok) throw new Error(`could not correct a Quote: ${corrected.reason}`);
 
-    const quotes = await listQuotes(itemId, owner);
-
-    return quotes.find((quote) => quote.id === quoteId)?.ruledOut ?? null;
+    return (await ruledOutMark(quoteId, owner)) ?? null;
   }
 
   it("clears the judgement when the correction changes the offer's identity", async () => {
@@ -1782,8 +1783,6 @@ describe("correcting a Quote that has been ruled out", () => {
 });
 
 describe("putting a ruled-out Quote back", () => {
-  const ruledOutAt = new Date("2026-09-12T04:00:00.000Z");
-
   async function aRuledOutQuote(store: SessionCookieStore): Promise<string> {
     const quoteId = await aWrittenQuote(store);
     const result = await ruleOutQuote({ quoteId, note: "Wrong voltage", ruledOutAt }, store);
@@ -1793,19 +1792,13 @@ describe("putting a ruled-out Quote back", () => {
     return quoteId;
   }
 
-  async function markOf(quoteId: string, store: SessionCookieStore) {
-    const quotes = await listQuotes(itemId, store);
-
-    return quotes.find((quote) => quote.id === quoteId)?.ruledOut;
-  }
-
   it("takes the mark off, and the reason with it", async () => {
     const store = await signedInAs(assignee.email);
     const quoteId = await aRuledOutQuote(store);
 
     expect(await clearRuledOut(quoteId, store)).toEqual({ ok: true });
 
-    expect(await markOf(quoteId, store)).toBeNull();
+    expect(await ruledOutMark(quoteId, store)).toBeNull();
   });
 
   it("does not hand back a selection the Quote took with it", async () => {
@@ -1833,6 +1826,6 @@ describe("putting a ruled-out Quote back", () => {
       reason: "not_found",
     });
 
-    expect(await markOf(quoteId, store)).not.toBeNull();
+    expect(await ruledOutMark(quoteId, store)).not.toBeNull();
   });
 });

@@ -125,6 +125,19 @@ export type RuledOut = {
   note: string | null;
 };
 
+/**
+ * No judgement standing on this Quote, as the three columns spell it.
+ *
+ * Written once because the columns only ever move together, and because the two writes that
+ * take a mark off — reopening a Quote, and a correction that changes what is on offer — are
+ * saying the same thing and must not be able to drift into saying it differently.
+ */
+const noJudgement = {
+  ruled_out_by_user_id: null,
+  ruled_out_at: null,
+  ruled_out_note: null,
+} as const;
+
 /** One Quote as a screen needs it. */
 export type Quote = {
   id: string;
@@ -390,13 +403,7 @@ export async function updateQuote(
       // lets the Assignee who sourced the Quote correct it, ADR-0032 keeps the judgement
       // invisible to them, and one of them fixing a typo'd price would silently resurrect a
       // Quote the Owner discarded on specification.
-      ...(changesTheOffer
-        ? {
-            ruled_out_by_user_id: null,
-            ruled_out_at: null,
-            ruled_out_note: null,
-          }
-        : {}),
+      ...(changesTheOffer ? noJudgement : {}),
       // All four together or none of them, which is why this is one spread rather than
       // four assignments guarded separately.
       ...(rate === null
@@ -488,14 +495,20 @@ export async function deleteQuote(
  * the confirm `deleteQuote` already asks for, down to the `clears_selection` reason, and
  * `clearingSelection` is the caller having been told and come back.
  *
- * The selection is cleared *before* the mark goes on, which is the order that matters if
- * only one of the two writes lands: an Item that has lost its selection has lost a decision
- * somebody can see and make again, where a Quote both Selected and Ruled Out is a state no
- * screen can draw.
+ * The clearing itself is not done here, exactly as it is not done in `deleteQuote`: a
+ * trigger nulls the Item's `selected_quote_id` as the mark goes on, the way the composite
+ * foreign key nulls it as the row goes away. So this function writes one row, the two states
+ * cannot both be true of a Quote even if this process dies mid-call, and the refusal above is
+ * about what the act costs rather than about integrity.
  *
  * `ruledOutAt` is passed in rather than read here — the clock belongs to the request
  * boundary (ADR-0010). It stamps a human act, which is why it is the app's to write and not
  * `touch_updated_at`'s.
+ *
+ * Ruling out a Quote that is already ruled out restamps all three columns rather than being
+ * a conflict to report, the way `recordNoSupplierFound` is an upsert: pressing it again with
+ * a reason is somebody adding the one they did not have the first time, and the judgement
+ * recorded is the one most recently made.
  */
 export async function ruleOutQuote(
   {
@@ -518,24 +531,12 @@ export async function ruleOutQuote(
   if (!caller) return { ok: false, reason: "forbidden" };
 
   const supabase = createSessionClient(store);
-  const standing = await judgeableQuote(quoteId, supabase);
+  const target = await judgeableQuote(quoteId, supabase);
 
-  if ("reason" in standing) return { ok: false, reason: standing.reason };
+  if ("reason" in target) return { ok: false, reason: target.reason };
 
-  if (standing.isSelected && !clearingSelection) {
+  if (target.isSelected && !clearingSelection) {
     return { ok: false, reason: "clears_selection" };
-  }
-
-  if (standing.isSelected) {
-    // By the selection rather than by the Item's id: it is the same row either way, and
-    // this way the write cannot land on an Item whose selection has moved on since the
-    // read above.
-    const { error } = await supabase
-      .from("tender_items")
-      .update({ selected_quote_id: null })
-      .eq("selected_quote_id", quoteId);
-
-    if (error !== null) return { ok: false, reason: "failed" };
   }
 
   const { data, error } = await supabase
@@ -564,6 +565,11 @@ export async function ruleOutQuote(
  *
  * The note goes with the mark. It was a reason for a judgement that no longer stands, and
  * the schema refuses to keep one without the other.
+ *
+ * No standing check, and not even the "who ruled it out" the row carries: org membership
+ * through RLS is the gate on this exactly as it is on {@link ruleOutQuote}, because an
+ * Owner's judgement is not their private property either. The attribution is there to say
+ * who did it, never to say who may undo it.
  */
 export async function clearRuledOut(
   quoteId: string,
@@ -575,11 +581,7 @@ export async function clearRuledOut(
 
   const { data, error } = await createSessionClient(store)
     .from("quotes")
-    .update({
-      ruled_out_by_user_id: null,
-      ruled_out_at: null,
-      ruled_out_note: null,
-    })
+    .update(noJudgement)
     .eq("id", quoteId)
     .select("id")
     .maybeSingle();

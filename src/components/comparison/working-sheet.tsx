@@ -403,9 +403,10 @@ function ItemPanel({
         </div>
       ) : null}
 
-      {/* Item-level, stacked, and never on a row or a card. Two of the three are
-          statements about the ranking, which is a property of the Item and not of any one
-          supplier — so the reflow moves them not at all. */}
+      {/* Item-level, stacked, and never on a row or a card. Most of them are statements
+          about the ranking, which is a property of the Item and not of any one supplier —
+          so the reflow moves them not at all. `all_ruled_out` is the one that is not, and
+          it says there is no ranking left to make a statement about. */}
       {banners.map((banner, index) => (
         <Banner key={`${banner.kind}-${index}`} banner={banner} item={item} />
       ))}
@@ -875,7 +876,13 @@ function Banner({ banner, item }: { banner: ItemBanner; item: SheetItem }) {
 
   // Amber rather than the refusal's red: nothing here is the app declining to compute,
   // which is what that tone is kept for. It is the Item that is stuck, and what it is
-  // asking for is a person — the Assignee, for more offers.
+  // asking for is a person — the Assignee, for more Quotes.
+  //
+  // **The only banner written in the second person**, where the other four are impersonal.
+  // What separates this state from Not Yet Sourced and from No Supplier Found is *who said
+  // it*, and here that is the Owner — the one person who can see this screen and the one
+  // reading the sentence. "Every quote has been ruled out" would put the judgement in the
+  // passive and lose exactly the distinction the copy exists to hold.
   if (banner.kind === "all_ruled_out") {
     return (
       <Notice tone="warn" title={t("allRuledOut.title")}>

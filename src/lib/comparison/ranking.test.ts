@@ -142,7 +142,7 @@ describe("a unit mismatch removes ranking from the whole Item", () => {
   });
 
   it("raises the banner that refuses, and no ranking banner beneath it", () => {
-    expect(itemBanners(item, mixed)).toEqual([{ kind: "unit_mismatch" }]);
+    expect(itemBanners(item, mixed, [])).toEqual([{ kind: "unit_mismatch" }]);
   });
 });
 
@@ -153,7 +153,7 @@ describe("the banner that says the ranking is comparing different products", () 
       quote({ id: "b", matchType: "alternative" }),
     ];
 
-    expect(itemBanners(item, alternatives)).toEqual([
+    expect(itemBanners(item, alternatives, [])).toEqual([
       { kind: "all_alternatives", quoteCount: 2 },
     ]);
   });
@@ -166,11 +166,11 @@ describe("the banner that says the ranking is comparing different products", () 
       quote({ id: "b" }),
     ];
 
-    expect(itemBanners(item, mixed)).toEqual([]);
+    expect(itemBanners(item, mixed, [])).toEqual([]);
   });
 
   it("is not raised on an Item nobody has quoted", () => {
-    expect(itemBanners(item, [])).toEqual([]);
+    expect(itemBanners(item, [], [])).toEqual([]);
   });
 });
 
@@ -187,7 +187,7 @@ describe("too close to call on frozen rates", () => {
   it("is raised when the top two are within 3% and one of them carries a stale rate", () => {
     // 1.34% between them, on rates frozen a week apart. The lead is smaller than the
     // drift it is being measured through, so the ranking cannot settle this.
-    expect(itemBanners(item, [leader, runnerUp])).toEqual([
+    expect(itemBanners(item, [leader, runnerUp], [])).toEqual([
       {
         kind: "too_close_to_call",
         leader: "Ace Medical",
@@ -202,20 +202,20 @@ describe("too close to call on frozen rates", () => {
   it("is not raised when the gap is wide enough to survive the drift", () => {
     const clear = quote({ id: "b", supplierName: "Beta Supply", unitPriceThb: 700 });
 
-    expect(itemBanners(item, [leader, clear])).toEqual([]);
+    expect(itemBanners(item, [leader, clear], [])).toEqual([]);
   });
 
   it("is not raised when both rates are current, however close the two are", () => {
     const current = quote({ ...leader, fxRateIsStale: false });
 
-    expect(itemBanners(item, [current, runnerUp])).toEqual([]);
+    expect(itemBanners(item, [current, runnerUp], [])).toEqual([]);
   });
 
   it("ignores a stale rate below the top two, which cannot change the lead", () => {
     const third = quote({ id: "c", unitPriceThb: 900, fxRateIsStale: true });
     const current = quote({ ...leader, fxRateIsStale: false });
 
-    expect(itemBanners(item, [current, runnerUp, third])).toEqual([]);
+    expect(itemBanners(item, [current, runnerUp, third], [])).toEqual([]);
   });
 
   it("is not raised on an Item that has no ranking to be close in", () => {
@@ -224,7 +224,7 @@ describe("too close to call on frozen rates", () => {
       quote({ ...runnerUp, unitPriceThb: 603 }),
     ];
 
-    expect(itemBanners(item, unrankable)).toEqual([{ kind: "unit_mismatch" }]);
+    expect(itemBanners(item, unrankable, [])).toEqual([{ kind: "unit_mismatch" }]);
   });
 });
 
@@ -252,7 +252,7 @@ describe("the same supplier, quoted twice", () => {
       }),
     ];
 
-    expect(itemBanners(item, twice)).toEqual([
+    expect(itemBanners(item, twice, [])).toEqual([
       {
         kind: "duplicate_supplier",
         supplier: "Ace Medical",
@@ -270,7 +270,7 @@ describe("the same supplier, quoted twice", () => {
       quote({ id: "b", supplierName: "ace medical" }),
     ];
 
-    expect(itemBanners(item, twice).map((banner) => banner.kind)).toEqual([
+    expect(itemBanners(item, twice, []).map((banner) => banner.kind)).toEqual([
       "duplicate_supplier",
     ]);
   });
@@ -281,7 +281,7 @@ describe("the same supplier, quoted twice", () => {
       quote({ id: "b", supplierName: "Beta Supply", unitPriceThb: 900 }),
     ];
 
-    expect(itemBanners(item, distinct)).toEqual([]);
+    expect(itemBanners(item, distinct, [])).toEqual([]);
   });
 });
 
@@ -299,7 +299,7 @@ describe("the banner for an Item every offer of which was ruled out", () => {
   it("is not raised on an Item nobody has quoted", () => {
     // The same empty field, and not the same condition. An Item with nothing on it is Not
     // Yet Sourced and this banner would be a claim about offers that never existed.
-    expect(itemBanners(item, [])).toEqual([]);
+    expect(itemBanners(item, [], [])).toEqual([]);
   });
 
   it("is not raised while one offer is still standing", () => {
@@ -350,7 +350,7 @@ describe("banners stack, refusal first", () => {
       }),
     ];
 
-    expect(itemBanners(item, both).map((banner) => banner.kind)).toEqual([
+    expect(itemBanners(item, both, []).map((banner) => banner.kind)).toEqual([
       "unit_mismatch",
       "all_alternatives",
       "duplicate_supplier",

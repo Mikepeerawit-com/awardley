@@ -509,7 +509,7 @@
       },
       "allRuledOut": {
         "title": "Every quote ruled out.",
-        "body": "{count, plural, =1 {# quote arrived and you ruled it out} other {# quotes arrived and you ruled out every one}}. This is not a sourcing failure — somebody sourced {product}, the offers came in, and none of them fit. Ask the assignee for more, or reopen one below."
+        "body": "{count, plural, =1 {# quote arrived and you ruled it out} other {# quotes arrived and you ruled out every one}}. This is not No supplier found — somebody sourced {product} and priced it, and none of what they found fits. Ask the assignee for more, or reopen one of them."
       },
       "tooClose": {
         "title": "Too close to call on frozen rates.",

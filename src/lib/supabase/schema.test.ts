@@ -308,6 +308,73 @@ describe("the Selected Quote", () => {
   });
 });
 
+describe("the Ruled Out Quote", () => {
+  // ADR-0032 could not reuse the Selected Quote's shape: a pointer on `tender_items` is
+  // one-per-Item by construction, and the Owner may rule out four of five offers. So the
+  // mark is columns on the Quote itself, and `ruled_out_at` is what carries the boolean —
+  // there is no `is_ruled_out` beside it to disagree with.
+  async function markedQuote(mark: Record<string, unknown>) {
+    const quoteId = await insert("quotes", quote());
+
+    return service.from("quotes").update(mark).eq("id", quoteId);
+  }
+
+  it("records who ruled it out, when, and why", async () => {
+    const quoteId = await insert("quotes", quote());
+
+    const { error } = await service
+      .from("quotes")
+      .update({
+        ruled_out_by_user_id: fixture.userId,
+        ruled_out_at: "2026-09-12T04:00:00Z",
+        ruled_out_note: "Wrong voltage",
+      })
+      .eq("id", quoteId);
+
+    expect(error).toBeNull();
+
+    const { data } = await service
+      .from("quotes")
+      .select("ruled_out_by_user_id, ruled_out_at, ruled_out_note")
+      .eq("id", quoteId)
+      .single();
+
+    expect(data?.ruled_out_by_user_id).toBe(fixture.userId);
+    expect(data?.ruled_out_note).toBe("Wrong voltage");
+  });
+
+  it("accepts a mark with no note", async () => {
+    // The note must never be what stops the discard: the judgement is made several times
+    // per Item on a screen the Owner is already scrolling.
+    const { error } = await markedQuote({
+      ruled_out_by_user_id: fixture.userId,
+      ruled_out_at: "2026-09-12T04:00:00Z",
+    });
+
+    expect(error).toBeNull();
+  });
+
+  it("refuses a note with nothing ruled out", async () => {
+    // A reason on a Quote that is not ruled out is the same species of stale claim as an
+    // Alternative's product name on a row that no longer offers one.
+    const { error } = await markedQuote({ ruled_out_note: "Wrong voltage" });
+
+    expect(error?.message).toContain("ruled_out_together");
+  });
+
+  it("refuses a time with nobody attached to it", async () => {
+    const { error } = await markedQuote({ ruled_out_at: "2026-09-12T04:00:00Z" });
+
+    expect(error?.message).toContain("ruled_out_together");
+  });
+
+  it("refuses somebody with no time attached to them", async () => {
+    const { error } = await markedQuote({ ruled_out_by_user_id: fixture.userId });
+
+    expect(error?.message).toContain("ruled_out_together");
+  });
+});
+
 describe("prices", () => {
   it("refuses a negative unit price", async () => {
     // A typo'd -125 ranks first in a comparison view that sorts by cheapest THB, and

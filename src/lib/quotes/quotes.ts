@@ -35,6 +35,11 @@ import { mayCorrectQuote, matchTypes, type MatchType } from "./quote-form";
  * "nobody tried" mean opposite things when deciding whether to Bid at all, and only one
  * of them is worth chasing an Assignee about.
  *
+ * One act here is not the Assignee's at all. **Ruling a Quote out** is the Owner reading
+ * what arrived and judging it unsuitable (ADR-0032), and it lives in this module because the
+ * mark is columns on the Quote — which is also what makes a correction able to clear it. See
+ * {@link ruleOutQuote}, and the rule in {@link updateQuote}.
+ *
  * Everything reads and writes through the *session* client, so RLS is what keeps one org
  * out of another's Quotes; the checks in this file are the ones RLS cannot express.
  */
@@ -104,6 +109,22 @@ export type QuoteResult<T = Record<never, never>> =
   | ({ ok: true } & T)
   | { ok: false; reason: QuoteProblem };
 
+/**
+ * The Owner's standing judgement that a Quote is unsuitable (ADR-0032).
+ *
+ * One nullable fact rather than three nullable fields, because the three columns behind it
+ * only ever move together — `ruled_out_together` in the schema is what lets a reader ask
+ * `quote.ruledOut !== null` and be done.
+ */
+export type RuledOut = {
+  /** The Owner who judged it. Written down even though only they can see the screen. */
+  byUserId: string;
+  /** When they judged it, in the timezone-bearing notation Postgres hands back. */
+  at: string;
+  /** The reason, which they were never made to give. */
+  note: string | null;
+};
+
 /** One Quote as a screen needs it. */
 export type Quote = {
   id: string;
@@ -126,6 +147,8 @@ export type Quote = {
   /** Who rang the supplier. A column, never dropped, never derived from anything else. */
   sourcedByUserId: string;
   sourcedByName: string;
+  /** Null unless the Owner has ruled this Quote out. See {@link RuledOut}. */
+  ruledOut: RuledOut | null;
 };
 
 /** One Assignee's "I could not source this", with whatever they said about it. */
@@ -145,7 +168,8 @@ export type ItemSourcing = {
 const quoteColumns =
   "id, tender_item_id, unit_price, currency, quoted_unit, unit_price_thb, " +
   "fx_rate_mid, fx_rate_applied, fx_rate_as_of, fx_rate_is_stale, lead_time_days, " +
-  "match_type, alternative_product_name, detail_notes, quoted_at, created_by_user_id";
+  "match_type, alternative_product_name, detail_notes, quoted_at, created_by_user_id, " +
+  "ruled_out_by_user_id, ruled_out_at, ruled_out_note";
 
 /**
  * Record one supplier's price for one Tender Item.
@@ -265,6 +289,18 @@ export async function createQuote(
  * convert. A re-freeze that falls back to a last-known rate is recorded as stale rather
  * than refused — an Assignee fixing a date must no more be stopped by a service in
  * Frankfurt than one entering a price was.
+ *
+ * ## A correction can clear the Owner's judgement (ADR-0032)
+ *
+ * `supplierName`, `quotedUnit`, `matchType` and `alternativeProductName` say **what is on
+ * offer**, and a Quote the Owner ruled out on fit stops being the Quote they judged when any
+ * of them moves — so the mark goes. `unitPrice`, `quotedAt`, `leadTimeDays` and
+ * `detailNotes` leave it standing, because they are the same offer written down more
+ * accurately.
+ *
+ * Enforced here because this is the only place the two facts meet, and because the person
+ * correcting cannot see the judgement they are clearing: `mayCorrectQuote` admits the
+ * Assignee who sourced the Quote, and ADR-0032 keeps ruling out invisible to them.
  */
 export async function updateQuote(
   input: QuoteCorrection,
@@ -313,23 +349,54 @@ export async function updateQuote(
 
   if (supplierId === null) return { ok: false, reason: "failed" };
 
+  const quotedUnit = input.quotedUnit.trim();
+  // Cleared when a correction takes the Quote back to an exact match. Left behind, it is a
+  // substitute's name on a row that no longer offers one — and the comparison view's
+  // QUOTED PRODUCT column reads this and nothing else.
+  const alternativeProductName =
+    input.matchType === "alternative"
+      ? (input.alternativeProductName?.trim() ?? null)
+      : null;
+
+  // Whether this correction changes **what is on offer**: who is selling, what they are
+  // selling, and the unit they priced it in. A price, a date, a lead time or a note is the
+  // same offer written down more accurately.
+  //
+  // The supplier is compared by id rather than by name, so the same supplier typed in a
+  // different case is what `findOrCreateSupplier` says it is — the one already on the row.
+  const changesTheOffer =
+    supplierId !== standing.quote.supplier_id ||
+    quotedUnit !== standing.quote.quoted_unit ||
+    input.matchType !== standing.quote.match_type ||
+    alternativeProductName !== standing.quote.alternative_product_name;
+
   const { error } = await supabase
     .from("quotes")
     .update({
       supplier_id: supplierId,
       unit_price: input.unitPrice,
-      quoted_unit: input.quotedUnit.trim(),
+      quoted_unit: quotedUnit,
       lead_time_days: input.leadTimeDays,
       match_type: input.matchType,
-      // Cleared when a correction takes the Quote back to an exact match. Left behind, it
-      // is a substitute's name on a row that no longer offers one — and the comparison
-      // view's QUOTED PRODUCT column reads this and nothing else.
-      alternative_product_name:
-        input.matchType === "alternative"
-          ? (input.alternativeProductName?.trim() ?? null)
-          : null,
+      alternative_product_name: alternativeProductName,
       detail_notes: blankToNull(input.detailNotes),
       quoted_at: input.quotedAt,
+      // ADR-0032: an Owner's standing judgement is about *this* offer, so a correction that
+      // changes the offer's identity takes the judgement with it — the same treatment
+      // `alternative_product_name` gets one line up, and for the same reason: a claim left
+      // behind on a row that no longer bears it out is a claim the sheet reads as current.
+      //
+      // Not cleared on every correction, which is the opposite failure: `mayCorrectQuote`
+      // lets the Assignee who sourced the Quote correct it, ADR-0032 keeps the judgement
+      // invisible to them, and one of them fixing a typo'd price would silently resurrect a
+      // Quote the Owner discarded on specification.
+      ...(changesTheOffer
+        ? {
+            ruled_out_by_user_id: null,
+            ruled_out_at: null,
+            ruled_out_note: null,
+          }
+        : {}),
       // All four together or none of them, which is why this is one spread rather than
       // four assignments guarded separately.
       ...(rate === null
@@ -392,6 +459,134 @@ export async function deleteQuote(
   const { error } = await supabase.from("quotes").delete().eq("id", quoteId);
 
   return error === null ? { ok: true } : { ok: false, reason: "failed" };
+}
+
+/**
+ * Rule a Quote out: the Owner has read it and judged it unsuitable (ADR-0032).
+ *
+ * A judgement about **fit**, never about price — the wrong product, an Alternative that is
+ * not near enough, photographs that do not show what the client described. The Quote stays
+ * on the sheet as a stub, so nothing is hidden by price and nothing is deleted; what the
+ * mark buys is that the Owner stops carrying an offer they have already dismissed.
+ *
+ * **There is no role check here, and that is the same absence `selectQuote` has.** Entering
+ * a Quote is restricted because the Assignee is the one who actually rang the supplier and
+ * attribution is destroyed by anybody entering on their behalf. Judging Quotes already
+ * recorded is not that act, and it is not somebody's private property either. ADR-0020
+ * already keeps an Assignee off the working sheet where this control lives, and it says
+ * that distinction belongs in the query layer rather than in RLS — so org membership
+ * through RLS is the whole gate, as it is everywhere else a Tender is decided.
+ *
+ * **The note never blocks the discard.** Optional here and optional in the schema: the
+ * judgement is made several times per Item on a screen the Owner is already scrolling, and
+ * a required reason turns a tap into a form — friction landing exactly on the behaviour
+ * that shortens the sheet.
+ *
+ * **Ruling out an Item's Selected Quote clears the selection, and is refused until it is
+ * asked for twice.** `Selected` is "the Quote we chose to build our Bid from" and Ruled Out
+ * means unsuitable, so a Quote carrying both is a sentence the sheet cannot render. This is
+ * the confirm `deleteQuote` already asks for, down to the `clears_selection` reason, and
+ * `clearingSelection` is the caller having been told and come back.
+ *
+ * The selection is cleared *before* the mark goes on, which is the order that matters if
+ * only one of the two writes lands: an Item that has lost its selection has lost a decision
+ * somebody can see and make again, where a Quote both Selected and Ruled Out is a state no
+ * screen can draw.
+ *
+ * `ruledOutAt` is passed in rather than read here — the clock belongs to the request
+ * boundary (ADR-0010). It stamps a human act, which is why it is the app's to write and not
+ * `touch_updated_at`'s.
+ */
+export async function ruleOutQuote(
+  {
+    quoteId,
+    note = null,
+    ruledOutAt,
+    clearingSelection = false,
+  }: {
+    quoteId: string;
+    /** Optional, and trimmed to nothing is nothing. */
+    note?: string | null;
+    ruledOutAt: Date;
+    /** The caller has been told this clears the Item's selection, and means it. */
+    clearingSelection?: boolean;
+  },
+  store: SessionCookieStore,
+): Promise<QuoteResult> {
+  const caller = await currentUser(store);
+
+  if (!caller) return { ok: false, reason: "forbidden" };
+
+  const supabase = createSessionClient(store);
+  const standing = await judgeableQuote(quoteId, supabase);
+
+  if ("reason" in standing) return { ok: false, reason: standing.reason };
+
+  if (standing.isSelected && !clearingSelection) {
+    return { ok: false, reason: "clears_selection" };
+  }
+
+  if (standing.isSelected) {
+    // By the selection rather than by the Item's id: it is the same row either way, and
+    // this way the write cannot land on an Item whose selection has moved on since the
+    // read above.
+    const { error } = await supabase
+      .from("tender_items")
+      .update({ selected_quote_id: null })
+      .eq("selected_quote_id", quoteId);
+
+    if (error !== null) return { ok: false, reason: "failed" };
+  }
+
+  const { data, error } = await supabase
+    .from("quotes")
+    .update({
+      ruled_out_by_user_id: caller.id,
+      ruled_out_at: ruledOutAt.toISOString(),
+      ruled_out_note: blankToNull(note),
+    })
+    .eq("id", quoteId)
+    .select("id")
+    .maybeSingle();
+
+  if (error !== null) return { ok: false, reason: "failed" };
+
+  return data ? { ok: true } : { ok: false, reason: "not_found" };
+}
+
+/**
+ * Put a ruled-out Quote back under consideration.
+ *
+ * The undo, and there is nothing to confirm: the Quote rejoins the ranking and the sheet
+ * gets longer, both of which are visible in the act of asking. Nothing is restored to the
+ * Item either — a Quote that took a selection with it on the way out does not bring it
+ * back, because the Owner has not said they chose it again.
+ *
+ * The note goes with the mark. It was a reason for a judgement that no longer stands, and
+ * the schema refuses to keep one without the other.
+ */
+export async function clearRuledOut(
+  quoteId: string,
+  store: SessionCookieStore,
+): Promise<QuoteResult> {
+  const caller = await currentUser(store);
+
+  if (!caller) return { ok: false, reason: "forbidden" };
+
+  const { data, error } = await createSessionClient(store)
+    .from("quotes")
+    .update({
+      ruled_out_by_user_id: null,
+      ruled_out_at: null,
+      ruled_out_note: null,
+    })
+    .eq("id", quoteId)
+    .select("id")
+    .maybeSingle();
+
+  if (error !== null) return { ok: false, reason: "failed" };
+
+  return data ? { ok: true } : { ok: false, reason: "not_found" };
 }
 
 /**
@@ -460,6 +655,10 @@ export async function clearNoSupplierFound(
  * has no ranking at all, and a list that quietly sorted by `unit_price_thb` would put a
  * number beside two prices that are not comparable. Entry order is the one order that
  * claims nothing.
+ *
+ * **Ruled-out Quotes are in it.** Every Quote is drawn somewhere — ADR-0030's finding is that
+ * the Owner reads all of them — and which of them a ranking is computed over is the caller's
+ * decision, not this read's (ADR-0032). Each one carries its own `ruledOut`.
  */
 export async function listQuotes(
   tenderItemId: string,
@@ -816,10 +1015,7 @@ async function correctableQuote(
   quoteId: string,
   callerId: string,
   supabase: ReturnType<typeof createSessionClient>,
-): Promise<
-  | { reason: QuoteProblem }
-  | { quote: { currency: string; quoted_at: string; isSelected: boolean } }
-> {
+): Promise<{ reason: QuoteProblem } | { quote: StandingQuote }> {
   if (!quoteId) return { reason: "not_found" };
 
   const { data } = await supabase
@@ -829,6 +1025,7 @@ async function correctableQuote(
       // this Quote's Item, and that Item's Selected Quote — so an unqualified embed is
       // ambiguous and PostgREST refuses it, which arrives here as no row at all.
       "id, currency, quoted_at, created_by_user_id, " +
+        "supplier_id, quoted_unit, match_type, alternative_product_name, " +
         "item:tender_items!quotes_tender_item_id_fkey(" +
         "selected_quote_id, tender:tenders(owner_user_id))",
     )
@@ -850,9 +1047,43 @@ async function correctableQuote(
     quote: {
       currency: data.currency,
       quoted_at: data.quoted_at,
+      supplier_id: data.supplier_id,
+      quoted_unit: data.quoted_unit,
+      match_type: data.match_type,
+      alternative_product_name: data.alternative_product_name,
       isSelected: data.item?.selected_quote_id === quoteId,
     },
   };
+}
+
+/**
+ * Is this Quote there to be judged, and does judging it cost the Item its selection?
+ *
+ * Deliberately not {@link correctableQuote}: that asks who sourced the Quote, because
+ * correcting somebody else's record of their own phone call is the act it guards. Ruling
+ * out asks nothing of the kind — see {@link ruleOutQuote} — so this reads only the two
+ * things the write needs, and RLS turning another org's Quote into no row is the whole of
+ * the rest.
+ */
+async function judgeableQuote(
+  quoteId: string,
+  supabase: ReturnType<typeof createSessionClient>,
+): Promise<{ reason: QuoteProblem } | { isSelected: boolean }> {
+  if (!quoteId) return { reason: "not_found" };
+
+  const { data } = await supabase
+    .from("quotes")
+    // The embed is named for the same reason it is in `correctableQuote`: `quotes` and
+    // `tender_items` reference each other, so an unqualified one is ambiguous and
+    // PostgREST refuses it.
+    .select("id, item:tender_items!quotes_tender_item_id_fkey(selected_quote_id)")
+    .eq("id", quoteId)
+    .maybeSingle()
+    .overrideTypes<JudgeableQuoteDbRow, { merge: false }>();
+
+  if (!data) return { reason: "not_found" };
+
+  return { isSelected: data.item?.selected_quote_id === quoteId };
 }
 
 /**
@@ -925,6 +1156,16 @@ function asQuote(row: QuoteDbRow): Quote {
     quotedAt: row.quoted_at,
     sourcedByUserId: row.created_by_user_id,
     sourcedByName: row.sourcedBy?.name ?? "",
+    // Both or neither, which the schema's `ruled_out_together` guarantees — read as two
+    // questions anyway, because that is what narrows the type here.
+    ruledOut:
+      row.ruled_out_by_user_id === null || row.ruled_out_at === null
+        ? null
+        : {
+            byUserId: row.ruled_out_by_user_id,
+            at: row.ruled_out_at,
+            note: row.ruled_out_note,
+          },
   };
 }
 
@@ -950,20 +1191,48 @@ type QuoteDbRow = {
   detail_notes: string | null;
   quoted_at: string;
   created_by_user_id: string;
+  ruled_out_by_user_id: string | null;
+  ruled_out_at: string | null;
+  ruled_out_note: string | null;
   supplier: { name: string } | null;
   sourcedBy: { name: string } | null;
 };
 
-/** What {@link correctableQuote} reads: the permission facts, and the two an edit needs. */
+/**
+ * The Quote a correction is about to overwrite, as the correction needs to know it: the two
+ * fields ADR-0018's re-freeze rule turns on, the four that make up the offer's identity
+ * under ADR-0032, and whether the Item has this Quote Selected.
+ */
+type StandingQuote = {
+  currency: string;
+  quoted_at: string;
+  supplier_id: string;
+  quoted_unit: string;
+  match_type: MatchType;
+  alternative_product_name: string | null;
+  isSelected: boolean;
+};
+
+/** What {@link correctableQuote} reads: the permission facts, and what an edit needs. */
 type CorrectableQuoteDbRow = {
   id: string;
   currency: string;
   quoted_at: string;
   created_by_user_id: string;
+  supplier_id: string;
+  quoted_unit: string;
+  match_type: MatchType;
+  alternative_product_name: string | null;
   item: {
     selected_quote_id: string | null;
     tender: { owner_user_id: string } | null;
   } | null;
+} | null;
+
+/** What {@link judgeableQuote} reads: whether it is there, and what it costs. */
+type JudgeableQuoteDbRow = {
+  id: string;
+  item: { selected_quote_id: string | null } | null;
 } | null;
 
 type NoSupplierFoundDbRow = {

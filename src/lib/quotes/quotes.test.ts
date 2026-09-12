@@ -13,12 +13,14 @@ import { addAssignee, createTender, getTender } from "@/lib/tenders/tenders";
 
 import {
   clearNoSupplierFound,
+  clearRuledOut,
   countItemSourcing,
   createQuote,
   deleteQuote,
   listItemSourcing,
   listQuotes,
   recordNoSupplierFound,
+  ruleOutQuote,
   updateQuote,
   type QuoteCorrection,
   type QuoteFields,
@@ -237,6 +239,25 @@ async function storedQuote(quoteId: string) {
   if (error) throw error;
 
   return data;
+}
+
+/**
+ * Which Quote the Item has Selected, read past the app.
+ *
+ * The selection lives on `tender_items` and no read of a Quote carries it, so the Quote
+ * module's own interface cannot answer this — which is what makes it the one thing these
+ * tests go to the row for.
+ */
+async function selectionOf(tenderItemId: string): Promise<string | null> {
+  const { data, error } = await service
+    .from("tender_items")
+    .select("selected_quote_id")
+    .eq("id", tenderItemId)
+    .single();
+
+  if (error) throw error;
+
+  return data.selected_quote_id;
 }
 
 /** The four fields ADR-0018 says move together or not at all. */
@@ -1477,5 +1498,341 @@ describe("taking a Quote back", () => {
     // missing entry as an Item with no Quote.
     expect((await countItemSourcing(items, store)).get(items[1])).toBeUndefined();
     expect(await progressNow()).toBe("sourcing");
+  });
+});
+
+/**
+ * The Owner's judgement that a Quote is unsuitable (ADR-0032).
+ *
+ * Read back through `listQuotes` rather than off the row: the mark exists to shorten a
+ * screen, and a column a screen cannot see would not shorten anything. The one thing read
+ * past the app is `selected_quote_id`, which belongs to the Item rather than the Quote.
+ */
+describe("ruling a Quote out", () => {
+  /** The instant the request boundary would have handed in (ADR-0010). */
+  const ruledOutAt = new Date("2026-09-12T04:00:00.000Z");
+
+  async function ruledOutMark(quoteId: string, store: SessionCookieStore) {
+    const quotes = await listQuotes(itemId, store);
+    const mark = quotes.find((quote) => quote.id === quoteId)?.ruledOut;
+
+    // `timestamptz` comes back in Postgres's own offset notation. The instant is the
+    // claim, not how it is spelled.
+    return mark == null ? mark : { ...mark, at: new Date(mark.at).toISOString() };
+  }
+
+  it("records who judged it unsuitable, when, and why", async () => {
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    expect(await ruleOutQuote({ quoteId, note: "Wrong voltage", ruledOutAt }, store)).toEqual(
+      { ok: true },
+    );
+
+    expect(await ruledOutMark(quoteId, store)).toEqual({
+      byUserId: assignee.id,
+      at: ruledOutAt.toISOString(),
+      note: "Wrong voltage",
+    });
+  });
+
+  it("takes the judgement without a reason for it", async () => {
+    // The note must never be what stops the discard: the Owner is scrolling a sheet and
+    // judging fit several times per Item, and a required reason turns a tap into a form.
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    expect(await ruleOutQuote({ quoteId, ruledOutAt }, store)).toEqual({ ok: true });
+
+    expect(await ruledOutMark(quoteId, store)).toEqual({
+      byUserId: assignee.id,
+      at: ruledOutAt.toISOString(),
+      note: null,
+    });
+  });
+
+  it("reads a reason of nothing but spaces as no reason at all", async () => {
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    await ruleOutQuote({ quoteId, note: "   ", ruledOutAt }, store);
+
+    expect((await ruledOutMark(quoteId, store))?.note).toBeNull();
+  });
+
+  it("leaves every other Quote on the Item standing", async () => {
+    const store = await signedInAs(assignee.email);
+    const doomed = await aWrittenQuote(store, { supplierName: "Ace Medical" });
+    const standing = await aWrittenQuote(store, { supplierName: "Beta Surgical" });
+
+    await ruleOutQuote({ quoteId: doomed, ruledOutAt }, store);
+
+    expect(await ruledOutMark(standing, store)).toBeNull();
+  });
+
+  it("gives another org's Quote the same answer as a deleted one", async () => {
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    expect(
+      await ruleOutQuote({ quoteId, ruledOutAt }, await signedInAs(outsider.email)),
+    ).toEqual({ ok: false, reason: "not_found" });
+
+    expect(await ruledOutMark(quoteId, store)).toBeNull();
+  });
+
+  it("takes a reason on the second pressing that the first did not have", async () => {
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    await ruleOutQuote({ quoteId, ruledOutAt }, store);
+
+    expect(
+      await ruleOutQuote({ quoteId, note: "Wrong voltage", ruledOutAt }, store),
+    ).toEqual({ ok: true });
+
+    expect((await ruledOutMark(quoteId, store))?.note).toBe("Wrong voltage");
+  });
+
+  it("will not quietly rule out the Item's Selected Quote", async () => {
+    // Selected is "the Quote we chose to build our Bid from" and Ruled Out means
+    // unsuitable, so a Quote carrying both is a sentence the sheet cannot render. The cost
+    // is a decision, which is what the second asking is for — the same one a delete asks.
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    await service
+      .from("tender_items")
+      .update({ selected_quote_id: quoteId })
+      .eq("id", itemId);
+
+    expect(await ruleOutQuote({ quoteId, ruledOutAt }, store)).toEqual({
+      ok: false,
+      reason: "clears_selection",
+    });
+
+    expect(await ruledOutMark(quoteId, store)).toBeNull();
+    expect(await selectionOf(itemId)).toBe(quoteId);
+  });
+
+  it("goes ahead once the cost is confirmed, clearing the selection", async () => {
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    await service
+      .from("tender_items")
+      .update({ selected_quote_id: quoteId })
+      .eq("id", itemId);
+
+    expect(
+      await ruleOutQuote({ quoteId, ruledOutAt, clearingSelection: true }, store),
+    ).toEqual({ ok: true });
+
+    expect(await ruledOutMark(quoteId, store)).not.toBeNull();
+    expect(await selectionOf(itemId)).toBeNull();
+  });
+
+  it("asks for no confirmation when the Quote is not the Selected one", async () => {
+    const store = await signedInAs(assignee.email);
+    const selected = await aWrittenQuote(store, { supplierName: "Ace Medical" });
+    const doomed = await aWrittenQuote(store, { supplierName: "Beta Surgical" });
+
+    await service
+      .from("tender_items")
+      .update({ selected_quote_id: selected })
+      .eq("id", itemId);
+
+    expect(await ruleOutQuote({ quoteId: doomed, ruledOutAt }, store)).toEqual({
+      ok: true,
+    });
+
+    // The surviving selection is still the one that was made.
+    expect(await selectionOf(itemId)).toBe(selected);
+  });
+});
+
+/**
+ * A correction arriving on a Quote the Owner has already judged (ADR-0032).
+ *
+ * The sharp part of the decision, and the reason it cannot be "clear it on every
+ * correction": `mayCorrectQuote` lets **the Assignee who sourced the Quote** correct it, and
+ * ADR-0032 keeps the Owner's judgement invisible to them. So the offer can change under a
+ * standing judgement, silently, from somebody who does not know one was made — and equally,
+ * an Assignee fixing a typo'd price must not resurrect a Quote the Owner discarded on
+ * specification and re-lengthen the sheet for a reason that has nothing to do with why it
+ * was shortened.
+ *
+ * The line is the offer's **identity**: who is selling, what they are selling, and the unit
+ * they priced it in.
+ */
+describe("correcting a Quote that has been ruled out", () => {
+  const ruledOutAt = new Date("2026-09-12T04:00:00.000Z");
+
+  /** An Alternative, so the substitute's own name is one of the fields a test can move. */
+  const anAlternative = {
+    matchType: "alternative" as const,
+    alternativeProductName: "Vinyl gloves, size M",
+  };
+
+  /**
+   * Write an Alternative, have the Owner rule it out with a reason, correct it — and hand
+   * back whatever is left of the judgement.
+   */
+  async function correctedUnderTheMark(
+    overrides: Partial<Omit<QuoteCorrection, "quoteId">>,
+    {
+      owner,
+      sourcedBy = owner,
+    }: {
+      owner: SessionCookieStore;
+      /** Whoever rang the supplier, and so whoever the correction comes from. */
+      sourcedBy?: SessionCookieStore;
+    },
+  ) {
+    const quoteId = await aWrittenQuote(sourcedBy, anAlternative);
+    const ruled = await ruleOutQuote(
+      { quoteId, note: "Wrong voltage", ruledOutAt },
+      owner,
+    );
+
+    if (!ruled.ok) throw new Error(`could not rule out a Quote: ${ruled.reason}`);
+
+    const corrected = await updateQuote(
+      { quoteId, ...aCorrection({ ...anAlternative, ...overrides }) },
+      sourcedBy,
+    );
+
+    if (!corrected.ok) throw new Error(`could not correct a Quote: ${corrected.reason}`);
+
+    const quotes = await listQuotes(itemId, owner);
+
+    return quotes.find((quote) => quote.id === quoteId)?.ruledOut ?? null;
+  }
+
+  it("clears the judgement when the correction changes the offer's identity", async () => {
+    const store = await signedInAs(assignee.email);
+
+    const changesTheOffer: Partial<Omit<QuoteCorrection, "quoteId">>[] = [
+      { supplierName: "Beta Surgical" },
+      { quotedUnit: "piece" },
+      { matchType: "exact", alternativeProductName: null },
+      { alternativeProductName: "Vinyl gloves, size L" },
+    ];
+
+    for (const overrides of changesTheOffer) {
+      expect(await correctedUnderTheMark(overrides, { owner: store })).toBeNull();
+    }
+  });
+
+  it("leaves the judgement standing when the offer is still the same one", async () => {
+    const store = await signedInAs(assignee.email);
+
+    const leavesTheOfferAlone: Partial<Omit<QuoteCorrection, "quoteId">>[] = [
+      { unitPrice: 118.25 },
+      { quotedAt: "2026-08-19" },
+      { leadTimeDays: 21 },
+      { detailNotes: "Ships from Shenzhen, 40ft container" },
+    ];
+
+    for (const overrides of leavesTheOfferAlone) {
+      // The reason too: a mark that survived with its note emptied would lose the one thing
+      // that tells the Owner why they discarded this months from now.
+      expect(await correctedUnderTheMark(overrides, { owner: store })).toMatchObject({
+        note: "Wrong voltage",
+      });
+    }
+  });
+
+  it("does not resurrect the Quote when its Assignee fixes the price", async () => {
+    // The whole reason the rule is not "clear on every correction". `rival` sourced this
+    // Quote and cannot see that a judgement exists; a digit in the price is not a claim
+    // about the product the Owner ruled out on.
+    const store = await signedInAs(assignee.email);
+
+    expect(
+      await correctedUnderTheMark(
+        { unitPrice: 118.25 },
+        { owner: store, sourcedBy: await signedInAs(rival.email) },
+      ),
+    ).toMatchObject({ note: "Wrong voltage" });
+  });
+
+  it("clears it when its Assignee changes the product, without telling them", async () => {
+    // The other half, and the cost ADR-0032 accepts out loud: the judgement goes silently,
+    // because the Quote the Owner judged is no longer the Quote on the row.
+    const store = await signedInAs(assignee.email);
+
+    expect(
+      await correctedUnderTheMark(
+        { alternativeProductName: "Vinyl gloves, size L" },
+        { owner: store, sourcedBy: await signedInAs(rival.email) },
+      ),
+    ).toBeNull();
+  });
+
+  it("reads a supplier's name written differently as the same supplier", async () => {
+    // `findOrCreateSupplier` keys on the name case-insensitively, so "ACE MEDICAL" is the
+    // supplier already on the row. Nothing about the offer moved, and the judgement stands.
+    const store = await signedInAs(assignee.email);
+
+    expect(
+      await correctedUnderTheMark({ supplierName: "ACE MEDICAL" }, { owner: store }),
+    ).toMatchObject({ note: "Wrong voltage" });
+  });
+});
+
+describe("putting a ruled-out Quote back", () => {
+  const ruledOutAt = new Date("2026-09-12T04:00:00.000Z");
+
+  async function aRuledOutQuote(store: SessionCookieStore): Promise<string> {
+    const quoteId = await aWrittenQuote(store);
+    const result = await ruleOutQuote({ quoteId, note: "Wrong voltage", ruledOutAt }, store);
+
+    if (!result.ok) throw new Error(`could not rule out a Quote: ${result.reason}`);
+
+    return quoteId;
+  }
+
+  async function markOf(quoteId: string, store: SessionCookieStore) {
+    const quotes = await listQuotes(itemId, store);
+
+    return quotes.find((quote) => quote.id === quoteId)?.ruledOut;
+  }
+
+  it("takes the mark off, and the reason with it", async () => {
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aRuledOutQuote(store);
+
+    expect(await clearRuledOut(quoteId, store)).toEqual({ ok: true });
+
+    expect(await markOf(quoteId, store)).toBeNull();
+  });
+
+  it("does not hand back a selection the Quote took with it", async () => {
+    // Reopening says the Quote is under consideration again, not that the Owner chose it.
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aWrittenQuote(store);
+
+    await service
+      .from("tender_items")
+      .update({ selected_quote_id: quoteId })
+      .eq("id", itemId);
+    await ruleOutQuote({ quoteId, ruledOutAt, clearingSelection: true }, store);
+
+    expect(await clearRuledOut(quoteId, store)).toEqual({ ok: true });
+
+    expect(await selectionOf(itemId)).toBeNull();
+  });
+
+  it("gives another org's Quote the same answer as a deleted one", async () => {
+    const store = await signedInAs(assignee.email);
+    const quoteId = await aRuledOutQuote(store);
+
+    expect(await clearRuledOut(quoteId, await signedInAs(outsider.email))).toEqual({
+      ok: false,
+      reason: "not_found",
+    });
+
+    expect(await markOf(quoteId, store)).not.toBeNull();
   });
 });

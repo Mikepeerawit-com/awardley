@@ -275,6 +275,7 @@ function quote({
     quotedAt: "2026-08-12",
     sourcedByUserId: `user-${sourcedByName}`,
     sourcedByName,
+    ruledOut: null,
   };
 }
 

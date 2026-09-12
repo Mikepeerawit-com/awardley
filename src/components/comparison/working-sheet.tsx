@@ -885,11 +885,12 @@ function Banner({ banner, item }: { banner: ItemBanner; item: SheetItem }) {
   // passive and lose exactly the distinction the copy exists to hold.
   if (banner.kind === "all_ruled_out") {
     return (
+      // No `product` here, where the four others interpolate one: this banner sits three
+      // lines under the Item's own name with nothing between them, and the contact sheet
+      // is what settled it — a 62-character product name in the middle of the sentence
+      // buried the sentence.
       <Notice tone="warn" title={t("allRuledOut.title")}>
-        {t("allRuledOut.body", {
-          count: banner.quoteCount,
-          product: item.productName,
-        })}
+        {t("allRuledOut.body", { count: banner.quoteCount })}
       </Notice>
     );
   }

@@ -1360,6 +1360,26 @@ const items: TenderItem[] = [
     outcome: null,
     outcomeAt: null,
   },
+  /* The Item every offer on which the Owner ruled out (#167), and the only reason this
+     fixture has a fourth: the banner that says so is drawn on an Item whose quote table
+     is gone, which no arrangement of the three above can reach — the gloves and the
+     syringes are the two the ranked table is measured on, and the masks are folded away
+     behind a selection.
+
+     The client's line is explicit about two things — sterile, and wrapped one to a pad —
+     and that is what makes ruling out on **fit** plausible here rather than an Owner
+     being difficult. Sourced by all three Assignees, so the outstanding band is unchanged
+     by it: they went and found offers, and what the Item needs now is more of them. That
+     nothing on their screens says so is ADR-0032's accepted silence and #168's. */
+  {
+    id: "item-pads",
+    productName: "Alcohol prep pad, 70% isopropyl, individually wrapped, sterile",
+    description: "Sterile, one pad per sachet. Bulk tubs are not acceptable.",
+    quantity: 100000,
+    unit: "piece",
+    outcome: null,
+    outcomeAt: null,
+  },
 ];
 
 /** The Item both sourcing screens are about, named rather than indexed at five sites. */
@@ -1498,6 +1518,12 @@ export const tender: Tender = {
  * folded away on the sheet, so what it holds is a count on a chip rather than a column of
  * cards, and inventing rows behind a fold nobody opens would lengthen the run without
  * lengthening the screen.
+ *
+ * **The pads carry five too, and every one of them is ruled out.** Five is the number that
+ * makes that Item worth drawing: it is ADR-0032's own arithmetic — five cards at 232–350px
+ * becoming five lines — and the count the banner above them reads aloud. It is also the
+ * one place in this record where five Quotes cost the screen almost nothing, which is the
+ * whole of what ruling out is for.
  *
  * More than one person's on the Item both sourcing screens draw, because that is the only
  * arrangement in which the reduction is a visible thing at all: the Owner's copy of the
@@ -1841,9 +1867,145 @@ const everyQuote: Quote[] = [
     // The run with nowhere to break, on the line that has least room for one: a stub is a
     // chip and a name, and `Button`'s `whitespace-nowrap` would take the page sideways.
     ruledOut: {
-      byUserId: "user-owner",
+      byUserId: "user-somchai",
       at: "2026-08-15T02:30:00Z",
       note: "Luer slip, not the luer lock the client specified",
+    },
+  },
+  /* The pads: five offers, three Assignees, and the Owner judged none of them fit.
+
+     Ordinary rows on purpose — no Stale Rate, no Alternative, no odd unit. A stub draws a
+     chip and a supplier name and nothing else, so a mark on any of these would be a mark
+     nobody can see, and the awkward rows are meant to stay the minority. What each one
+     carries instead is its own reason, in the note, on **fit** every time: the two things
+     the client's line is explicit about are the two things these suppliers got wrong.
+     None is ruled out on price, which is the constraint ADR-0032 pins.
+
+     Entry order is what the sheet draws them in, because a stub has left the ordering the
+     rows above are in. */
+  {
+    id: "q4a",
+    tenderItemId: "item-pads",
+    supplierName: "Siam Pharma Supply Co., Ltd.",
+    unitPrice: 0.55,
+    currency: "THB",
+    quotedUnit: "piece",
+    unitPriceThb: 0.55,
+    fxRateMid: 1,
+    fxRateApplied: 1,
+    fxRateAsOf: "2026-08-14",
+    fxRateIsStale: false,
+    leadTimeDays: 14,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-14",
+    sourcedByUserId: "user-somchai",
+    sourcedByName: "Somchai Prasertkul",
+    ruledOut: {
+      byUserId: "user-somchai",
+      at: "2026-08-16T03:10:00Z",
+      note: "Non-sterile. The client's line says sterile and this one does not.",
+    },
+  },
+  {
+    id: "q4b",
+    tenderItemId: "item-pads",
+    supplierName: "Jiangsu Zhengkang Medical Apparatus Co., Ltd.",
+    unitPrice: 0.1,
+    currency: "CNY",
+    quotedUnit: "piece",
+    unitPriceThb: 0.50592,
+    fxRateMid: 4.96,
+    fxRateApplied: 5.0592,
+    fxRateAsOf: "2026-08-14",
+    fxRateIsStale: false,
+    leadTimeDays: 35,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-14",
+    sourcedByUserId: "user-nok",
+    sourcedByName: "Nok Wattanapong",
+    ruledOut: {
+      byUserId: "user-somchai",
+      at: "2026-08-16T03:12:00Z",
+      note: "70% ethanol, not the isopropyl the line specifies.",
+    },
+  },
+  {
+    id: "q4c",
+    tenderItemId: "item-pads",
+    supplierName: "Hangzhou Sunmed Medical Instruments Co., Ltd.",
+    unitPrice: 0.09,
+    currency: "CNY",
+    quotedUnit: "piece",
+    unitPriceThb: 0.455328,
+    fxRateMid: 4.96,
+    fxRateApplied: 5.0592,
+    fxRateAsOf: "2026-08-14",
+    fxRateIsStale: false,
+    leadTimeDays: 35,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-15",
+    sourcedByUserId: "user-wei",
+    sourcedByName: "Wei Zhang",
+    ruledOut: {
+      byUserId: "user-somchai",
+      at: "2026-08-16T03:14:00Z",
+      note: "Tub of 200, not individually wrapped.",
+    },
+  },
+  {
+    id: "q4d",
+    tenderItemId: "item-pads",
+    supplierName: "Bangkok Medline Co., Ltd.",
+    unitPrice: 0.62,
+    currency: "THB",
+    quotedUnit: "piece",
+    unitPriceThb: 0.62,
+    fxRateMid: 1,
+    fxRateApplied: 1,
+    fxRateAsOf: "2026-08-15",
+    fxRateIsStale: false,
+    leadTimeDays: 10,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-15",
+    sourcedByUserId: "user-nok",
+    sourcedByName: "Nok Wattanapong",
+    ruledOut: {
+      byUserId: "user-somchai",
+      at: "2026-08-16T03:15:00Z",
+      note: "Pad is 30 × 30 mm; the client asked for 65 × 30.",
+    },
+  },
+  {
+    id: "q4e",
+    tenderItemId: "item-pads",
+    supplierName: "Zhende Medical Co., Ltd.",
+    unitPrice: 0.011,
+    currency: "USD",
+    quotedUnit: "piece",
+    unitPriceThb: 0.369138,
+    fxRateMid: 32.9,
+    fxRateApplied: 33.558,
+    fxRateAsOf: "2026-08-15",
+    fxRateIsStale: false,
+    leadTimeDays: 45,
+    matchType: "exact",
+    alternativeProductName: null,
+    detailNotes: null,
+    quotedAt: "2026-08-15",
+    sourcedByUserId: "user-wei",
+    sourcedByName: "Wei Zhang",
+    ruledOut: {
+      byUserId: "user-somchai",
+      at: "2026-08-16T03:17:00Z",
+      note: "Photographs show a bulk tub, whatever the line says.",
     },
   },
 ];
@@ -1954,7 +2116,7 @@ function yourSourcing(callerId: string): SourcingItem[] {
  * facts a `SheetItem` carries that a `TenderItem` does not: whether the Item is decided,
  * and the two prices with the confirmation between them.
  *
- * **Between them the three Items draw every surface this screen can reach**, which is
+ * **Between them the four Items draw every surface this screen can reach**, which is
  * what makes them worth composing rather than listing:
  *
  * - **The gloves are undecided**, so the Item opens and the ranked quote table is drawn —
@@ -1973,6 +2135,13 @@ function yourSourcing(callerId: string): SourcingItem[] {
  *   one surface in the app drawn in `--destructive` over its own wash. Sold under what
  *   they cost, so the Margin is a **loss**, and therefore the other hue of the pair on the
  *   same screen as the gain.
+ * - **Every offer on the pads is ruled out**, so that Item has no quote table at all: the
+ *   `all_ruled_out` banner, five stubs under it, and empty pricing fields — which is the
+ *   only place in this record the pricing half is drawn with nothing typed into it, and
+ *   the honest state for an Item with no offer left to cost. It is also the Item that does
+ *   **not** fold despite having no decision to make on it, which is the rule ADR-0032
+ *   states and the reason it is worth photographing: an Owner scrolling past sees the one
+ *   Item that needs going back to an Assignee.
  *
  * A screen with one Margin on it would photograph as a screen with one hue on it, and the
  * risk #129 leaves open — a gain and a passed deadline both red in `zh-Hans` — can only be
@@ -2001,6 +2170,15 @@ const sheetItems: SheetItem[] = [
     landedCostPerUnit: 5.82,
     landedCostConfirmedAt: "2026-08-14T05:00:00Z",
     sellingPricePerUnit: 5.4,
+  }),
+  sheetItem(items[3], {
+    // Nothing, and every field of it deliberately: a landed cost is built from an offer,
+    // and there is no offer left standing to build one from. Typing a figure here would
+    // be the Owner costing a Quote they have ruled out.
+    selectedQuoteId: null,
+    landedCostPerUnit: null,
+    landedCostConfirmedAt: null,
+    sellingPricePerUnit: null,
   }),
 ];
 

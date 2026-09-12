@@ -231,11 +231,27 @@ reaching the Assignee before the Internal Quote Deadline can produce a better Qu
 that is worth real money. ADR-0020 did not have that argument available because the
 judgement had nowhere to live; it does now.
 
-It is left out of this decision because it drags a notification surface, a Reminder-shaped
+It was left out of this decision because it drags a notification surface, a Reminder-shaped
 thing and a Trigger Date question in with it, and `CONTEXT.md` already has four Trigger
-Dates that were each their own decision. It is
-[#168](https://github.com/Mikepeerawit-com/tender-tracker/issues/168), parked deliberately
-rather than forgotten.
+Dates that were each their own decision.
+[#168](https://github.com/Mikepeerawit-com/tender-tracker/issues/168) carried it, and **the
+answer came back no**. The Assignee is never told, the note stays optional, and there is no
+fifth Milestone.
+
+**The three facts that settled it are all about the surface rather than about the merits.**
+The only push this app has is the **Group Robot**, a broadcast into one chat whose
+membership nobody here controls — the `notifications` table ships but nothing renders it,
+so "their own screen" and "a Reminder" were never two routes to the same place. The
+judgement is made *several times per Item* while the Owner scrolls this sheet, and a post
+per rule-out is how a group learns to mute the robot it also hears the Reminders through.
+And the Internal Quote Deadline is worse than taken: that Reminder reaches only Assignees
+who have entered **no Quotes at all**, so it structurally skips the one person this would
+have been for.
+
+The correctable-while-open argument is not what lost, which is why it stays written down
+above. What lost is that acting on it costs a fifth Milestone and a Trigger Date, and buys
+a message into a group chat that the reader would have to be watching at the moment it
+scrolled past. **The silence stands, and it now stands on that rather than on deferral.**
 
 **A comparison surface.** Not rejected on the merits so much as not needed: if the field is
 eliminated down to two, those two are adjacent, and the problem #158 opened with dissolves.

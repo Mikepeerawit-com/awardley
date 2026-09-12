@@ -57,11 +57,11 @@ export function ownsTender({
  *
  * **One field is subtracted from the rows that survive**, which is why this does more than
  * filter. A Quote the Owner has ruled out stays in its Assignee's list looking exactly like
- * any other, because ADR-0032 leaves them untold: a ruled-out-for-fit judgement is worth
- * hearing and is parked in #168 with the notification surface it needs, so until then the
- * mark — and the reason, which is the readable half — is the Owner's alone. Done here rather
- * than in each loader for the reason the filter is: the next reduced screen inherits it
- * instead of remembering it.
+ * any other: the mark — and the reason, which is the readable half — is the Owner's alone.
+ * #168 asked whether the Assignee should be told and answered no, so this is settled rather
+ * than pending. ADR-0032's *What is not done* carries the argument on both sides. Done here
+ * rather than in each loader for the reason the filter is: the next reduced screen inherits
+ * it instead of remembering it.
  *
  * Generic over the row rather than typed to `Quote`, so that asking it costs no import
  * from `@/lib/quotes/quotes` — which is `server-only`, and would drag this file into

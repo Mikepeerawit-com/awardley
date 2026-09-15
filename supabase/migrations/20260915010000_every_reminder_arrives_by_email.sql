@@ -18,7 +18,7 @@ create table reminder_deliveries (
 );
 
 comment on table reminder_deliveries is
-  'One Reminder''s success on one channel (ADR-0034). It is what stops a transport that already succeeded from sending again when the other one is retried. An org with no Group Robot is complete on email alone; reminders.sent still means "nothing further is owed" and is set only once every channel the org has has succeeded.';
+  'One Reminder''s completion on one channel (ADR-0034): a success — or, on email only, a rejection that would repeat identically every morning, which closes the delivery rather than queueing a retry that cannot succeed. It is what stops a transport that already finished from sending again when the other one is retried. An org with no Group Robot is complete on email alone; reminders.sent still means "nothing further is owed" and is set only once every channel the org has is done.';
 
 -- Members may see what their own org's runs delivered; only the cron writes, and the
 -- cron holds the service role, which RLS does not bind. The same one-policy org-boundary

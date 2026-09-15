@@ -81,11 +81,14 @@ export type OutboundBoundary = { robot?: RobotBoundary; email?: EmailBoundary };
  * robot (ADR-0034) — and leave a bell row for each of them.
  *
  * Best effort throughout: it returns nothing, and every branch that cannot proceed simply
- * stops rather than reporting. Nothing it calls raises — `supabase-js` answers with an
- * `error` field rather than an exception, `sendGroupMessages` turns every transport and
- * protocol failure into a `SendOutcome`, and the one throw it does have (a blank webhook)
- * is unreachable because `webhookFor` reports a blank as no robot at all. That matters
- * because it is called from inside a server action whose real job has already succeeded.
+ * stops rather than reporting. Nothing it calls raises past it — `supabase-js` answers
+ * with an `error` field rather than an exception, both transports turn every wire and
+ * protocol failure into a `SendOutcome`, `sendGroupMessages`'s one throw (a blank
+ * webhook) is unreachable because `webhookFor` reports a blank as no robot at all, and
+ * `sendEmails`'s one throw (blank `RESEND_API_KEY`/`EMAIL_FROM`) is caught and logged
+ * below, because `/api/health` is where that deployment fault belongs (ADR-0034). All
+ * of that matters because this is called from inside a server action whose real job
+ * has already succeeded.
  */
 export async function announceOutcome(
   { itemId, outcome }: { itemId: string; outcome: AnnouncedOutcome },
@@ -159,15 +162,27 @@ export async function announceOutcome(
     people,
     link: appLinks().tenderItem(item.tender_id, item.id),
   });
-  const emailOutcomes = await sendEmails(emails, boundary.email);
 
-  for (const [index, result] of emailOutcomes.entries()) {
-    if (result.ok) continue;
+  try {
+    const emailOutcomes = await sendEmails(emails, boundary.email);
 
-    // The address and the provider's words, never the content: this line reaches the
-    // deployment's logs, and what was said is the org's business.
+    for (const [index, result] of emailOutcomes.entries()) {
+      if (result.ok) continue;
+
+      // The address and the provider's words, never the content: this line reaches the
+      // deployment's logs, and what was said is the org's business.
+      console.warn(
+        `Outcome news email to ${emails[index].to} for tender_item ${item.id} was refused: ${result.detail}`,
+      );
+    }
+  } catch (cause) {
+    // The transport throws on a blank key or sender, and `/api/health` is where that
+    // deployment fault is caught (ADR-0034). It must not be caught *here* by failing a
+    // write that already succeeded — the never-raises contract above stands — and it
+    // must not cost the group post below, which is the channel such a deployment still
+    // has.
     console.warn(
-      `Outcome news email to ${emails[index].to} for tender_item ${item.id} was refused: ${result.detail}`,
+      `Outcome news email for tender_item ${item.id} was not sent — email is not configured: ${cause instanceof Error ? cause.message : String(cause)}`,
     );
   }
 

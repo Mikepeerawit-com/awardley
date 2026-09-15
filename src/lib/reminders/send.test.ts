@@ -1752,6 +1752,90 @@ describe("email, the floor", () => {
     );
   });
 
+  it("keeps the group posting, and the rows retrying, when email is not configured", async () => {
+    // The transport throws on a blank key rather than reporting success, and
+    // /api/health is where that deployment fault is caught. What the throw must not
+    // cost is the other channel or the rows: the robot still posts, nothing is
+    // falsely marked delivered, and rule 1 recovers every email the morning the env
+    // lands.
+    const tender = await aTender({
+      internalQuoteDeadline: today,
+      clientSubmissionDeadline: "2026-08-20",
+      assignees: [anong],
+    });
+    const reference = await referenceOf(tender.id);
+
+    vi.stubEnv("RESEND_API_KEY", "");
+
+    const robot = recordingRobot();
+
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
+    vi.unstubAllEnvs();
+
+    expect(reminderFor(robot, reference)).not.toBe("");
+
+    const rows = await remindersOn(tender.id);
+
+    expect(rows.filter((row) => row.due_date <= today).some((row) => row.sent)).toBe(
+      false,
+    );
+
+    // The env lands: the reader is mailed at last, and only then do the rows settle.
+    const email = recordingEmail();
+
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email });
+
+    expect(
+      emailsTo(email, anong.email).some((payload) =>
+        payload.subject.includes(reference),
+      ),
+    ).toBe(true);
+
+    const after = await remindersOn(tender.id);
+
+    expect(after.filter((row) => row.due_date <= today).every((row) => row.sent)).toBe(
+      true,
+    );
+  });
+
+  it("writes a late milestone's bell rows even when an earlier one is half-delivered", async () => {
+    // A batch straddles runs. Day one the internal quote rows go out by email while
+    // the robot refuses; days later the client submission row joins the same Tender's
+    // batch. The Owner's first and only bell row for that milestone must not be
+    // swallowed by the gate that (rightly) stops day one's rows being written twice.
+    const tender = await aTender({
+      internalQuoteDeadline: "2026-08-11",
+      clientSubmissionDeadline: "2026-08-14",
+      assignees: [anong],
+    });
+    const reference = await referenceOf(tender.id);
+
+    await sendDailyPosts(runInstant, {
+      robot: refusingRobot((content) => content.includes(reference)),
+      email: recordingEmail(),
+    });
+
+    // Day two: the client submission's 3-days-out row is due, and the robot recovers.
+    await sendDailyPosts(new Date("2026-08-10T18:00:00Z"), {
+      robot: recordingRobot(),
+      email: recordingEmail(),
+    });
+
+    const rows = await notificationsOn(tender.id);
+
+    expect(
+      rows.some(
+        (row) => row.type === "reminder:client_submission" && row.user_id === owner.id,
+      ),
+    ).toBe(true);
+    // And day one's are not doubled by day two's success.
+    expect(
+      rows.filter(
+        (row) => row.type === "reminder:internal_quote" && row.user_id === anong.id,
+      ),
+    ).toHaveLength(1);
+  });
+
   it("closes the delivery on a rejected address rather than retrying it for ever", async () => {
     // A rejected address will be rejected again every morning until a human fixes it,
     // so the one thing retrying buys is a daily failure (ADR-0034). The refusal is

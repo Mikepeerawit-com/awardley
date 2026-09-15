@@ -400,6 +400,31 @@ describe("the email the news arrives by", () => {
   const to = (email: EmailStub, who: { email: string }) =>
     email.sent.find((sent) => sent.payload.to === who.email)?.payload;
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("still saves the Outcome and posts to the group when email is not configured", async () => {
+    // The transport throws on a blank key, and /api/health is where that deployment
+    // fault is caught — never here, by failing a write that already succeeded, and
+    // never at the group's expense, which is the channel such a deployment still has.
+    const tender = await aTender([nok]);
+
+    await quoteOn(tender.itemId, nok, "Ace Medical");
+
+    vi.stubEnv("RESEND_API_KEY", "");
+
+    const robot = recordingRobot();
+    const result = await setItemOutcome(
+      { itemId: tender.itemId, outcome: "won", decidedAt },
+      await signedInAs(owner),
+      { robot, email: recordingEmail() },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(addressedTo(robot, nok)).toBeDefined();
+  });
+
   it("mails every Assignee who quoted, each told their own fact", async () => {
     const tender = await aTender([nok, anong]);
     const winning = await quoteOn(tender.itemId, nok, "Ace Medical");

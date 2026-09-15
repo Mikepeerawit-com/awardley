@@ -5,6 +5,7 @@ import { appLinks } from "@/lib/app-links";
 import { daysBetween, todayIn } from "@/lib/calendar-date";
 import { digestFor } from "@/lib/digest/digest";
 import { sendEmails, type EmailBoundary, type EmailMessage } from "@/lib/email/send";
+import type { SendOutcome } from "@/lib/messaging/send-outcome";
 import {
   digestEmail,
   reminderEmail,
@@ -148,7 +149,7 @@ type TenderBatch = {
   /** What every recipient's email says about which Tender. */
   facts: { reference: string; client: string; title: string; link: string | null };
   /** Rows that are only finished once every channel the org has has succeeded. */
-  liveIds: string[];
+  live: ReminderRow[];
   notifications: NotificationRow[];
 };
 
@@ -262,9 +263,11 @@ async function sendOrgPosts(
   // channel. A batch is done on a channel when every row it carries is, which after a
   // partial morning (email out, robot refused) is exactly the state that must not be
   // re-sent when the other transport retries.
-  const delivered = await deliveriesFor(batches.flatMap((batch) => batch.liveIds));
+  const delivered = await deliveriesFor(
+    batches.flatMap((batch) => batch.live.map((row) => row.id)),
+  );
   const doneBefore = (batch: TenderBatch, channel: Channel) =>
-    batch.liveIds.every((id) => delivered.get(id)?.has(channel));
+    batch.live.every((row) => delivered.get(row.id)?.has(channel));
   const completed = new Map<TenderBatch, Set<Channel>>(
     batches.map((batch) => [
       batch,
@@ -297,43 +300,65 @@ async function sendOrgPosts(
     ...emailOwed.flatMap(({ emails: batchEmails }) => batchEmails),
     ...digestEmails,
   ];
-  const emailOutcomes = await sendEmails(emails, boundary.email);
 
-  let cursor = 0;
+  // The transport throws on a blank key or sender rather than reporting success, and
+  // `/api/health` is where that configuration fault is caught (ADR-0034). What the
+  // throw must not cost is the *other* channel: a deployment upgraded before the email
+  // env landed still owes its group posts, so the fault is logged, every email-owed
+  // row is left for rule 1's retry — which recovers them for free once the env is set
+  // — and the morning carries on to the robot.
+  let emailOutcomes: SendOutcome[] | null;
 
-  for (const { batch, emails: batchEmails } of emailOwed) {
-    const outcomes = emailOutcomes.slice(cursor, cursor + batchEmails.length);
-
-    cursor += batchEmails.length;
-
-    // The channel closes unless something is worth retrying. Every acceptance is done;
-    // a non-retryable refusal will be refused identically tomorrow (ADR-0034), so
-    // queueing it would buy a daily failure and nothing else — it is logged where the
-    // transport reported it and the delivery closes. A batch with nobody to write to
-    // (every recipient Disabled, or a milestone with no audience) closes the same way:
-    // there is nothing this channel owes.
-    if (outcomes.every((outcome) => outcome.ok || !outcome.retryable)) {
-      completed.get(batch)!.add("email");
-    }
-
-    for (const [index, outcome] of outcomes.entries()) {
-      if (outcome.ok || outcome.retryable) continue;
-
-      // The address, never the content: this line reaches the deployment's logs, and
-      // the message body is the org's business. A rejected address is the single most
-      // likely reason a customer says the reminders do not work (ADR-0034), so it is
-      // the one fact worth a line an operator can grep for.
-      console.warn(
-        `Reminder email to ${batchEmails[index].to} was rejected and will not be retried: ${outcome.detail}`,
-      );
-    }
+  try {
+    emailOutcomes = await sendEmails(emails, boundary.email);
+  } catch (cause) {
+    emailOutcomes = null;
+    console.warn(
+      `Email is not configured, so this run sent none: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
   }
 
-  // The Digest is the one message with no row to leave unsent. There is nothing to
-  // catch up: it is about today, and tomorrow's is the whole of what it had to say,
-  // one day fresher — so a refusal is counted and nothing is retried.
-  report.digests.email = emailOutcomes.slice(cursor).filter((outcome) => outcome.ok).length;
-  report.messages.email = emails.length;
+  if (emailOutcomes !== null) {
+    let cursor = 0;
+
+    for (const { batch, emails: batchEmails } of emailOwed) {
+      const outcomes = emailOutcomes.slice(cursor, cursor + batchEmails.length);
+
+      cursor += batchEmails.length;
+
+      // The channel closes unless something is worth retrying. Every acceptance is
+      // done; a non-retryable refusal will be refused identically tomorrow (ADR-0034),
+      // so queueing it would buy a daily failure and nothing else — it is logged below
+      // and the delivery closes. A batch with nobody to write to (every recipient
+      // Disabled, or a milestone with no audience) closes the same way: there is
+      // nothing this channel owes.
+      if (outcomes.every((outcome) => outcome.ok || !outcome.retryable)) {
+        completed.get(batch)!.add("email");
+      }
+    }
+
+    // Reminder and Digest emails alike. The address, never the content: this line
+    // reaches the deployment's logs, and the message body is the org's business. A
+    // rejected address is the single most likely reason a customer says the reminders
+    // do not work (ADR-0034), so it is the one fact worth a line an operator can grep
+    // for — and a member whose only mail this morning was the summary is exactly the
+    // reader a reminder-only log would go quiet about.
+    for (const [index, outcome] of emailOutcomes.entries()) {
+      if (outcome.ok || outcome.retryable) continue;
+
+      console.warn(
+        `Email to ${emails[index].to} was rejected and will not be retried: ${outcome.detail}`,
+      );
+    }
+
+    // The Digest is the one message with no row to leave unsent. There is nothing to
+    // catch up: it is about today, and tomorrow's is the whole of what it had to say,
+    // one day fresher — so a refusal is counted and nothing is retried.
+    report.digests.email = emailOutcomes
+      .slice(cursor)
+      .filter((outcome) => outcome.ok).length;
+    report.messages.email = emails.length;
+  }
 
   // ---- The Group Robot, the extra. ----
   //
@@ -381,17 +406,26 @@ async function sendOrgPosts(
   );
   await recordDeliveries(robotAccepted, "wecom", org.id, at);
 
-  // The bell rows ride the batch's **first** success on any channel: a batch that
-  // already succeeded somewhere wrote them that morning, and one that failed everywhere
-  // comes back tomorrow, rows and all.
+  // The bell rows ride a milestone's **first** success on any channel: a milestone
+  // whose rows already went out somewhere wrote its rows that morning, and one that
+  // failed everywhere comes back tomorrow, rows and all. Judged per milestone rather
+  // than per batch, because a batch straddles runs: a client-submission row falling
+  // due days after the internal-quote rows were half-delivered still owes the Owner
+  // their first and only bell row.
   await writeNotifications(
     batches
-      .filter(
-        (batch) =>
-          !batch.liveIds.some((id) => (delivered.get(id)?.size ?? 0) > 0) &&
-          completed.get(batch)!.size > 0,
-      )
-      .flatMap((batch) => batch.notifications),
+      .filter((batch) => completed.get(batch)!.size > 0)
+      .flatMap((batch) => {
+        const told = new Set(
+          batch.live
+            .filter((row) => (delivered.get(row.id)?.size ?? 0) > 0)
+            .map((row) => row.milestone),
+        );
+
+        return batch.notifications.filter(
+          (row) => !told.has(row.type.slice("reminder:".length) as ReminderMilestone),
+        );
+      }),
   );
 
   // A row settles only once every channel the org has is done with it — `sent` keeps
@@ -402,11 +436,15 @@ async function sendOrgPosts(
     channels.every((channel) => completed.get(batch)!.has(channel)),
   );
 
-  await settle(finished.flatMap((batch) => batch.liveIds), at, report);
+  await settle(
+    finished.flatMap((batch) => batch.live.map((row) => row.id)),
+    at,
+    report,
+  );
 
   report.retrying += batches
     .filter((batch) => !finished.includes(batch))
-    .reduce((total, batch) => total + batch.liveIds.length, 0);
+    .reduce((total, batch) => total + batch.live.length, 0);
 
   return report;
 }
@@ -510,8 +548,8 @@ async function recordDeliveries(
   at: Date,
 ): Promise<void> {
   const rows = batches.flatMap((batch) =>
-    batch.liveIds.map((reminderId) => ({
-      reminder_id: reminderId,
+    batch.live.map((row) => ({
+      reminder_id: row.id,
       channel,
       org_id: orgId,
       delivered_at: at.toISOString(),
@@ -775,7 +813,7 @@ function tenderMessage(
       title: tender.title,
       link,
     },
-    liveIds: live.map((row) => row.id),
+    live,
     notifications,
   };
 }

@@ -169,12 +169,24 @@ type TenderRow = {
 };
 
 /**
+ * One morning's Digest for one org: the group post, and the lines and link the send
+ * path turns into one email per member (ADR-0034). One read and one sort serve both
+ * transports, so the email and the post cannot disagree about what is open.
+ */
+export type DailyDigest = {
+  post: GroupMessage;
+  lines: DigestLine[];
+  link: string | null;
+};
+
+/**
  * One org's Digest, or **null when it has nothing open**.
  *
  * Silence is the right answer to an empty list, and it is the same rule the reminder
  * path applies to a Tender with nothing to say about it: a message that names no work
  * is the group's attention spent on a line with no fact in it, posted every morning for
- * ever. A team with nothing open is not losing track of anything.
+ * ever — and an email inbox learns to ignore a daily message even faster than a group
+ * does. A team with nothing open is not losing track of anything.
  *
  * Read through the **service** client, scoped by `org_id`. The cron has no session, so
  * RLS is not the boundary here — that filter is, and it is what stops one org's Tenders
@@ -183,7 +195,7 @@ type TenderRow = {
 export async function digestFor(
   orgId: string,
   today: string,
-): Promise<GroupMessage | null> {
+): Promise<DailyDigest | null> {
   const { data } = await createServiceClient()
     .from("tenders")
     .select(
@@ -201,7 +213,9 @@ export async function digestFor(
   // never told its origin, which costs the link and never the Digest.
   const link = appLinks().tenders();
 
-  return lines.length === 0 ? null : digestMessage({ tenders: lines, link });
+  return lines.length === 0
+    ? null
+    : { post: digestMessage({ tenders: lines, link }), lines, link };
 }
 
 function fromRow(row: TenderRow): DigestTender {

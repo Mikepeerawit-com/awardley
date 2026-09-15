@@ -15,6 +15,7 @@ import {
   setItemOutcome,
   updateTender,
 } from "@/lib/tenders/tenders";
+import { recordingEmail, refusingEmail, type EmailStub } from "@/lib/email/email-stub";
 import { recordingRobot, refusingRobot, type RobotStub } from "@/lib/wecom/robot-stub";
 import { paceMs } from "@/lib/wecom/robot";
 
@@ -339,7 +340,7 @@ describe("rule 1: catch up, never skip", () => {
     // The 7th: the cron runs, and nothing is due yet.
     const before = recordingRobot();
 
-    await sendDailyPosts(new Date("2026-08-06T18:00:00Z"), before);
+    await sendDailyPosts(new Date("2026-08-06T18:00:00Z"), { robot: before, email: recordingEmail() });
 
     expect(reminderFor(before, reference)).toBe("");
 
@@ -347,7 +348,7 @@ describe("rule 1: catch up, never skip", () => {
     // due on the 8th and nobody is there to send it.
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, reference)).toContain("2026-08-11");
 
@@ -373,13 +374,13 @@ describe("rule 1: catch up, never skip", () => {
 
     const early = recordingRobot();
 
-    await sendDailyPosts(nightBefore, early);
+    await sendDailyPosts(nightBefore, { robot: early, email: recordingEmail() });
 
     expect(reminderFor(early, reference)).toBe("");
 
     const onTheDay = recordingRobot();
 
-    await sendDailyPosts(runInstant, onTheDay);
+    await sendDailyPosts(runInstant, { robot: onTheDay, email: recordingEmail() });
 
     expect(reminderFor(onTheDay, reference)).toContain("2026-08-13");
   });
@@ -392,7 +393,7 @@ describe("rule 1: catch up, never skip", () => {
     const reference = await referenceOf(tender.id);
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, reference)).toContain("就是今天");
   });
@@ -409,7 +410,7 @@ describe("rule 2: a caught-up nudge for a milestone that has passed", () => {
     const reference = await referenceOf(tender.id);
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, reference)).toBe("");
   });
@@ -420,7 +421,7 @@ describe("rule 2: a caught-up nudge for a milestone that has passed", () => {
       clientSubmissionDeadline: "2026-09-01",
     });
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
 
     const internal = (await remindersOn(tender.id)).filter(
       (row) => row.milestone === "internal_quote" && row.due_date <= today,
@@ -445,7 +446,7 @@ describe("rule 2: a caught-up nudge for a milestone that has passed", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, reference)).toBe("");
   });
@@ -463,7 +464,7 @@ describe("rule 4: one message per Tender per run", () => {
     const reference = await referenceOf(tender.id);
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     // One reminder, however many rows were owed. The Digest names it too, and that is a
     // different message with a different job.
@@ -510,7 +511,7 @@ describe("rule 4: one message per Tender per run", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const references = await Promise.all(
       tenders.map((tender) => referenceOf(tender.id)),
@@ -539,19 +540,19 @@ describe("rule 5: a non-zero errcode is not a send", () => {
     const reference = await referenceOf(tender.id);
 
     // WeCom's throttle response is unmeasured, so every non-zero result is retryable.
-    await sendDailyPosts(
-      runInstant,
-      refusingRobot((content) => content.includes(reference), {
+    await sendDailyPosts(runInstant, {
+      robot: refusingRobot((content) => content.includes(reference), {
         errcode: 45009,
         errmsg: "busy",
       }),
-    );
+      email: recordingEmail(),
+    });
 
     expect((await remindersOn(tender.id)).every((row) => row.sent === false)).toBe(true);
 
     const retry = recordingRobot();
 
-    await sendDailyPosts(runInstant, retry);
+    await sendDailyPosts(runInstant, { robot: retry, email: recordingEmail() });
 
     expect(reminderFor(retry, reference)).toContain("2026-08-11");
     expect(
@@ -561,7 +562,10 @@ describe("rule 5: a non-zero errcode is not a send", () => {
     ).toBe(true);
   });
 
-  it("writes no in-app notification for a message that was refused", async () => {
+  it("writes no in-app notification for a message refused on every channel", async () => {
+    // Both transports, because the bell rows ride the batch's *first* success on any
+    // channel (ADR-0034): a refused group post with the email delivered still tells
+    // this Tender's people, and writing the rows then is correct rather than a leak.
     const tender = await aTender({
       internalQuoteDeadline: "2026-08-11",
       clientSubmissionDeadline: "2026-08-20",
@@ -570,10 +574,10 @@ describe("rule 5: a non-zero errcode is not a send", () => {
 
     const reference = await referenceOf(tender.id);
 
-    await sendDailyPosts(
-      runInstant,
-      refusingRobot((content) => content.includes(reference)),
-    );
+    await sendDailyPosts(runInstant, {
+      robot: refusingRobot((content) => content.includes(reference)),
+      email: refusingEmail((email) => email.subject.includes(reference)),
+    });
 
     expect(await notificationsOn(tender.id)).toEqual([]);
   });
@@ -595,7 +599,7 @@ describe("who a reminder @s", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const message = mine(robot).find((sent) =>
       sent.payload.text.content.includes(reference),
@@ -623,7 +627,7 @@ describe("who a reminder @s", () => {
     const reference = await referenceOf(tender.id);
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const message = mine(robot).find((sent) =>
       sent.payload.text.content.includes(reference),
@@ -651,7 +655,7 @@ describe("who a reminder @s", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const message = mine(robot).find((sent) =>
       sent.payload.text.content.includes(reference),
@@ -681,7 +685,7 @@ describe("who a reminder @s", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const message = mine(robot).find((sent) =>
       sent.payload.text.content.includes(reference),
@@ -709,7 +713,7 @@ describe("who a reminder @s", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(
       mine(robot).find((sent) => sent.payload.text.content.includes(reference))?.payload
@@ -729,7 +733,7 @@ describe("who a reminder @s", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, reference)).toBe("");
   });
@@ -744,7 +748,7 @@ describe("who a reminder @s", () => {
     const reference = await referenceOf(tender.id);
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const message = mine(robot).find((sent) =>
       sent.payload.text.content.includes(reference),
@@ -773,7 +777,7 @@ describe("who a reminder @s", () => {
       .eq("id", anong.id);
 
     try {
-      await sendDailyPosts(runInstant, robot);
+      await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
     } finally {
       // Restored here rather than in an `afterEach`: every other test in this file shares
       // these three members and expects all of them active.
@@ -799,7 +803,7 @@ describe("the in-app notifications the bell will read", () => {
       assignees: [nok],
     });
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
 
     const rows = (await notificationsOn(tender.id)).filter(
       (row) => row.type === "reminder:internal_quote",
@@ -828,7 +832,7 @@ describe("the in-app notifications the bell will read", () => {
     await addAssignee({ tenderItemId: tender.itemIds[0], userId: nok.id }, store);
     await addAssignee({ tenderItemId: tender.itemIds[1], userId: anong.id }, store);
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
 
     const rows = (await notificationsOn(tender.id)).filter(
       (row) => row.type === "reminder:internal_quote",
@@ -858,7 +862,7 @@ describe("the in-app notifications the bell will read", () => {
       await signedInAs(nok),
     );
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
 
     const rows = (await notificationsOn(tender.id)).filter(
       (row) => row.type === "reminder:internal_quote",
@@ -876,7 +880,7 @@ describe("the in-app notifications the bell will read", () => {
       items: ["Nitrile gloves", "Surgical masks"],
     });
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
 
     expect(
       (await notificationsOn(tender.id)).filter(
@@ -903,7 +907,7 @@ describe("the missed submission", () => {
     const reference = await referenceOf(tender.id);
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const message = mine(robot).find((sent) =>
       sent.payload.text.content.includes(reference),
@@ -922,11 +926,11 @@ describe("the missed submission", () => {
     const tender = await aTender(missed);
     const reference = await referenceOf(tender.id);
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
 
     const again = recordingRobot();
 
-    await sendDailyPosts(new Date("2026-08-10T18:00:00Z"), again);
+    await sendDailyPosts(new Date("2026-08-10T18:00:00Z"), { robot: again, email: recordingEmail() });
 
     expect(reminderFor(again, reference)).toBe("");
   });
@@ -937,7 +941,7 @@ describe("the missed submission", () => {
     const tender = await aTender(missed);
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const content = reminderFor(robot, await referenceOf(tender.id));
 
@@ -958,7 +962,7 @@ describe("the missed submission", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, await referenceOf(tender.id))).toBe("");
   });
@@ -975,7 +979,7 @@ describe("the missed submission", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, await referenceOf(tender.id))).toBe("");
   });
@@ -986,7 +990,7 @@ describe("the missed submission", () => {
     const tender = await aTender(missed);
     const reference = await referenceOf(tender.id);
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
     await reschedule(
       tender.id,
       { internalQuoteDeadline: "2026-08-14", clientSubmissionDeadline: "2026-08-16" },
@@ -996,7 +1000,7 @@ describe("the missed submission", () => {
     // 2026-08-17 in Bangkok: the day after the extension, missed again.
     const after = recordingRobot();
 
-    await sendDailyPosts(new Date("2026-08-16T18:00:00Z"), after);
+    await sendDailyPosts(new Date("2026-08-16T18:00:00Z"), { robot: after, email: recordingEmail() });
 
     expect(reminderFor(after, reference)).toContain("错过");
     expect(reminderFor(after, reference)).toContain("2026-08-16");
@@ -1019,7 +1023,7 @@ describe("the decision chase", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(await remindersOn(tender.id)).not.toContainEqual(
       expect.objectContaining({ milestone: "decision_chase" }),
@@ -1042,7 +1046,7 @@ describe("the decision chase", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const message = mine(robot).find((sent) =>
       sent.payload.text.content.includes(reference),
@@ -1063,7 +1067,7 @@ describe("the decision chase", () => {
     });
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const content = reminderFor(robot, await referenceOf(tender.id));
 
@@ -1082,7 +1086,7 @@ describe("the decision chase", () => {
     });
     const reference = await referenceOf(tender.id);
 
-    await sendDailyPosts(runInstant, recordingRobot());
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email: recordingEmail() });
 
     // Neither posted nor closed — it is owed again tomorrow, unchanged.
     expect(
@@ -1100,7 +1104,7 @@ describe("the decision chase", () => {
 
     const after = recordingRobot();
 
-    await sendDailyPosts(new Date("2026-08-10T18:00:00Z"), after);
+    await sendDailyPosts(new Date("2026-08-10T18:00:00Z"), { robot: after, email: recordingEmail() });
 
     expect(reminderFor(after, reference)).toContain("决标");
   });
@@ -1124,7 +1128,7 @@ describe("the decision chase", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, await referenceOf(tender.id))).toBe("");
   });
@@ -1154,6 +1158,7 @@ describe("the daily run as a whole", () => {
     const report = await runDailyCron(runInstant, {
       rates: { fetch: recordOrder("rates", rates.fetch!) },
       robot: { ...robot, fetch: recordOrder("robot", robot.fetch!) },
+      email: recordingEmail(),
     });
 
     expect(order[0]).toBe("rates");
@@ -1175,6 +1180,7 @@ describe("the daily run as a whole", () => {
     const report = await runDailyCron(runInstant, {
       rates: unreachableRates(),
       robot,
+      email: recordingEmail(),
     });
 
     expect(report.rates).toBeNull();
@@ -1223,7 +1229,7 @@ describe("the daily run as a whole", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     // Only these three, and only their relative order: the org has been collecting
     // Tenders all suite and the run posts about those too.
@@ -1358,7 +1364,7 @@ describe("the daily Digest", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const digest = digestOf(robot, digestClient);
 
@@ -1396,7 +1402,7 @@ describe("the daily Digest", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, missed.reference, digestClient)).toContain("错过");
     expect(digestOf(robot, digestClient)).toContain("已错过客户投标截止 2026-08-05");
@@ -1412,7 +1418,7 @@ describe("the daily Digest", () => {
     });
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const posted = mine(robot, digestClient).map(
       (message) => message.payload.text.content,
@@ -1455,7 +1461,7 @@ describe("the daily Digest", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(robot.sent.filter((message) => message.url.endsWith("-quiet"))).toEqual([]);
 
@@ -1472,11 +1478,12 @@ describe("the daily Digest", () => {
     const report = await runDailyCron(runInstant, {
       rates: unreachableRates(),
       robot,
+      email: recordingEmail(),
     });
 
     expect(digestOf(robot, digestClient)).not.toBe("");
     // Every org with something open, this one included — the figure is the whole run's.
-    expect(report.posts.digests).toBeGreaterThanOrEqual(1);
+    expect(report.posts.digests.wecom).toBeGreaterThanOrEqual(1);
   });
 
   it("names no Tender belonging to another org", async () => {
@@ -1484,7 +1491,7 @@ describe("the daily Digest", () => {
     // A Tender listed in the wrong company's group chat is unrecoverable.
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(digestOf(robot, digestClient)).not.toContain(client);
     expect(digestOf(robot)).not.toContain(digestClient);
@@ -1518,7 +1525,7 @@ describe("where a reminder and the Digest send people", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const content = reminderFor(robot, reference);
 
@@ -1539,7 +1546,7 @@ describe("where a reminder and the Digest send people", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     const digest = digestOf(robot);
 
@@ -1563,7 +1570,7 @@ describe("where a reminder and the Digest send people", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, reference)).toContain("请进入系统完成以上操作。");
     expect(reminderFor(robot, reference)).not.toContain("http");
@@ -1584,7 +1591,7 @@ describe("where a reminder and the Digest send people", () => {
 
     const robot = recordingRobot();
 
-    await sendDailyPosts(runInstant, robot);
+    await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
 
     expect(reminderFor(robot, reference)).not.toContain("http");
   });

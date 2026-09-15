@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createServiceClient } from "@/lib/supabase/service-client";
 import type { createSessionClient } from "@/lib/supabase/session-client";
 
 import {
@@ -133,8 +134,20 @@ export async function rescheduleReminders(
   }
 
   const orphans = existing.filter((row) => !matched.has(row.id)).map((row) => row.id);
+  // A re-dated row is a new promise, and both channels owe it again: the messages that
+  // went out named the old date. Cleared through the **service** client — deliveries
+  // are the cron's bookkeeping, and `reminder_deliveries` deliberately grants a session
+  // nothing but reading its own org's rows. Orphaned rows need nothing here: their
+  // deliveries go with them, `on delete cascade`.
+  const redated = updates.map(({ id }) => id);
 
   const results = await Promise.all([
+    redated.length === 0
+      ? ok()
+      : createServiceClient()
+          .from("reminder_deliveries")
+          .delete()
+          .in("reminder_id", redated),
     inserts.length === 0
       ? ok()
       : supabase

@@ -5,7 +5,7 @@ import { daysBetween } from "@/lib/calendar-date";
 import type { ReminderMilestone } from "@/lib/reminders/schedule";
 import { createServiceClient } from "@/lib/supabase/service-client";
 import { tenderOutcome, type DecidedItem, type ItemOutcome } from "@/lib/tenders/outcome";
-import { digestMessage, type DigestLine } from "@/lib/wecom/messages";
+import { digestMessage, type DigestLine } from "@/lib/messaging/messages";
 import type { GroupMessage } from "@/lib/wecom/robot";
 
 /**
@@ -37,7 +37,7 @@ import type { GroupMessage } from "@/lib/wecom/robot";
  * ## Financial silence, and the language
  *
  * Both inherited from ADR-0012 and enforced where every other message is: the builder in
- * `@/lib/wecom/messages` is called by introspection in `messages.test.ts`, so the Digest
+ * `@/lib/messaging/messages` is called by introspection in `messages.test.ts`, so the Digest
  * is covered by the price/margin/supplier rules the day it is written.
  *
  * Arithmetic over `today` — a day already resolved in the org's timezone (ADR-0010) —

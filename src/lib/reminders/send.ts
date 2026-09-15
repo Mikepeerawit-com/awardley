@@ -6,7 +6,7 @@ import { digestFor } from "@/lib/digest/digest";
 import { tenderOutcome, type ItemOutcome } from "@/lib/tenders/outcome";
 import { createServiceClient } from "@/lib/supabase/service-client";
 import { webhookFor } from "@/lib/wecom/group-robot";
-import { reminderMessage, type DueMilestone } from "@/lib/wecom/messages";
+import { reminderMessage, type DueMilestone } from "@/lib/messaging/messages";
 import { sendGroupMessages, type GroupMessage, type RobotBoundary } from "@/lib/wecom/robot";
 
 import {
@@ -522,7 +522,7 @@ function notificationsFor(
  * rather than three more branches spread across the file.
  *
  * **`audience` is said twice: here, and in the message.** Since #99 each milestone line in
- * `@/lib/wecom/messages.ts` names the role it is addressed to — 参与人 for the internal
+ * `@/lib/messaging/messages.ts` names the role it is addressed to — 参与人 for the internal
  * quote deadline, 负责人 for the other three — so that somebody @-ed about a Tender owing
  * two milestones can tell which half is theirs. **Changing an `audience` below means
  * changing that sentence too**, or the message @s one person and instructs another.

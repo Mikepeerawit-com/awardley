@@ -1496,7 +1496,7 @@ describe("the daily Digest", () => {
  *
  * The wording of these messages already told the reader to go and follow up. What is
  * asserted here is the half that was missing: *where*, and that it is the right where —
- * the builders in `@/lib/wecom/messages.ts` cover the shape of the line, and this covers
+ * the builders in `@/lib/messaging/messages.ts` cover the shape of the line, and this covers
  * the id that reaches it. A reminder pointing at somebody else's Tender would satisfy
  * every test in that file.
  */

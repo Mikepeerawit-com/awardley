@@ -7,7 +7,7 @@ import {
   otherQuotesOutcomeMessage,
   selectedQuoteOutcomeMessage,
   type AnnouncedOutcome,
-} from "@/lib/wecom/messages";
+} from "@/lib/messaging/messages";
 import { sendGroupMessages, type GroupMessage, type RobotBoundary } from "@/lib/wecom/robot";
 
 /**

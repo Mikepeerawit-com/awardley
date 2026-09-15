@@ -285,17 +285,25 @@ async function sendOrgPosts(
   const emailOwed = batches
     .filter((batch) => !completed.get(batch)!.has("email"))
     .map((batch) => ({ batch, emails: reminderEmailsFor(batch, members) }));
+  // Rendered once per locale rather than once per member: forty members share at most
+  // two renderings, and only the address differs.
+  const digestRendered = new Map<Locale, ReturnType<typeof digestEmail>>();
   const digestEmails: EmailMessage[] =
     digest === null
       ? []
-      : [...members.values()].map((member) => ({
-          to: member.email,
-          ...digestEmail({
-            locale: member.locale,
-            tenders: digest.lines,
-            link: digest.link,
-          }),
-        }));
+      : [...members.values()].map((member) => {
+          const rendered =
+            digestRendered.get(member.locale) ??
+            digestEmail({
+              locale: member.locale,
+              tenders: digest.lines,
+              link: digest.link,
+            });
+
+          digestRendered.set(member.locale, rendered);
+
+          return { to: member.email, ...rendered };
+        });
   const emails = [
     ...emailOwed.flatMap(({ emails: batchEmails }) => batchEmails),
     ...digestEmails,
@@ -329,11 +337,23 @@ async function sendOrgPosts(
       // The channel closes unless something is worth retrying. Every acceptance is
       // done; a non-retryable refusal will be refused identically tomorrow (ADR-0034),
       // so queueing it would buy a daily failure and nothing else — it is logged below
-      // and the delivery closes. A batch with nobody to write to (every recipient
-      // Disabled, or a milestone with no audience) closes the same way: there is
-      // nothing this channel owes.
+      // and the delivery closes. Granularity is the batch, deliberately: one reader's
+      // retryable failure holds the whole Tender's email leg open, and the readers who
+      // already got theirs are mailed again with it tomorrow — a duplicate nudge, the
+      // safe direction, and the same trade the settle-write failure documents.
       if (outcomes.every((outcome) => outcome.ok || !outcome.retryable)) {
         completed.get(batch)!.add("email");
+      }
+
+      // A batch with nobody reachable — every recipient Disabled, or a milestone with
+      // no audience at all — closes the same way: there is nothing this channel owes.
+      // On an org with a robot the group still hears the unmentioned post; on one
+      // without, this line is the only record that a deadline passed with nobody to
+      // tell, so it is written where an operator can find it.
+      if (batchEmails.length === 0) {
+        console.warn(
+          `Reminder for tender ${batch.facts.reference} has no reachable email recipient; the email channel closes with nothing sent.`,
+        );
       }
     }
 
@@ -342,13 +362,13 @@ async function sendOrgPosts(
     // rejected address is the single most likely reason a customer says the reminders
     // do not work (ADR-0034), so it is the one fact worth a line an operator can grep
     // for — and a member whose only mail this morning was the summary is exactly the
-    // reader a reminder-only log would go quiet about.
+    // reader a reminder-only log would go quiet about. No claim about retrying: a
+    // rejection in a batch held open by a retryable neighbour is re-attempted with it,
+    // and tomorrow's Digest goes out regardless.
     for (const [index, outcome] of emailOutcomes.entries()) {
       if (outcome.ok || outcome.retryable) continue;
 
-      console.warn(
-        `Email to ${emails[index].to} was rejected and will not be retried: ${outcome.detail}`,
-      );
+      console.warn(`Email to ${emails[index].to} was rejected: ${outcome.detail}`);
     }
 
     // The Digest is the one message with no row to leave unsent. There is nothing to
@@ -406,12 +426,16 @@ async function sendOrgPosts(
   );
   await recordDeliveries(robotAccepted, "wecom", org.id, at);
 
-  // The bell rows ride a milestone's **first** success on any channel: a milestone
+  // The bell rows ride a milestone's **first completion** on any channel: a milestone
   // whose rows already went out somewhere wrote its rows that morning, and one that
-  // failed everywhere comes back tomorrow, rows and all. Judged per milestone rather
-  // than per batch, because a batch straddles runs: a client-submission row falling
-  // due days after the internal-quote rows were half-delivered still owes the Owner
-  // their first and only bell row.
+  // failed retryably everywhere comes back tomorrow, rows and all. Judged per
+  // milestone rather than per batch, because a batch straddles runs: a
+  // client-submission row falling due days after the internal-quote rows were
+  // half-delivered still owes the Owner their first and only bell row. Completion
+  // rather than success on purpose — a channel closed by a rejected address settles
+  // its rows, and the bell row is then the only trace of the reminder anywhere, which
+  // is outcome-news's argument applied here: skipping it would leave the reader told
+  // by nothing at all.
   await writeNotifications(
     batches
       .filter((batch) => completed.get(batch)!.size > 0)

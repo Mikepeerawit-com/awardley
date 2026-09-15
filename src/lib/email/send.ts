@@ -57,20 +57,40 @@ const endpoint = "https://api.resend.com/emails";
  * itself throws at the first real send rather than probing, so the place a deployment's
  * missing configuration is caught has to be the probe the deployment gate reads, not
  * the morning run that would otherwise be the first to notice.
+ *
+ * **This is also the one gate {@link sendEmails} throws on** — derived, not duplicated,
+ * so the probe cannot report `configured` about an environment the send path would
+ * refuse. That is why the sender's *shape* is checked here and not merely its presence:
+ * a malformed `EMAIL_FROM` would be refused by the provider on every send, for every
+ * recipient, and 4xx refusals close deliveries (ADR-0034) — a deployment-wide config
+ * typo must be caught by this probe rather than paid for in settled rows nobody was
+ * ever mailed.
  */
 export type EmailConfig = { from: string; error: null } | { from: null; error: string };
+
+/** `addr@domain`, or `Display Name <addr@domain>` — the two shapes Resend accepts. */
+const senderShape = /^(?:[^<>\s]+@[^<>@\s]+\.[^<>@\s]+|[^<>]+<[^<>\s]+@[^<>@\s]+\.[^<>@\s]+>)$/;
 
 export function emailConfig(): EmailConfig {
   const missing = ["RESEND_API_KEY", "EMAIL_FROM"].filter(
     (name) => (process.env[name] ?? "").trim() === "",
   );
 
-  return missing.length > 0
-    ? {
+  if (missing.length > 0) {
+    return {
+      from: null,
+      error: `${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not set, so no reminder email can be sent.`,
+    };
+  }
+
+  const from = (process.env.EMAIL_FROM ?? "").trim();
+
+  return senderShape.test(from)
+    ? { from, error: null }
+    : {
         from: null,
-        error: `${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not set, so no reminder email can be sent.`,
-      }
-    : { from: (process.env.EMAIL_FROM ?? "").trim(), error: null };
+        error: `EMAIL_FROM is not a sender Resend can accept — use "reminders@example.com" or "Name <reminders@example.com>".`,
+      };
 }
 
 /**
@@ -90,8 +110,14 @@ export async function sendEmails(
   // A run with nothing due is not a misconfiguration, so this comes first.
   if (emails.length === 0) return [];
 
-  const key = requiredEnv("RESEND_API_KEY");
-  const from = requiredEnv("EMAIL_FROM");
+  // The same gate `/api/health` probes, thrown rather than reported: one policy, so
+  // the probe cannot call configured what this line would refuse.
+  const config = emailConfig();
+
+  if (config.error !== null) throw new Error(config.error);
+
+  const from = config.from;
+  const key = (process.env.RESEND_API_KEY ?? "").trim();
 
   const post = boundary.fetch ?? globalThis.fetch;
   const wait = boundary.wait ?? sleep;
@@ -131,14 +157,21 @@ async function send(
 
   if (response.ok) return { ok: true };
 
-  // 4xx is Resend refusing the request itself — a rejected address, a malformed
-  // sender — which will be refused identically tomorrow. Everything else (a throttle,
-  // an outage) is worth tomorrow's run. The two exceptions are auth: a bad key is a
-  // deployment fault somebody will fix, after which the rows must still be there to
-  // send, so it stays retryable rather than closing every delivery over a config line.
+  // 4xx is Resend refusing the request itself — above all a rejected address — which
+  // will be refused identically tomorrow, so it is the failure that closes a delivery
+  // (ADR-0034). Everything else (a throttle, an outage) is worth tomorrow's run. The
+  // exceptions kept retryable are the deployment-shaped and time-shaped 4xxs: auth
+  // (401/403 — a bad key or an unverified domain is a fault somebody will fix, after
+  // which the rows must still be there to send), 408/409 (timeouts and conflicts are
+  // transient however the status is classed), and 429. Closing a delivery over any of
+  // those would settle rows nobody was ever mailed, unrecoverably — the config-shaped
+  // half of that risk is also caught upstream, where {@link emailConfig} refuses a
+  // malformed sender before a single request carries it.
   const retryable =
     response.status === 401 ||
     response.status === 403 ||
+    response.status === 408 ||
+    response.status === 409 ||
     response.status === 429 ||
     response.status >= 500;
 
@@ -162,16 +195,6 @@ async function detailOf(response: Response): Promise<string> {
 
 function failure(retryable: boolean, errcode: number | null, detail: string): SendOutcome {
   return { ok: false, retryable, errcode, detail };
-}
-
-function requiredEnv(name: string): string {
-  const value = process.env[name] ?? "";
-
-  if (value.trim() === "") {
-    throw new Error(`${name} is not set; email cannot be sent without it.`);
-  }
-
-  return value.trim();
 }
 
 function reasonFrom(cause: unknown): string {

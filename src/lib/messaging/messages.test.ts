@@ -111,7 +111,7 @@ function body(message: Built): string {
  * with a condition in it stops holding the first time somebody gets the condition wrong
  * (ADR-0034). A forwarded email is an uncontrolled surface just as the group is.
  */
-const financialSilence: Rule[] = [
+const sharedRules: Rule[] = [
   {
     name: "names no supplier, price, cost or margin",
     offences: (message) =>
@@ -124,10 +124,30 @@ const financialSilence: Rule[] = [
     offences: (message) =>
       body(message).match(/[฿¥$€£]|THB|CNY|USD|EUR|\d+(\.\d+)?\s*%/g) ?? [],
   },
+  {
+    name: "says none of the retired words for a Tender or an Item",
+    // The settled vocabulary (#87, #88). These strings are hardcoded here rather than in
+    // `zh-Hans.json`, so the guard that retired 标书, 条目, 明细 and bare 产品 across the
+    // screens cannot see them — and this is the app's highest-volume Chinese. 标书 is the
+    // bid document *we send back*, and pointed at the opposite end of the exchange from
+    // the client's enquiry it was being used for. Shared with the email rules: retiring
+    // another word must never need the same regex edited twice.
+    offences: (message) => body(message).match(/标书|条目|明细|产品(?!项)/g) ?? [],
+  },
+  {
+    name: "renders every field it reached for",
+    // The fixture is passed to every builder by introspection, so a builder wanting a
+    // field it does not carry would quietly interpolate `undefined` — and a message
+    // full of holes would satisfy every other rule here.
+    offences: (message) =>
+      body(message).includes("undefined") || body(message).trim() === ""
+        ? [body(message)]
+        : [],
+  },
 ];
 
 const rules: Rule[] = [
-  ...financialSilence,
+  ...sharedRules,
   {
     name: "is written in Simplified Chinese",
     // Hardcoded and not switchable: one group, one rendering, read once by everyone.
@@ -143,7 +163,8 @@ const rules: Rule[] = [
   {
     name: "mentions people by userid, never by mobile number",
     // A mis-formatted mobile binds for nobody and still returns errcode 0, so one
-    // mistake makes the whole org silently unreachable at once.
+    // mistake makes the whole org silently unreachable at once. Only group messages
+    // reach this list, so only their mention list is asked.
     offences: (message) =>
       (isEmail(message) ? [] : (message.mentions ?? [])).filter((mention) =>
         /^[+\d][\d\s-]{6,}$/.test(mention),
@@ -163,37 +184,19 @@ const rules: Rule[] = [
     // one, and it is pinned per line in "the role each reminder line addresses" below.
     offences: (message) => (body(message).includes("请") ? [] : [body(message)]),
   },
-  {
-    name: "says none of the retired words for a Tender or an Item",
-    // The settled vocabulary (#87, #88). These strings are hardcoded here rather than in
-    // `zh-Hans.json`, so the guard that retired 标书, 条目, 明细 and bare 产品 across the
-    // screens cannot see them — and this is the app's highest-volume Chinese. 标书 is the
-    // bid document *we send back*, and pointed at the opposite end of the exchange from
-    // the client's enquiry it was being used for.
-    offences: (message) => body(message).match(/标书|条目|明细|产品(?!项)/g) ?? [],
-  },
-  {
-    name: "renders every field it reached for",
-    // The fixture is passed to every builder by introspection, so a builder wanting a
-    // field it does not carry would quietly interpolate `undefined` — and a message
-    // full of holes would satisfy every other rule here.
-    offences: (message) =>
-      body(message).includes("undefined") || body(message).trim() === ""
-        ? [body(message)]
-        : [],
-  },
 ];
 
 /**
- * The email half's own rules, per locale. The financial-silence pair above applies
- * verbatim; these replace the rules that are facts about one language or one payload
- * shape. The raw-key rule is what holds the builders to the catalogue: next-intl
- * renders a missing entry as its own key and reports nothing, so a builder reaching
- * for a key that is not there would otherwise mail somebody `email.reminder.subject`.
+ * The email half's own rules, per locale. Everything in {@link sharedRules} applies
+ * verbatim; these replace only the rules that are facts about one language or one
+ * payload shape. The raw-key rule is what holds the builders to the catalogue:
+ * next-intl renders a missing entry as its own key and reports nothing, so a builder
+ * reaching for a key that is not there would otherwise mail somebody
+ * `email.reminder.subject`.
  */
 function emailRules(locale: Locale): Rule[] {
   return [
-    ...financialSilence,
+    ...sharedRules,
     {
       name: "speaks the reader's own locale",
       offences: (message) => {
@@ -210,10 +213,9 @@ function emailRules(locale: Locale): Rule[] {
           : [body(message)],
     },
     {
-      name: "says none of the retired words for a Tender or an Item",
-      offences: (message) => body(message).match(/标书|条目|明细|产品(?!项)/g) ?? [],
-    },
-    {
+      // `^[-*]\s` deliberately absent from this one: the reminder email's Item list
+      // is drawn with "- " lines, which are plain text in an inbox where they would
+      // be markdown in a WeCom bubble.
       name: "uses no markdown — the body ships as plain text",
       offences: (message) =>
         body(message).match(/\*\*|__|\[.+\]\(.+\)|^#{1,6}\s/gm) ?? [],
@@ -221,13 +223,6 @@ function emailRules(locale: Locale): Rule[] {
     {
       name: "resolves every catalogue key it reached for",
       offences: (message) => body(message).match(/\bemail\.[a-z][\w.]*/g) ?? [],
-    },
-    {
-      name: "renders every field it reached for",
-      offences: (message) =>
-        body(message).includes("undefined") || body(message).trim() === ""
-          ? [body(message)]
-          : [],
     },
   ];
 }

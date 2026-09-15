@@ -143,6 +143,20 @@ describe("GET /api/health, on a deployment that cannot send email", () => {
     expect(body.email?.error).toContain("EMAIL_FROM");
   });
 
+  it("refuses a sender the transport would refuse — configured has to mean sendable", async () => {
+    // Set, non-blank, and refused by the provider on every send. `configured: true`
+    // here would let a deployment-wide typo be paid for in settled rows nobody was
+    // ever mailed, because a 4xx closes deliveries (ADR-0034). One policy: this is the
+    // same check sendEmails throws on.
+    vi.stubEnv("EMAIL_FROM", "Tender Tracker reminders@example.test");
+
+    const { status, body } = await health();
+
+    expect(status).toBe(503);
+    expect(body.status).toBe("no-email-config");
+    expect(body.email?.error).toContain("EMAIL_FROM");
+  });
+
   it("lets the origin fault outrank it, so the reader meets one errand at a time", async () => {
     vi.stubEnv("APP_ORIGIN", "");
     vi.stubEnv("RESEND_API_KEY", "");

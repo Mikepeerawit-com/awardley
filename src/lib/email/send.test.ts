@@ -64,6 +64,16 @@ describe("sendEmails", () => {
     await expect(sendEmails([message], recordingEmail())).rejects.toThrow(/EMAIL_FROM/);
   });
 
+  it("throws on a sender the provider would refuse, before a single request carries it", async () => {
+    // A malformed EMAIL_FROM is a deployment-wide fault: every send would come back
+    // 4xx, and 4xx closes deliveries (ADR-0034) — rows settled with zero mail sent,
+    // unrecoverably. So the shape is checked at the same gate /api/health probes, and
+    // the morning run never gets far enough to pay for the typo in settled rows.
+    vi.stubEnv("EMAIL_FROM", "Tender Tracker reminders@example.test");
+
+    await expect(sendEmails([message], recordingEmail())).rejects.toThrow(/EMAIL_FROM/);
+  });
+
   it("reports an accepted email as sent", async () => {
     const outcomes = await sendEmails([message], recordingEmail());
 
@@ -80,6 +90,15 @@ describe("sendEmails", () => {
     const outcomes = await sendEmails([message], recordingEmail(500));
 
     expect(outcomes[0]).toMatchObject({ ok: false, retryable: true, errcode: 500 });
+  });
+
+  it("treats a timeout or conflict as retryable, whatever their status class", async () => {
+    // Time-shaped 4xxs. Closing a delivery over one would settle a row nobody was
+    // mailed, over a failure tomorrow's run would have cleared.
+    const outcomes = await sendEmails([message, message], recordingEmail(408, 409));
+
+    expect(outcomes[0]).toMatchObject({ ok: false, retryable: true, errcode: 408 });
+    expect(outcomes[1]).toMatchObject({ ok: false, retryable: true, errcode: 409 });
   });
 
   it("treats a rejected request as non-retryable — it will be rejected again for ever", async () => {

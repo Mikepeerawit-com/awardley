@@ -957,15 +957,17 @@ async function supplierNamed(
 }
 
 /**
- * Is the caller an Assignee on the Tender this Item belongs to?
+ * Is the caller an Assignee on this Item?
  *
- * Asked as one embedded read rather than two: RLS turns another org's Item into no row,
- * which is the same answer as an Item deleted while the form was open, and the embed
- * turns "not on this Tender" into an empty array without a second round trip.
+ * The Item's own Assignees, no longer the Tender's (ADR-0033): holding a different
+ * Item on the same Tender does not earn a Quote on this one. Asked as one embedded
+ * read rather than two: RLS turns another org's Item into no row, which is the same
+ * answer as an Item deleted while the form was open, and the embed turns "not on this
+ * Item" into an empty array without a second round trip.
  *
  * `not_assignee` is a different refusal from `forbidden` on purpose. Nothing is wrong
  * with the person — Assignees enrol themselves (ADR-0004) — so the sentence a user reads
- * is one that tells them to put themselves on the Tender, not one that says no.
+ * is one that tells them to put themselves on the Item, not one that says no.
  */
 async function assigneeProblem(
   tenderItemId: string,
@@ -976,19 +978,19 @@ async function assigneeProblem(
 
   const { data } = await supabase
     .from("tender_items")
-    .select("id, tender:tenders(assignees:tender_assignees(user_id))")
+    .select("id, assignees:tender_item_assignees(user_id)")
     .eq("id", tenderItemId)
     .maybeSingle()
     .overrideTypes<
-      { id: string; tender: { assignees: { user_id: string }[] } | null },
+      { id: string; assignees: { user_id: string }[] },
       { merge: false }
     >();
 
   if (!data) return "not_found";
 
-  const assignees = data.tender?.assignees ?? [];
-
-  return assignees.some((row) => row.user_id === callerId) ? null : "not_assignee";
+  return data.assignees.some((row) => row.user_id === callerId)
+    ? null
+    : "not_assignee";
 }
 
 /**

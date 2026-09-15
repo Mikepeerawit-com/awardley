@@ -6,7 +6,6 @@ import { Screen } from "@/components/screen";
 import { Measure } from "@/components/ui/screen-body";
 import { Section } from "@/components/ui/section";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { AssigneeControls } from "@/components/tenders/assignee-controls";
 import { EditTenderForm } from "@/components/tenders/edit-tender-form";
 import { ReferenceImageGallery } from "@/components/tenders/reference-image-gallery";
 import { ReferenceImageUploader } from "@/components/tenders/reference-image-uploader";
@@ -82,6 +81,11 @@ export default async function EditTenderPage({
               key={item.id}
               tenderId={tender.id}
               item={item}
+              // The panel is also where this Item's Assignees are managed (ADR-0033):
+              // the control lands where the reader already is when editing the Item.
+              members={members}
+              callerId={user.id}
+              isOwner={tender.ownerUserId === user.id}
               // The last Item cannot go: a Tender that asks for nothing is a Tender
               // nobody can Bid on, and the server refuses it either way.
               removable={tender.items.length > 1}
@@ -110,24 +114,6 @@ export default async function EditTenderPage({
         />
       </Section>
 
-      {/* Buildspec screen 3 names Assignees alongside the dates and the Items. They
-          also sit on the detail page, because that is where somebody who was never
-          asked goes to put themselves on a Tender. */}
-      {/* **A `Section` here and a `Fold` on the detail screen, on purpose.** The same
-          block is a lookup there — *who else is on this?* — and the work here, since
-          managing Assignees is one of the things this screen exists to do. It is also
-          where the heading went when the Tender detail's fold took it over: the component
-          stopped drawing its own `<h2>` and this page, which draws it bare, was left with
-          an unlabelled list. */}
-      <Section id="assignees" title={t("assignees.title")}>
-        <AssigneeControls
-          tenderId={tender.id}
-          assignees={tender.assignees}
-          members={members}
-          callerId={user.id}
-          isOwner={tender.ownerUserId === user.id}
-        />
-      </Section>
     </Screen>
   );
 }

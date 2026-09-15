@@ -123,30 +123,34 @@ export async function removeTenderItemAction(
   return afterTenderWrite(result, text(formData, "tenderId"));
 }
 
+/**
+ * Assignment is per Item (ADR-0033), so the write takes `itemId` — `tenderId` still
+ * rides along, because what has to be revalidated is the Tender's subtree and the
+ * module deliberately resolves the Item's Tender itself rather than trusting a posted
+ * pairing.
+ */
 export async function addAssigneeAction(
   _previous: TenderFormState,
   formData: FormData,
 ): Promise<TenderFormState> {
-  const tenderId = text(formData, "tenderId");
   const result = await addAssignee(
-    { tenderId, userId: text(formData, "userId") },
+    { tenderItemId: text(formData, "itemId"), userId: text(formData, "userId") },
     await cookies(),
   );
 
-  return afterTenderWrite(result, tenderId);
+  return afterTenderWrite(result, text(formData, "tenderId"));
 }
 
 export async function removeAssigneeAction(
   _previous: TenderFormState,
   formData: FormData,
 ): Promise<TenderFormState> {
-  const tenderId = text(formData, "tenderId");
   const result = await removeAssignee(
-    { tenderId, userId: text(formData, "userId") },
+    { tenderItemId: text(formData, "itemId"), userId: text(formData, "userId") },
     await cookies(),
   );
 
-  return afterTenderWrite(result, tenderId);
+  return afterTenderWrite(result, text(formData, "tenderId"));
 }
 
 /**

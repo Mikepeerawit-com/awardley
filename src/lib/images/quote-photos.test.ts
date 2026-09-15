@@ -117,9 +117,10 @@ async function aQuotedItem(
 
   if (!tender.ok) throw new Error(`could not create a Tender: ${tender.reason}`);
 
-  await addAssignee({ tenderId: tender.tenderId, userId: who.id }, store);
-
   const full = await getTender(tender.tenderId, store);
+
+  await addAssignee({ tenderItemId: full!.items[0].id, userId: who.id }, store);
+
   const quote = await createQuote(
     {
       tenderItemId: full!.items[0].id,

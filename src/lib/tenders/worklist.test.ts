@@ -121,11 +121,18 @@ async function aTender(
 
   if (!result.ok) throw new Error(`could not create a Tender: ${result.reason}`);
 
-  const assigned = await addAssignee({ tenderId: result.tenderId, userId: owner.id }, store);
-
-  if (!assigned.ok) throw new Error(`could not enrol the Owner: ${assigned.reason}`);
-
   const tender = await getTender(result.tenderId, store);
+
+  // On every Item, the competing shape: a Tender-level enrolment stopped existing with
+  // ADR-0033, and what these tests need is only that the Owner is working the Tender.
+  for (const item of tender!.items) {
+    const assigned = await addAssignee(
+      { tenderItemId: item.id, userId: owner.id },
+      store,
+    );
+
+    if (!assigned.ok) throw new Error(`could not enrol the Owner: ${assigned.reason}`);
+  }
 
   return { id: result.tenderId, itemIds: tender!.items.map((item) => item.id) };
 }

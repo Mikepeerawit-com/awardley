@@ -354,12 +354,14 @@ describe.each(locales)(`drawn nowhere in the record, read in %s`, (locale, messa
       </>,
     ],
     [
-      "enrolling yourself on a Tender you are not on",
+      "enrolling yourself on an Item you are not on",
       <AssigneeControls
         key="assignee"
         tenderId={tender.id}
-        assignees={tender.assignees}
-        members={tender.assignees}
+        itemId={tender.items[0].id}
+        itemName={tender.items[0].productName}
+        assignees={tender.items[0].assignees}
+        members={tender.items[0].assignees}
         callerId="user-ploy"
         isOwner={false}
       />,

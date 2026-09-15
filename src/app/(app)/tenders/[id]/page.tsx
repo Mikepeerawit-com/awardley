@@ -58,10 +58,12 @@ import { ownsTender } from "@/lib/tenders/viewer";
  *    working sheet and the sourcing list drew no `<h2>` at all before this.
  * 2. **{@link TenderSections} pins the list of those parts to the top**, so a reader who
  *    wants the Outcome does not scroll four thousand pixels to reach it.
- * 3. **What is read once, or never, is behind a {@link Fold}** — the reference facts and
- *    the Assignees. The test is whether the reader arrived with the question: what do I
- *    owe, what do these Items cost and when is this due are what they came for; who owns
- *    it and what the notes say are what they look up.
+ * 3. **What is read once, or never, is behind a {@link Fold}** — the reference facts.
+ *    The test is whether the reader arrived with the question: what do I owe, what do
+ *    these Items cost and when is this due are what they came for; who owns it and what
+ *    the notes say are what they look up. The Assignees were behind a fold too until
+ *    ADR-0033 moved assignment onto the Item: an Item with nobody sourcing it is work
+ *    outstanding, and work outstanding does not go behind a bar.
  *
  * **The two deadlines were promoted out of the facts grid** to sit above the work as a
  * reading rather than a value — see {@link TenderDeadlines}. They were two of six cells
@@ -69,8 +71,10 @@ import { ownsTender } from "@/lib/tenders/viewer";
  *
  * **The order is what the reader arrived for, then what they might ask, then what they
  * look up.** Deadlines, what you personally owe, the Items, the Outcome, the pictures
- * nobody has placed, and then the two folds. Assignees is last because it is the only
- * block on the screen that is administration rather than work.
+ * nobody has placed, who is on each Item, and then the fold. Assignees sits after the
+ * work because it is about who does it rather than what it is — but it stopped being a
+ * fold when ADR-0033 made "nobody is on this Item" a fact the Owner must see without
+ * opening anything.
  */
 export default async function TenderPage({ params }: PageProps<"/tenders/[id]">) {
   const { id } = await params;
@@ -120,6 +124,7 @@ export default async function TenderPage({ params }: PageProps<"/tenders/[id]">)
     ...(hasUnassigned
       ? [{ id: "unassigned-images", label: "tenders.sections.unassignedImages" }]
       : []),
+    { id: "assignees", label: "tenders.assignees.title" },
   ];
 
   return (
@@ -224,26 +229,32 @@ export default async function TenderPage({ params }: PageProps<"/tenders/[id]">)
         <TenderFacts tender={tender} />
       </Fold>
 
-      {/* Shut, and the count on the summary is why that costs the reader nothing: who is
-          on this Tender is a number most of the time, and the names are one tap away when
-          it is not. `AssigneeControls` draws its own heading no longer — the fold's
-          summary is it. */}
-      <Fold
-        id="assignees"
-        title={t("assignees.title")}
-        count={tender.assignees.length}
-      >
-        <AssigneeControls
-          tenderId={tender.id}
-          assignees={tender.assignees}
-          members={members}
-          callerId={user.id}
-          // The same sentence the loader asked, asked again rather than a second copy of
-          // it written out: `ownsTender` is where "is this reader the Owner" lives, here and
-          // in `mayCorrectQuote` both.
-          isOwner={ownsTender({ ownerUserId: tender.ownerUserId, callerId: user.id })}
-        />
-      </Fold>
+      {/* A Section and not a Fold since ADR-0033: assignment is per Item, and an Item
+          nobody is on — Nobody Sourcing — is work outstanding, which is exactly what a
+          shut bar would hide. One block per Item, each stating who is on it or that
+          nobody is, with the control that fixes it directly underneath — so noticing
+          and putting somebody on are one act on one screen. */}
+      <Section id="assignees" title={t("assignees.title")}>
+        <div className="flex min-w-0 flex-col gap-group">
+          {tender.items.map((item) => (
+            <div key={item.id} className="flex min-w-0 flex-col gap-field">
+              <h3 className="type-subhead min-w-0 break-words">{item.productName}</h3>
+              <AssigneeControls
+                tenderId={tender.id}
+                itemId={item.id}
+                itemName={item.productName}
+                assignees={item.assignees}
+                members={members}
+                callerId={user.id}
+                // The same sentence the loader asked, asked again rather than a second
+                // copy of it written out: `ownsTender` is where "is this reader the
+                // Owner" lives, here and in `mayCorrectQuote` both.
+                isOwner={ownsTender({ ownerUserId: tender.ownerUserId, callerId: user.id })}
+              />
+            </div>
+          ))}
+        </div>
+      </Section>
     </Screen>
   );
 }

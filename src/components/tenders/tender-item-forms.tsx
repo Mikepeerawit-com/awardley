@@ -9,10 +9,12 @@ import {
   updateTenderItemAction,
   type TenderFormState,
 } from "@/app/actions/tenders";
+import { AssigneeControls } from "@/components/tenders/assignee-controls";
 import { TenderItemInputs } from "@/components/tenders/tender-item-fields";
 import { TenderProblemNotice } from "@/components/tenders/tender-problem";
 import { Button } from "@/components/ui/button";
 import { Fold } from "@/components/ui/fold";
+import type { Member } from "@/lib/org/members";
 import { itemAsSubmitted } from "@/lib/tenders/tender-form";
 import type { TenderItem } from "@/lib/tenders/tenders";
 
@@ -73,11 +75,18 @@ function wasRefused(state: TenderFormState): boolean {
 export function EditTenderItemForm({
   tenderId,
   item,
+  members,
+  callerId,
+  isOwner,
   removable,
   defaultOpen = false,
 }: {
   tenderId: string;
   item: TenderItem;
+  /** The org's members, for this Item's assignee picker — see the block below. */
+  members: Member[];
+  callerId: string;
+  isOwner: boolean;
   removable: boolean;
   /**
    * **The one Item of a one-Item Tender**, which is the case the page can see and this
@@ -161,6 +170,23 @@ export function EditTenderItemForm({
               {isRemoving ? t("item.removing") : t("item.remove")}
             </Button>
           ) : null}
+        </div>
+
+        {/* This Item's Assignees, inside its own panel (ADR-0033, ADR-0031): the
+            per-Item control lands where the reader already is when editing the Item.
+            `AssigneeControls` brings its own `<form>`s, so it sits beside the two
+            above rather than inside either — a nested form is not HTML. */}
+        <div className="flex flex-col gap-label">
+          <h4 className="type-subhead min-w-0 break-words">{t("assignees.title")}</h4>
+          <AssigneeControls
+            tenderId={tenderId}
+            itemId={item.id}
+            itemName={item.productName}
+            assignees={item.assignees}
+            members={members}
+            callerId={callerId}
+            isOwner={isOwner}
+          />
         </div>
       </div>
     </Fold>

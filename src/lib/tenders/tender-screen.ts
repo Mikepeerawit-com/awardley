@@ -20,10 +20,11 @@ type TenderScreenFacts = {
   /** The ones nobody has said which Item they are of. Split here so the screen does not. */
   unassignedImages: ReferenceImage[];
   /**
-   * The Items **this reader** has neither Quoted nor recorded No Supplier Found on.
+   * The Items **this reader** holds and has neither Quoted nor recorded No Supplier
+   * Found on.
    *
-   * Empty for a reader who owes nothing, for anybody who is not an Assignee on this
-   * Tender, and for a Tender whose Bid has gone out — see {@link outstandingFor}.
+   * Empty for a reader who owes nothing, for anybody holding none of this Tender's
+   * Items, and for a Tender whose Bid has gone out — see {@link outstandingFor}.
    */
   outstandingForYou: OutstandingItem[];
 };
@@ -247,10 +248,12 @@ function yourWorkOnly(
  * "nobody tried" mean opposite things — only one of them is worth chasing somebody about,
  * and treating the first as the second is how a team learns to ignore the nag.
  *
- * **Somebody who is not an Assignee owes nothing**, and gets no band. Under ADR-0004 only
- * an Assignee may enter a Quote and Assignees enrol themselves, so every Item would
- * otherwise read as outstanding for an Owner who never took one on — nagging them about
- * work they cannot do, with links to a screen that would refuse them.
+ * **Somebody owes only the Items they hold** (ADR-0033), and holding none gets no band
+ * at all. Only an Assignee may enter a Quote and Assignees enrol themselves per Item, so
+ * every Item would otherwise read as outstanding for an Owner who never took one on —
+ * nagging them about work they cannot do, with links to a screen that would refuse
+ * them. Under dividing this is also what keeps the band honest: a colleague's Item is
+ * their work, not this reader's.
  *
  * **Nothing is owed on work that is over**, which is two conditions and not one:
  *
@@ -273,7 +276,12 @@ function outstandingFor(
 ): OutstandingItem[] {
   if (tender === null) return [];
   if (tender.submittedAt !== null) return [];
-  if (!tender.assignees.some((assignee) => assignee.id === callerId)) return [];
+
+  const held = new Set(
+    tender.items
+      .filter((item) => item.assignees.some((assignee) => assignee.id === callerId))
+      .map((item) => item.id),
+  );
 
   // The Outcome is on the Tender's Items and the sourcing is on the sheet's, so the two
   // are matched by id rather than one being read off the other. Both are already in hand.
@@ -284,6 +292,7 @@ function outstandingFor(
   return sheet.items
     .filter(
       (item) =>
+        held.has(item.id) &&
         !decided.has(item.id) &&
         !item.quotes.some((quote) => quote.sourcedByUserId === callerId) &&
         !item.sourcing.noSupplierFound.some((refusal) => refusal.userId === callerId),

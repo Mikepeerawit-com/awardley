@@ -141,18 +141,21 @@ async function aTenderWithTwoItems(store: SessionCookieStore): Promise<void> {
 
   tenderId = result.tenderId;
 
-  // The Owner is deliberately not among them: on this Tender they are the person the
-  // Quotes are compared *by*, not one of the people competing.
-  for (const who of [assignee, colleague]) {
-    const added = await addAssignee({ tenderId, userId: who.id }, store);
-
-    if (!added.ok) throw new Error(`could not assign ${who.email}: ${added.reason}`);
-  }
-
   const tender = await getTender(tenderId, store);
 
   itemId = tender!.items[0].id;
   otherItemId = tender!.items[1].id;
+
+  // The Owner is deliberately not among them: on this Tender they are the person the
+  // Quotes are compared *by*, not one of the people competing. Both hold both Items —
+  // the competing shape (ADR-0033).
+  for (const who of [assignee, colleague]) {
+    for (const tenderItemId of [itemId, otherItemId]) {
+      const added = await addAssignee({ tenderItemId, userId: who.id }, store);
+
+      if (!added.ok) throw new Error(`could not assign ${who.email}: ${added.reason}`);
+    }
+  }
 }
 
 async function aQuote(supplier: string, store: SessionCookieStore): Promise<string> {

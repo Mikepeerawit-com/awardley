@@ -101,20 +101,20 @@ async function aTender(assignees: { id: string }[] = []): Promise<{
 
   if (!result.ok) throw new Error(`could not create a Tender: ${result.reason}`);
 
-  for (const assignee of assignees) {
-    const added = await addAssignee(
-      { tenderId: result.tenderId, userId: assignee.id },
-      store,
-    );
-
-    if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
-  }
-
   const { data } = await service
     .from("tender_items")
     .select("id")
     .eq("tender_id", result.tenderId)
     .single();
+
+  for (const assignee of assignees) {
+    const added = await addAssignee(
+      { tenderItemId: data!.id, userId: assignee.id },
+      store,
+    );
+
+    if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+  }
 
   return { id: result.tenderId, itemId: data!.id };
 }

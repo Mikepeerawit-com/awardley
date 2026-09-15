@@ -139,14 +139,17 @@ beforeAll(async () => {
 
   tenderId = created.tenderId;
 
-  for (const who of [owner, rival]) {
-    await addAssignee({ tenderId, userId: who.id }, store);
-  }
-
   const tender = await getTender(tenderId, store);
 
   glovesId = tender!.items[0].id;
   syringesId = tender!.items[1].id;
+
+  // Both on both Items — the competing shape, which is what the sheet ranks.
+  for (const who of [owner, rival]) {
+    for (const tenderItemId of [glovesId, syringesId]) {
+      await addAssignee({ tenderItemId, userId: who.id }, store);
+    }
+  }
 });
 
 afterEach(async () => {

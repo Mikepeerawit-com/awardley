@@ -16,21 +16,37 @@ import type { Member } from "@/lib/org/members";
 const initialState: TenderFormState = {};
 
 /**
- * Who is working this Tender.
+ * Who is sourcing this Tender Item.
  *
- * Adding yourself is one button and asks nobody, because Assignees compete rather than
- * divide (ADR-0004) and the step exists to enrol you in the Tender's reminders before
- * you start ringing suppliers. Adding or removing someone else is the Owner's, and the
- * picker only renders for them — the real gate is in the server action.
+ * One of these per Item, never one per Tender: assignment is per Item (ADR-0033), and
+ * how many people an Owner puts on each is the whole of competing versus dividing.
+ * Adding yourself is one button and asks nobody — the step exists to enrol you in the
+ * Item's reminders before you start ringing suppliers. Adding or removing someone else
+ * is the Owner's, and the picker only renders for them — the real gate is in the server
+ * action.
+ *
+ * **An Item with nobody on it says Nobody Sourcing** rather than drawing nothing: the
+ * empty state is the one with work outstanding in it, and the control that fixes it is
+ * directly underneath what it says.
+ *
+ * The group role carries the Item's name, because a screen with six of these renders
+ * six identical buttons: "Add me" is only an instruction once a screen reader can say
+ * which Item it enrols you on.
  */
 export function AssigneeControls({
   tenderId,
+  itemId,
+  itemName,
   assignees,
   members,
   callerId,
   isOwner,
 }: {
+  /** The Item's Tender — posted for the revalidate, never trusted for the write. */
   tenderId: string;
+  itemId: string;
+  /** Read for the accessible name only; the visible heading is the caller's. */
+  itemName: string;
   assignees: Member[];
   members: Member[];
   callerId: string;
@@ -41,15 +57,20 @@ export function AssigneeControls({
   const assigned = new Set(assignees.map((assignee) => assignee.id));
   const unassigned = members.filter((member) => !assigned.has(member.id));
 
-  // No heading and no `<section>` of its own since the Tender detail put this behind a
-  // `Fold`: the fold's summary *is* the heading, and it carries the count of Assignees as
-  // well. Two headings one line apart at two different weights is what the old screen
-  // had. The block still lays itself out — at `gap-group` since #154, because the list of
-  // Assignees and the control that adds one are two different things inside one fold.
+  // No heading and no `<section>` of its own: every place this renders — an Item's
+  // block on the Tender detail, its panel on the edit screen, the quote screen's way
+  // in — has already named the Item, and the group label repeats it only where sight
+  // does not reach. The block still lays itself out — at `gap-group` since #154,
+  // because the list of Assignees and the control that adds one are two different
+  // things inside one block.
   return (
-    <div className="flex min-w-0 flex-col gap-group">
+    <div
+      role="group"
+      aria-label={t("groupLabel", { product: itemName })}
+      className="flex min-w-0 flex-col gap-group"
+    >
       {assignees.length === 0 ? (
-        <p className="type-quiet">{t("none")}</p>
+        <p className="text-sm">{t("nobodySourcing")}</p>
       ) : (
         <ul className="flex flex-col gap-field">
           {assignees.map((assignee) => (
@@ -58,6 +79,7 @@ export function AssigneeControls({
               {isOwner || assignee.id === callerId ? (
                 <RemoveForm
                   tenderId={tenderId}
+                  itemId={itemId}
                   userId={assignee.id}
                   label={assignee.id === callerId ? t("removeMe") : t("remove")}
                   pendingLabel={
@@ -74,6 +96,7 @@ export function AssigneeControls({
         {assigned.has(callerId) ? null : (
           <AddForm
             tenderId={tenderId}
+            itemId={itemId}
             userId={callerId}
             label={t("addMe")}
             pendingLabel={t("addingMe")}
@@ -81,7 +104,7 @@ export function AssigneeControls({
         )}
 
         {isOwner && unassigned.length > 0 ? (
-          <AddPicker tenderId={tenderId} members={unassigned} />
+          <AddPicker tenderId={tenderId} itemId={itemId} members={unassigned} />
         ) : null}
       </div>
     </div>
@@ -90,11 +113,13 @@ export function AssigneeControls({
 
 function AddForm({
   tenderId,
+  itemId,
   userId,
   label,
   pendingLabel,
 }: {
   tenderId: string;
+  itemId: string;
   userId: string;
   label: string;
   /** What the button says while the write is in flight — see {@link RemoveForm}. */
@@ -105,6 +130,7 @@ function AddForm({
   return (
     <form action={formAction} className="flex flex-col gap-label">
       <input type="hidden" name="tenderId" value={tenderId} />
+      <input type="hidden" name="itemId" value={itemId} />
       <input type="hidden" name="userId" value={userId} />
 
       <TenderProblemNotice error={state.error} />
@@ -116,13 +142,22 @@ function AddForm({
   );
 }
 
-function AddPicker({ tenderId, members }: { tenderId: string; members: Member[] }) {
+function AddPicker({
+  tenderId,
+  itemId,
+  members,
+}: {
+  tenderId: string;
+  itemId: string;
+  members: Member[];
+}) {
   const t = useTranslations("tenders.assignees");
   const [state, formAction, isPending] = useActionState(addAssigneeAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-label">
       <input type="hidden" name="tenderId" value={tenderId} />
+      <input type="hidden" name="itemId" value={itemId} />
 
       <TenderProblemNotice error={state.error} />
 
@@ -157,11 +192,13 @@ function AddPicker({ tenderId, members }: { tenderId: string; members: Member[] 
  */
 function RemoveForm({
   tenderId,
+  itemId,
   userId,
   label,
   pendingLabel,
 }: {
   tenderId: string;
+  itemId: string;
   userId: string;
   label: string;
   /** What it says instead, for as long as the write is in flight. */
@@ -175,6 +212,7 @@ function RemoveForm({
   return (
     <form action={formAction} className="flex items-center gap-2">
       <input type="hidden" name="tenderId" value={tenderId} />
+      <input type="hidden" name="itemId" value={itemId} />
       <input type="hidden" name="userId" value={userId} />
 
       <Button type="submit" variant="ghost" size="sm" className="h-11" disabled={isPending}>

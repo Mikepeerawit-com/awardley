@@ -144,20 +144,19 @@ async function aTender(
 
   if (!result.ok) throw new Error(`could not create a Tender: ${result.reason}`);
 
+  const tender = await getTender(result.tenderId, store);
+  const itemId = tender!.items[0].id;
+
   // Creating a Tender does not enrol anybody, the Owner included: Assignees add
-  // themselves (ADR-0004), and only an Assignee may enter a Quote.
+  // themselves (ADR-0004), per Item since ADR-0033, and only an Assignee on the Item
+  // may enter a Quote on it.
   for (const who of assignees) {
-    const added = await addAssignee(
-      { tenderId: result.tenderId, userId: who.id },
-      store,
-    );
+    const added = await addAssignee({ tenderItemId: itemId, userId: who.id }, store);
 
     if (!added.ok) throw new Error(`could not assign ${who.email}: ${added.reason}`);
   }
 
-  const tender = await getTender(result.tenderId, store);
-
-  return { tenderId: result.tenderId, itemId: tender!.items[0].id };
+  return { tenderId: result.tenderId, itemId };
 }
 
 /** A Quote as somebody actually gives one, with the awkward fields already filled in. */
@@ -693,8 +692,47 @@ describe("who may enter a Quote", () => {
     const result = await createQuote(aQuote(), store);
 
     // Not `forbidden`: nothing is wrong with them, and the sentence they read has to be
-    // the one that tells them to put themselves on the Tender.
+    // the one that tells them to put themselves on the Item.
     expect(result).toEqual({ ok: false, reason: "not_assignee" });
+  });
+
+  it("refuses somebody holding a different Item on the same Tender", async () => {
+    // Assignment is per Item (ADR-0033): under dividing, being handed the masks earns
+    // no Quote on the gloves. The refusal is the same enrol-yourself sentence, because
+    // the fix is the same one button.
+    const store = await signedInAs(assignee.email);
+    const built = await createTender(
+      {
+        clientName: "Bangkok General Hospital",
+        title: "Divided sourcing",
+        dateReceived: "2026-08-01",
+        internalQuoteDeadline: "2026-08-20",
+        clientSubmissionDeadline: "2026-08-28",
+        expectedDecisionDate: null,
+        ownerUserId: assignee.id,
+        notes: null,
+        items: [
+          { productName: "Nitrile gloves", description: null, quantity: 500, unit: "box of 50" },
+          { productName: "Surgical masks", description: null, quantity: 200, unit: "box of 50" },
+        ],
+      },
+      store,
+    );
+
+    if (!built.ok) throw new Error(`could not create a Tender: ${built.reason}`);
+
+    const items = (await getTender(built.tenderId, store))!.items;
+
+    await addAssignee({ tenderItemId: items[1].id, userId: rival.id }, store);
+
+    const result = await createQuote(
+      aQuote({ tenderItemId: items[0].id }),
+      await signedInAs(rival.email),
+    );
+
+    expect(result).toEqual({ ok: false, reason: "not_assignee" });
+
+    await service.from("tenders").delete().eq("id", built.tenderId);
   });
 
   it("gives another org's Item the same answer as a deleted one", async () => {
@@ -1477,14 +1515,13 @@ describe("taking a Quote back", () => {
 
     if (!built.ok) throw new Error(`could not create a Tender: ${built.reason}`);
 
-    const added = await addAssignee(
-      { tenderId: built.tenderId, userId: assignee.id },
-      store,
-    );
-
-    if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
-
     const items = (await getTender(built.tenderId, store))!.items.map((item) => item.id);
+
+    for (const tenderItemId of items) {
+      const added = await addAssignee({ tenderItemId, userId: assignee.id }, store);
+
+      if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+    }
 
     /** The Tender as `tenderProgress` needs it, built from what the database now says. */
     const progressNow = async () => {

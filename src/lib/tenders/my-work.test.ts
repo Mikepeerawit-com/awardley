@@ -133,16 +133,20 @@ async function aTender(
 
   if (!result.ok) throw new Error(`could not create a Tender: ${result.reason}`);
 
-  for (const who of assignees) {
-    const assigned = await addAssignee(
-      { tenderId: result.tenderId, userId: who.id },
-      store,
-    );
-
-    if (!assigned.ok) throw new Error(`could not enrol an Assignee: ${assigned.reason}`);
-  }
-
   const tender = await getTender(result.tenderId, store);
+
+  // Everybody on every Item — the competing shape, and exactly what the old
+  // Tender-level row meant. The dividing tests below assign by hand instead.
+  for (const who of assignees) {
+    for (const item of tender!.items) {
+      const assigned = await addAssignee(
+        { tenderItemId: item.id, userId: who.id },
+        store,
+      );
+
+      if (!assigned.ok) throw new Error(`could not enrol an Assignee: ${assigned.reason}`);
+    }
+  }
 
   return { id: result.tenderId, itemIds: tender!.items.map((item) => item.id) };
 }
@@ -275,6 +279,23 @@ describe("listMyWork", () => {
     // Readable — it is their org's Tender — and still not their work.
     expect(await myItemIds()).toEqual([]);
     expect(await myItemIds(somchai)).toHaveLength(1);
+  });
+
+  it("lists only the Items the reader holds, when an Owner divides", async () => {
+    // The list ADR-0033 exists for: one product each, and each list is its holder's.
+    // Under the Tender-level join both readers saw both rows and neither list was
+    // anybody's — reaching zero meant nothing on a list that was never yours.
+    const { itemIds } = await aTender({
+      assignees: [],
+      items: [anItem("Nitrile gloves"), anItem("Surgical masks")],
+    });
+    const store = await signedInAs(owner.email);
+
+    await addAssignee({ tenderItemId: itemIds[0], userId: nok.id }, store);
+    await addAssignee({ tenderItemId: itemIds[1], userId: somchai.id }, store);
+
+    expect(await myItemIds()).toEqual([itemIds[0]]);
+    expect(await myItemIds(somchai)).toEqual([itemIds[1]]);
   });
 
   it("orders rows by soonest Internal Quote Deadline, whichever Tender they are on", async () => {

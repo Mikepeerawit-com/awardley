@@ -377,9 +377,12 @@ function verdictOn(row: ReminderRow, tender: TenderRow, today: string): Verdict 
  * mean "the 25th" — and both milestones share the one message and the one @-list.
  *
  * Who each milestone is addressed to lives in {@link milestoneRules}, and the sharp case
- * is the internal quote deadline: **only Assignees who have not answered at all**, because
- * a reminder that pings the person who already rang round teaches the whole group to mute
- * the robot inside a month.
+ * is the internal quote deadline: **only Assignees who have answered nothing they
+ * hold**, because a reminder that pings the person who already rang round teaches the
+ * whole group to mute the robot inside a month. Assignment is per Item (ADR-0033), so
+ * "they hold" is load-bearing: under dividing, the person given two Items and done with
+ * both is silent while the person given the unanswered one is named — nobody is chased
+ * about work that was never theirs.
  */
 function tenderMessage(
   orgId: string,
@@ -496,9 +499,15 @@ function notificationsFor(
 
   return recipients.flatMap((userId) =>
     tender.items
-      // An Item this Assignee has already said they could not source is answered. They
-      // are still @-ed about the Tender; they are not sent back to a job they finished.
-      .filter((item) => !sourcing.noSupplierFound.get(item.id)?.has(userId))
+      // Only the Items this Assignee holds (ADR-0033): the row is a job to do, and an
+      // Item that was never theirs is not one. An Item they have already said they
+      // could not source is answered — they are still @-ed about the Tender; they are
+      // not sent back to a job they finished.
+      .filter(
+        (item) =>
+          sourcing.assignees.get(item.id)?.includes(userId) &&
+          !sourcing.noSupplierFound.get(item.id)?.has(userId),
+      )
       .map((item) => row(userId, item.id)),
   );
 }
@@ -531,7 +540,13 @@ const milestoneRules: Record<
 > = {
   internal_quote: {
     audience: (tender, sourcing) => {
-      const assignees = sourcing.assignees.get(tender.id) ?? [];
+      // Everybody holding any of this Tender's Items, deduplicated: under competing one
+      // person holds them all and is addressable once.
+      const assignees = [
+        ...new Set(
+          tender.items.flatMap((item) => sourcing.assignees.get(item.id) ?? []),
+        ),
+      ];
 
       return {
         addressable: assignees,
@@ -589,23 +604,30 @@ function ownerOnly(tender: TenderRow): Audience {
 type Audience = { addressable: string[]; owing: string[] };
 
 /**
- * Has this Assignee still not answered for this Tender?
+ * Has this Assignee still not answered for the Items they hold on this Tender?
  *
- * Two conditions, and the second is not optional. **No Supplier Found silences the
- * sourcing nag for the person who recorded it** (CONTEXT.md): an Assignee who rang round
- * every Item and reported back that none could be sourced has done the work, and pinging
- * them is exactly what the "no Quotes at all" filter exists to avoid. Counting Quotes
- * alone would nag the one person on the Tender who answered every question they were
- * asked.
+ * Only the Items they hold (ADR-0033): a colleague's unanswered Item is not this
+ * person's silence, and chasing them about it is exactly the wrongness the per-Item
+ * model exists to remove. Within that scope the rule keeps both of its old conditions.
+ * A Quote on any held Item is an answer — under competing that keeps today's shape:
+ * one price entered anywhere you hold silences the nag. **No Supplier Found silences
+ * it for the person who recorded it** (CONTEXT.md): an Assignee who rang round every
+ * Item they hold and reported back that none could be sourced has done the work, and
+ * counting Quotes alone would nag the one person who answered every question they
+ * were asked.
  *
  * This is still not the worklist's Sourcing Overdue rule. That one asks whether *anybody*
  * has answered for an Item and decides which block the Tender sits in; this one asks
- * whether *this person* has answered for any of them and decides who is @-ed.
+ * whether *this person* has answered for what they hold and decides who is @-ed.
  */
 function stillOwes(userId: string, tender: TenderRow, sourcing: Sourcing): boolean {
-  if (sourcing.quotedBy.get(tender.id)?.has(userId)) return false;
+  const held = tender.items.filter((item) =>
+    sourcing.assignees.get(item.id)?.includes(userId),
+  );
 
-  return tender.items.some((item) => !sourcing.noSupplierFound.get(item.id)?.has(userId));
+  if (held.some((item) => sourcing.quotedBy.get(item.id)?.has(userId))) return false;
+
+  return held.some((item) => !sourcing.noSupplierFound.get(item.id)?.has(userId));
 }
 
 function deadlines(tender: TenderRow): Deadlines {
@@ -668,7 +690,7 @@ async function tendersById(ids: string[]): Promise<Map<string, TenderRow>> {
   return new Map((data ?? []).map((tender) => [tender.id, tender]));
 }
 
-/** Who is on each Tender, who has already quoted on it, and who has answered each Item. */
+/** Who holds each Item, who has quoted on it, and who has said it could not be sourced. */
 type Sourcing = {
   assignees: Map<string, string[]>;
   quotedBy: Map<string, Set<string>>;
@@ -678,20 +700,16 @@ type Sourcing = {
 /**
  * The whole run's sourcing picture in three queries, not three per Tender.
  *
- * `quotes` carries no `tender_id` — a Quote is a price for one *Item* — so the Tender-level
- * question "has this Assignee quoted here at all" is answered by reading the Quotes on
- * every Item of every Tender in the run and folding them back up.
+ * All three maps are keyed by *Item* now that assignment is too (ADR-0033). Nothing here
+ * folds up to the Tender any more: the Tender-level questions — who is addressable, who
+ * still owes — are asked of these maps by the rules above, against the Items each person
+ * holds.
  */
 async function loadSourcing(tenders: Map<string, TenderRow>): Promise<Sourcing> {
   const service = createServiceClient();
-  const tenderOf = new Map<string, string>();
-
-  for (const tender of tenders.values()) {
-    for (const item of tender.items) tenderOf.set(item.id, tender.id);
-  }
-
-  const itemIds = [...tenderOf.keys()];
-  const tenderIds = [...tenders.keys()];
+  const itemIds = [...tenders.values()].flatMap((tender) =>
+    tender.items.map((item) => item.id),
+  );
 
   // `.in()` on an empty list is a query with no answer worth asking for, and PostgREST
   // rejects it outright rather than returning nothing.
@@ -699,10 +717,12 @@ async function loadSourcing(tenders: Map<string, TenderRow>): Promise<Sourcing> 
     itemIds.length === 0 ? Promise.resolve({ data: [] as T[] }) : query();
 
   const [assigneeRows, quoteRows, refusalRows] = await Promise.all([
-    service
-      .from("tender_assignees")
-      .select("tender_id, user_id")
-      .in("tender_id", tenderIds),
+    overItems<{ tender_item_id: string; user_id: string }>(() =>
+      service
+        .from("tender_item_assignees")
+        .select("tender_item_id, user_id")
+        .in("tender_item_id", itemIds),
+    ),
     overItems<{ tender_item_id: string; created_by_user_id: string }>(() =>
       service
         .from("quotes")
@@ -722,20 +742,16 @@ async function loadSourcing(tenders: Map<string, TenderRow>): Promise<Sourcing> 
   const noSupplierFound = new Map<string, Set<string>>();
 
   for (const row of assigneeRows.data ?? []) {
-    assignees.set(row.tender_id, [
-      ...(assignees.get(row.tender_id) ?? []),
+    assignees.set(row.tender_item_id, [
+      ...(assignees.get(row.tender_item_id) ?? []),
       row.user_id,
     ]);
   }
 
   for (const row of quoteRows.data ?? []) {
-    const tenderId = tenderOf.get(row.tender_item_id);
-
-    if (tenderId === undefined) continue;
-
     quotedBy.set(
-      tenderId,
-      (quotedBy.get(tenderId) ?? new Set()).add(row.created_by_user_id),
+      row.tender_item_id,
+      (quotedBy.get(row.tender_item_id) ?? new Set()).add(row.created_by_user_id),
     );
   }
 

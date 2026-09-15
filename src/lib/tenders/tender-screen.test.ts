@@ -249,12 +249,14 @@ beforeAll(async () => {
     store,
   ));
 
-  // Both are Assignees, which under ADR-0004 is what makes either of them owe anything
-  // at all: Assignees compete rather than divide, so both owe both Items to begin with.
+  // Both hold both Items, which is what makes either of them owe anything at all — the
+  // competing shape (ADR-0033), and exactly what the old Tender-level enrolment meant.
   for (const who of [owner, mate]) {
-    const added = await addAssignee({ tenderId, userId: who.id }, store);
+    for (const held of [itemId, otherItemId]) {
+      const added = await addAssignee({ tenderItemId: held, userId: who.id }, store);
 
-    if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+      if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+    }
   }
 
   // One placed on each Item and one left Unassigned, so a loader that split them wrongly
@@ -565,11 +567,13 @@ describe("what each viewer is handed", () => {
 
     // The Owner is deliberately *not* among them: "Owner" and "Assignee" are two
     // different answers on this Tender, and the last test in this suite is what makes
-    // somebody both.
+    // somebody both. Both hold both Items — the competing shape (ADR-0033).
     for (const who of [mate, rival]) {
-      const added = await addAssignee({ tenderId: viewed.tenderId, userId: who.id }, store);
+      for (const held of [viewed.itemId, viewed.otherItemId]) {
+        const added = await addAssignee({ tenderItemId: held, userId: who.id }, store);
 
-      if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+        if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+      }
     }
 
     const mine = await aQuote(
@@ -785,7 +789,10 @@ describe("what each viewer is handed", () => {
 
   it("gives an Owner who is also an Assignee everything", async () => {
     // Owner wins. Working a Tender you own must not cost you the screen for owning it.
-    const added = await addAssignee({ tenderId: viewed.tenderId, userId: owner.id }, store);
+    const added = await addAssignee(
+      { tenderItemId: viewed.itemId, userId: owner.id },
+      store,
+    );
 
     expect(added.ok).toBe(true);
 
@@ -793,7 +800,11 @@ describe("what each viewer is handed", () => {
       await loadTenderScreen(viewed.tenderId, owner.id, store),
     );
 
-    expect(screen.tender?.assignees.map((assignee) => assignee.id)).toContain(owner.id);
+    expect(
+      screen.tender?.items
+        .find((item) => item.id === viewed.itemId)
+        ?.assignees.map((assignee) => assignee.id),
+    ).toContain(owner.id);
     expect(screen.sheet.items[0].landedCostPerUnit).toBe(priced.landedCost);
     expect(screen.sheet.items[0].quotes).toHaveLength(2);
   });

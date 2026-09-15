@@ -439,9 +439,17 @@ describe("the two roles in Chinese", () => {
     // `tenders.ownedBy` could read 参与人：{name} against English "Owner: {name}" and every
     // other assertion here stays green. That is this ticket's own fault with the roles
     // exchanged, which is the one regression a fix like this actually invites.
+    //
+    // One key is exempt by decision rather than by oversight. **Nobody Sourcing** names
+    // the role in Chinese — 暂无参与人 says who is absent, and #174 is explicit that it is
+    // the Assignee's word and never the Owner's — while its settled English, "Nobody
+    // sourcing", says what is not happening. The pair is the glossary's, so this file
+    // does not get to make English name an Assignee there.
+    const exempt = new Set(["tenders.assignees.nobodySourcing"]);
+
     const misused = [...chinese]
       .filter(([, message]) => message.includes("参与人"))
-      .filter(([key]) => !names.assignee(english.get(key) ?? ""))
+      .filter(([key]) => !exempt.has(key) && !names.assignee(english.get(key) ?? ""))
       .map(([key]) => key)
       .sort();
 

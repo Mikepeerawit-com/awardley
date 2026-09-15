@@ -117,7 +117,7 @@ describe("the v1 schema", () => {
     "users",
     "suppliers",
     "tenders",
-    "tender_assignees",
+    "tender_item_assignees",
     "tender_items",
     "quotes",
     "quote_photos",
@@ -142,6 +142,63 @@ describe("the v1 schema", () => {
 
     expect(error).toBeNull();
     expect(data).toEqual([{ timezone: "Asia/Bangkok", fx_buffer_pct: 0.02 }]);
+  });
+});
+
+describe("tender_item_assignees", () => {
+  // Asked of the database directly because the guarantees are the database's: the app's
+  // upsert is *built on* this key, and the cascade fires on a path no app code walks.
+  it("keys on the Item and the person, once", async () => {
+    const row = {
+      tender_item_id: fixture.tenderItemId,
+      user_id: fixture.userId,
+      org_id: fixture.orgId,
+    };
+
+    const first = await service.from("tender_item_assignees").insert(row);
+    const second = await service.from("tender_item_assignees").insert(row);
+
+    expect(first.error).toBeNull();
+    expect(second.error?.message).toContain("tender_item_assignees_pkey");
+
+    await service
+      .from("tender_item_assignees")
+      .delete()
+      .match({ tender_item_id: fixture.tenderItemId, user_id: fixture.userId });
+  });
+
+  it("goes with its Item, the way the old table went with its Tender", async () => {
+    const doomedItem = await insert("tender_items", {
+      org_id: fixture.orgId,
+      tender_id: fixture.tenderId,
+      product_name: "Doomed widget",
+      quantity: 1,
+      unit: "piece",
+      ordinal: 99,
+    });
+
+    await service.from("tender_item_assignees").insert({
+      tender_item_id: doomedItem,
+      user_id: fixture.userId,
+      org_id: fixture.orgId,
+    });
+
+    await service.from("tender_items").delete().eq("id", doomedItem);
+
+    const { data } = await service
+      .from("tender_item_assignees")
+      .select("user_id")
+      .eq("tender_item_id", doomedItem);
+
+    expect(data).toEqual([]);
+  });
+
+  it("left no tender_assignees table behind", async () => {
+    // "Replaces" means replaces: two assignment tables would be two answers to "who is
+    // on this?", and the one the code no longer reads would be the one that lies.
+    const { error } = await service.from("tender_assignees").select("*").limit(0);
+
+    expect(error).not.toBeNull();
   });
 });
 

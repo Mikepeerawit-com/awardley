@@ -114,6 +114,22 @@ async function aTender(overrides = {}): Promise<string> {
   return result.tenderId;
 }
 
+/** The first Item of a Tender, which is where assignment lives now (ADR-0033). */
+async function anItemOf(tenderId: string): Promise<string> {
+  const { data, error } = await service
+    .from("tender_items")
+    .select("id")
+    .eq("tender_id", tenderId)
+    .order("ordinal")
+    .order("id")
+    .limit(1)
+    .single();
+
+  if (error) throw error;
+
+  return data.id;
+}
+
 beforeAll(async () => {
   orgId = await createOrg(`Tenders ${run}`);
   otherOrgId = await createOrg(`Tenders other ${run}`);
@@ -567,12 +583,12 @@ describe("Tender Items", () => {
 describe("byNameThenId", () => {
   // The order Assignees are read in, tested as a rule rather than through the read.
   //
-  // The read cannot answer for it: `tender_assignees` is keyed `(tender_id, user_id)`,
-  // so an untiebroken embed comes back ascending by `user_id` or in heap order depending
-  // on the plan Postgres picks, and the two are the same answer often enough that a
-  // database test with the `id` key removed went green 11 times in 25 (#105). That is a
-  // check reporting on the planner, not on the ordering. Here the failing case is two
-  // lines long and it fails every time.
+  // The read cannot answer for it: `tender_item_assignees` is keyed
+  // `(tender_item_id, user_id)`, so an untiebroken embed comes back ascending by
+  // `user_id` or in heap order depending on the plan Postgres picks, and the two are the
+  // same answer often enough that a database test with the `id` key removed went green
+  // 11 times in 25 (#105). That is a check reporting on the planner, not on the
+  // ordering. Here the failing case is two lines long and it fails every time.
   const somchai = { id: "22222222-0000-0000-0000-000000000000", name: "Somchai Wong" };
   const alsoSomchai = { id: "11111111-0000-0000-0000-000000000000", name: "Somchai Wong" };
 
@@ -590,35 +606,41 @@ describe("byNameThenId", () => {
 });
 
 describe("Assignees", () => {
-  it("lets the Owner add and remove someone", async () => {
+  it("lets the Owner add and remove someone on an Item", async () => {
     const tenderId = await aTender();
+    const tenderItemId = await anItemOf(tenderId);
     const store = await signedInAs(owner.email);
 
-    expect(await addAssignee({ tenderId, userId: mate.id }, store)).toEqual({ ok: true });
-    expect((await getTender(tenderId, store))?.assignees.map((a) => a.id)).toEqual([
-      mate.id,
-    ]);
-
-    expect(await removeAssignee({ tenderId, userId: mate.id }, store)).toEqual({
+    expect(await addAssignee({ tenderItemId, userId: mate.id }, store)).toEqual({
       ok: true,
     });
-    expect((await getTender(tenderId, store))?.assignees).toEqual([]);
+    expect(
+      (await getTender(tenderId, store))?.items[0].assignees.map((a) => a.id),
+    ).toEqual([mate.id]);
+
+    expect(await removeAssignee({ tenderItemId, userId: mate.id }, store)).toEqual({
+      ok: true,
+    });
+    expect((await getTender(tenderId, store))?.items[0].assignees).toEqual([]);
   });
 
-  it("lets anyone add themselves without waiting to be asked", async () => {
-    // Self-assignment is the step that enrols you in the Tender's reminders, and it is
-    // deliberately not gated: ADR-0004.
+  it("lets anyone add themselves to an Item without waiting to be asked", async () => {
+    // Self-assignment is the step that enrols you in the Item's reminders, and it is
+    // deliberately not gated: ADR-0004's rule, per Item since ADR-0033.
     const tenderId = await aTender();
+    const tenderItemId = await anItemOf(tenderId);
     const store = await signedInAs(mate.email);
 
-    expect(await addAssignee({ tenderId, userId: mate.id }, store)).toEqual({ ok: true });
+    expect(await addAssignee({ tenderItemId, userId: mate.id }, store)).toEqual({
+      ok: true,
+    });
   });
 
   it("refuses a non-Owner adding somebody else", async () => {
-    const tenderId = await aTender();
+    const tenderItemId = await anItemOf(await aTender());
 
     const result = await addAssignee(
-      { tenderId, userId: owner.id },
+      { tenderItemId, userId: owner.id },
       await signedInAs(mate.email),
     );
 
@@ -626,12 +648,12 @@ describe("Assignees", () => {
   });
 
   it("refuses a non-Owner removing somebody else", async () => {
-    const tenderId = await aTender();
+    const tenderItemId = await anItemOf(await aTender());
 
-    await addAssignee({ tenderId, userId: owner.id }, await signedInAs(owner.email));
+    await addAssignee({ tenderItemId, userId: owner.id }, await signedInAs(owner.email));
 
     const result = await removeAssignee(
-      { tenderId, userId: owner.id },
+      { tenderItemId, userId: owner.id },
       await signedInAs(mate.email),
     );
 
@@ -639,30 +661,53 @@ describe("Assignees", () => {
   });
 
   it("lets an Assignee take themselves back off", async () => {
-    const tenderId = await aTender();
+    const tenderItemId = await anItemOf(await aTender());
     const store = await signedInAs(mate.email);
 
-    await addAssignee({ tenderId, userId: mate.id }, store);
+    await addAssignee({ tenderItemId, userId: mate.id }, store);
 
-    expect(await removeAssignee({ tenderId, userId: mate.id }, store)).toEqual({
+    expect(await removeAssignee({ tenderItemId, userId: mate.id }, store)).toEqual({
       ok: true,
     });
   });
 
   it("is idempotent, so a second add is not an error", async () => {
     const tenderId = await aTender();
+    const tenderItemId = await anItemOf(tenderId);
     const store = await signedInAs(mate.email);
 
-    await addAssignee({ tenderId, userId: mate.id }, store);
+    await addAssignee({ tenderItemId, userId: mate.id }, store);
 
-    expect(await addAssignee({ tenderId, userId: mate.id }, store)).toEqual({ ok: true });
-    expect((await getTender(tenderId, store))?.assignees).toHaveLength(1);
+    expect(await addAssignee({ tenderItemId, userId: mate.id }, store)).toEqual({
+      ok: true,
+    });
+    expect((await getTender(tenderId, store))?.items[0].assignees).toHaveLength(1);
+  });
+
+  it("scopes assignment to the one Item, not the Tender", async () => {
+    // The whole of ADR-0033 in one read: being put on one Item of a two-Item Tender
+    // says nothing about the other, which is what makes dividing expressible at all.
+    const tenderId = await aTender({
+      items: [
+        { productName: "Nitrile gloves", description: null, quantity: 500, unit: "box of 50" },
+        { productName: "Surgical masks", description: null, quantity: 20000, unit: "piece" },
+      ],
+    });
+    const store = await signedInAs(owner.email);
+    const tender = await getTender(tenderId, store);
+
+    await addAssignee({ tenderItemId: tender!.items[0].id, userId: mate.id }, store);
+
+    const after = await getTender(tenderId, store);
+
+    expect(after?.items[0].assignees.map((a) => a.id)).toEqual([mate.id]);
+    expect(after?.items[1].assignees).toEqual([]);
   });
 
   it("refuses to assign a Disabled colleague, whose id the picker never offered", async () => {
     // The picker leaves them out, and the picker is not the gate: the action is a public
     // endpoint and the disabled member's row is still visible to the rest of the org.
-    const tenderId = await aTender();
+    const tenderItemId = await anItemOf(await aTender());
 
     await service
       .from("users")
@@ -670,7 +715,7 @@ describe("Assignees", () => {
       .eq("id", mate.id);
 
     const result = await addAssignee(
-      { tenderId, userId: mate.id },
+      { tenderItemId, userId: mate.id },
       await signedInAs(owner.email),
     );
 
@@ -680,19 +725,19 @@ describe("Assignees", () => {
   });
 
   it("still lets the Owner take a Disabled colleague off", async () => {
-    // The mirror has to keep working. Someone leaving is exactly when their Tenders get
+    // The mirror has to keep working. Someone leaving is exactly when their Items get
     // tidied up, and by then their account is already disabled.
-    const tenderId = await aTender();
+    const tenderItemId = await anItemOf(await aTender());
     const store = await signedInAs(owner.email);
 
-    await addAssignee({ tenderId, userId: mate.id }, store);
+    await addAssignee({ tenderItemId, userId: mate.id }, store);
 
     await service
       .from("users")
       .update({ disabled_at: disabledAt })
       .eq("id", mate.id);
 
-    expect(await removeAssignee({ tenderId, userId: mate.id }, store)).toEqual({
+    expect(await removeAssignee({ tenderItemId, userId: mate.id }, store)).toEqual({
       ok: true,
     });
 
@@ -700,14 +745,32 @@ describe("Assignees", () => {
   });
 
   it("refuses to assign someone from another org", async () => {
-    const tenderId = await aTender();
+    const tenderItemId = await anItemOf(await aTender());
 
     const result = await addAssignee(
-      { tenderId, userId: outsider.id },
+      { tenderItemId, userId: outsider.id },
       await signedInAs(owner.email),
     );
 
     expect(result).toEqual({ ok: false, reason: "unassignable" });
+  });
+
+  it("refuses an Item in another org, as not found rather than as forbidden", async () => {
+    // RLS makes somebody else's Item and no Item the same answer, and that is the
+    // answer to give: `not_found` states nothing about what exists elsewhere.
+    const result = await createTender(
+      tenderInput({ ownerUserId: outsider.id }),
+      await signedInAs(outsider.email),
+    );
+
+    if (!result.ok) throw new Error(result.reason);
+    created.push(result.tenderId);
+
+    const tenderItemId = await anItemOf(result.tenderId);
+
+    expect(
+      await addAssignee({ tenderItemId, userId: owner.id }, await signedInAs(owner.email)),
+    ).toEqual({ ok: false, reason: "not_found" });
   });
 });
 
@@ -785,6 +848,60 @@ describe("listTenders and getTender", () => {
       items: [{ outcome: null }],
     });
     expect(row?.reference).toMatch(/^T-\d+$/);
+  });
+
+  it("hands the Assignees back on the Item, and an Item with none says so", async () => {
+    const tenderId = await aTender({
+      items: [
+        { productName: "Nitrile gloves", description: null, quantity: 500, unit: "box of 50" },
+        { productName: "Surgical masks", description: null, quantity: 20000, unit: "piece" },
+      ],
+    });
+    const store = await signedInAs(owner.email);
+    const before = await getTender(tenderId, store);
+
+    await addAssignee({ tenderItemId: before!.items[0].id, userId: mate.id }, store);
+
+    const tender = await getTender(tenderId, store);
+
+    expect(tender?.items[0].assignees).toEqual([{ id: mate.id, name: mate.email }]);
+    // Nobody Sourcing is this empty array and nothing else — derived, never stored.
+    expect(tender?.items[1].assignees).toEqual([]);
+  });
+
+  it("keeps the two-Assignee order the rule byNameThenId states", async () => {
+    const tenderId = await aTender();
+    const store = await signedInAs(owner.email);
+    const tenderItemId = await anItemOf(tenderId);
+
+    await addAssignee({ tenderItemId, userId: owner.id }, store);
+    await addAssignee({ tenderItemId, userId: mate.id }, store);
+
+    const assignees = (await getTender(tenderId, store))!.items[0].assignees;
+
+    expect(assignees).toHaveLength(2);
+    expect(assignees).toEqual([...assignees].sort(byNameThenId));
+  });
+
+  it("unions the Items' Assignees into the row's assigneeUserIds", async () => {
+    // The Tender-level list is what Mine reads, and holding any one Item keeps the
+    // Tender yours — so one person on both Items appears once, not twice.
+    const tenderId = await aTender({
+      items: [
+        { productName: "Nitrile gloves", description: null, quantity: 500, unit: "box of 50" },
+        { productName: "Surgical masks", description: null, quantity: 20000, unit: "piece" },
+      ],
+    });
+    const store = await signedInAs(owner.email);
+    const tender = await getTender(tenderId, store);
+
+    await addAssignee({ tenderItemId: tender!.items[0].id, userId: mate.id }, store);
+    await addAssignee({ tenderItemId: tender!.items[0].id, userId: owner.id }, store);
+    await addAssignee({ tenderItemId: tender!.items[1].id, userId: owner.id }, store);
+
+    const row = (await listTenders(store)).find((candidate) => candidate.id === tenderId);
+
+    expect(row?.assigneeUserIds.toSorted()).toEqual([mate.id, owner.id].toSorted());
   });
 
   it("shows another org nothing", async () => {

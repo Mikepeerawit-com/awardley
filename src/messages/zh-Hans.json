@@ -249,7 +249,8 @@
     },
     "assignees": {
       "title": "参与人",
-      "none": "还没有人负责寻源。",
+      "nobodySourcing": "暂无参与人",
+      "groupLabel": "{product}的参与人",
       "pick": "选择要添加的同事",
       "add": "添加",
       "adding": "添加中…",
@@ -257,7 +258,7 @@
       "addingMe": "正在加入…",
       "remove": "移除",
       "removing": "移除中…",
-      "removeMe": "退出该招标",
+      "removeMe": "退出该产品项",
       "removingMe": "正在退出…"
     },
     "referenceImages": {
@@ -339,7 +340,7 @@
     },
     "add": "新增报价",
     "addHint": "按供应商实际给出的币种和计价单位填写。换算由系统负责，不需要你算。",
-    "notAssignee": "只有本次招标的参与人才能录入报价——打电话给供应商的是他们。在下方把自己加进来，表单就会出现。",
+    "notAssignee": "只有该产品项的参与人才能录入报价——打电话给供应商的是他们。在下方把自己加进来，表单就会出现。",
     "supplier": "供应商",
     "quotedAt": "报价日期",
     "unitPrice": "单价",

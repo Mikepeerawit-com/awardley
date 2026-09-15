@@ -142,14 +142,6 @@ const { data: tender, error: tenderError } = await db
 
 if (tenderError) die(`could not create the tender: ${tenderError.message}`);
 
-// Without this row the Quote form refuses with `not_assignee` and the camera button
-// never gets a Quote to hang off.
-const { error: assigneeError } = await db
-  .from("tender_assignees")
-  .insert({ tender_id: tender.id, user_id: user.id, org_id: user.org_id });
-
-if (assigneeError) die(`could not assign you to it: ${assigneeError.message}`);
-
 const { data: item, error: itemError } = await db
   .from("tender_items")
   .insert({
@@ -166,6 +158,14 @@ const { data: item, error: itemError } = await db
   .single();
 
 if (itemError) die(`could not create the item: ${itemError.message}`);
+
+// Without this row the Quote form refuses with `not_assignee` and the camera button
+// never gets a Quote to hang off. Per Item since ADR-0033, so it needs the Item first.
+const { error: assigneeError } = await db
+  .from("tender_item_assignees")
+  .insert({ tender_item_id: item.id, user_id: user.id, org_id: user.org_id });
+
+if (assigneeError) die(`could not assign you to it: ${assigneeError.message}`);
 
 // ── the Quote the camera button hangs off ─────────────────────────────────
 const { data: existingSupplier } = await db

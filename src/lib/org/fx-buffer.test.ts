@@ -190,11 +190,11 @@ beforeAll(async () => {
 
   if (!tender.ok) throw new Error(`could not create a Tender: ${tender.reason}`);
 
-  const added = await addAssignee({ tenderId: tender.tenderId, userId: admin.id }, store);
+  itemId = (await getTender(tender.tenderId, store))!.items[0].id;
+
+  const added = await addAssignee({ tenderItemId: itemId, userId: admin.id }, store);
 
   if (!added.ok) throw new Error(`could not assign the admin: ${added.reason}`);
-
-  itemId = (await getTender(tender.tenderId, store))!.items[0].id;
 });
 
 afterEach(async () => {

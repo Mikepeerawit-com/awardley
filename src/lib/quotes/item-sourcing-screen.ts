@@ -61,10 +61,10 @@ export type ItemSourcingScreenData = {
    * no confidentiality at all and cost the team duplicated calls.
    *
    * It is also what the screen was already built to say. `NoSupplierFoundForm` is per
-   * Assignee and never per Item — Assignees compete rather than divide (ADR-0004), so one
-   * of them failing says nothing about whether the Item can be sourced — and it already
-   * draws other people's records "as fact rather than as something to act on". That is
-   * exactly the reading taken here.
+   * Assignee and never per Item — under competing several people hold one Item
+   * (ADR-0033), and one of them failing says nothing about whether the Item can be
+   * sourced — and it already draws other people's records "as fact rather than as
+   * something to act on". That is exactly the reading taken here.
    *
    * **The cost, stated.** The note is free text, so somebody may one day type a number
    * into it ("supplier wanted 300, way over"). Accepted: it is written by an Assignee who

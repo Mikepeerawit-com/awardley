@@ -150,22 +150,26 @@ async function aTender(shape: TenderShape = {}): Promise<{
 
   if (!result.ok) throw new Error(`could not create a Tender: ${result.reason}`);
 
-  for (const assignee of shape.assignees ?? []) {
-    const added = await addAssignee(
-      { tenderId: result.tenderId, userId: assignee.id },
-      store,
-    );
-
-    if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
-  }
-
   const { data } = await service
     .from("tender_items")
     .select("id")
     .eq("tender_id", result.tenderId)
     .order("ordinal");
 
-  return { id: result.tenderId, itemIds: (data ?? []).map((item) => item.id) };
+  const itemIds = (data ?? []).map((item) => item.id);
+
+  // `assignees` puts each person on *every* Item — the competing shape, which is what
+  // the Tender-level enrolment these tests were written against meant (ADR-0033). The
+  // dividing cases below call `addAssignee` on single Items by hand instead.
+  for (const assignee of shape.assignees ?? []) {
+    for (const tenderItemId of itemIds) {
+      const added = await addAssignee({ tenderItemId, userId: assignee.id }, store);
+
+      if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+    }
+  }
+
+  return { id: result.tenderId, itemIds };
 }
 
 async function quoteOn(itemId: string, who: { email: string }): Promise<void> {
@@ -600,11 +604,41 @@ describe("who a reminder @s", () => {
     expect(message?.payload.text.mentioned_list).toEqual([anong.wecom]);
   });
 
-  it("leaves an Assignee alone once they have quoted anything on the Tender", async () => {
-    // The filter is "no Quotes at all", per Assignee and per Tender. It is deliberately
-    // not the worklist's Item-level Sourcing Overdue rule — which would nag Nok here,
-    // because the gloves are still unpriced. That one decides which block a Tender sits
-    // in; this one decides who is @-ed. They answer different questions.
+  it("chases only the holder of the unanswered Item, when an Owner divides", async () => {
+    // ADR-0033's own case. Under the Tender-level join this message named the person
+    // who had priced everything they were given and stayed silent about the one who
+    // was given nothing — chasing somebody about work that was never theirs.
+    const tender = await aTender({
+      internalQuoteDeadline: "2026-08-11",
+      clientSubmissionDeadline: "2026-09-01",
+      items: ["Nitrile gloves", "Surgical masks"],
+      assignees: [],
+    });
+    const store = await signedInAs(owner);
+
+    await addAssignee({ tenderItemId: tender.itemIds[0], userId: nok.id }, store);
+    await addAssignee({ tenderItemId: tender.itemIds[1], userId: anong.id }, store);
+    await quoteOn(tender.itemIds[0], nok);
+
+    const reference = await referenceOf(tender.id);
+    const robot = recordingRobot();
+
+    await sendDailyPosts(runInstant, robot);
+
+    const message = mine(robot).find((sent) =>
+      sent.payload.text.content.includes(reference),
+    );
+
+    // Nok answered the one Item they hold; the gloves being their only Item, they are
+    // done. Anong holds the masks and has said nothing, and is the whole audience.
+    expect(message?.payload.text.mentioned_list).toEqual([anong.wecom]);
+  });
+
+  it("leaves an Assignee alone once they have quoted anything they hold", async () => {
+    // The filter is "no Quotes on anything you hold", per Assignee (ADR-0033). It is
+    // deliberately not the worklist's Item-level Sourcing Overdue rule — which would
+    // nag Nok here, because the gloves are still unpriced. That one decides which block
+    // a Tender sits in; this one decides who is @-ed. They answer different questions.
     const tender = await aTender({
       internalQuoteDeadline: "2026-08-11",
       clientSubmissionDeadline: "2026-08-13",
@@ -779,6 +813,35 @@ describe("the in-app notifications the bell will read", () => {
     // The deadline, not a sentence. A notification has exactly one reader, so the wording
     // belongs in the message catalogue and is rendered from this when the bell is built.
     expect(rows.every((row) => row.body === "2026-08-11")).toBe(true);
+  });
+
+  it("names only the Items the Assignee holds, when an Owner divides", async () => {
+    // The row is a job to do, and an Item that was never theirs is not one (ADR-0033).
+    const tender = await aTender({
+      internalQuoteDeadline: "2026-08-11",
+      clientSubmissionDeadline: "2026-09-01",
+      items: ["Nitrile gloves", "Surgical masks"],
+      assignees: [],
+    });
+    const store = await signedInAs(owner);
+
+    await addAssignee({ tenderItemId: tender.itemIds[0], userId: nok.id }, store);
+    await addAssignee({ tenderItemId: tender.itemIds[1], userId: anong.id }, store);
+
+    await sendDailyPosts(runInstant, recordingRobot());
+
+    const rows = (await notificationsOn(tender.id)).filter(
+      (row) => row.type === "reminder:internal_quote",
+    );
+
+    expect(
+      rows.map((row) => [row.user_id, row.tender_item_id]).toSorted(),
+    ).toEqual(
+      [
+        [nok.id, tender.itemIds[0]],
+        [anong.id, tender.itemIds[1]],
+      ].toSorted(),
+    );
   });
 
   it("skips an Item the Assignee has already recorded No Supplier Found on", async () => {

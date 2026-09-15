@@ -96,6 +96,10 @@ export type TenderListRow = TenderSummary & {
    * answer a different one, cost a second embed on every row, and put a colleague's name
    * in a payload the row never draws it in. `ownerName` is the exception and stays one:
    * the row states who owns a Tender, and states nothing about who is sourcing it.
+   *
+   * Assignment lives on the Item (ADR-0033), so this is the union across the Tender's
+   * Items — kept at the Tender level because Mine's question did not move: holding any
+   * one Item of a Tender makes the Tender yours.
    */
   assigneeUserIds: string[];
 };
@@ -111,11 +115,16 @@ export type TenderItem = { id: string } & TenderItemFields & {
     outcome: ItemOutcome | null;
     /** When it was decided. Always set with the Outcome and cleared with it. */
     outcomeAt: string | null;
+    /**
+     * Who is sourcing this Item, sorted {@link byNameThenId}. Empty is a state with a
+     * name — Nobody Sourcing — and the screens say so rather than hiding the row
+     * (ADR-0033): an Item nobody is working is the one with work outstanding on it.
+     */
+    assignees: { id: string; name: string }[];
   };
 
 export type Tender = TenderSummary & {
   items: TenderItem[];
-  assignees: { id: string; name: string }[];
 };
 
 const tenderColumns =
@@ -141,6 +150,7 @@ type TenderItemDbRow = {
   unit: string;
   outcome: ItemOutcome | null;
   outcome_at: string | null;
+  assignees: { user: { id: string; name: string } | null }[];
 };
 
 type TenderDbRow = {
@@ -157,12 +167,10 @@ type TenderDbRow = {
   owner_user_id: string;
   owner: OwnerEmbed;
   items: TenderItemDbRow[];
-  assignees: { user: { id: string; name: string } | null }[];
 };
 
-type TenderListDbRow = Omit<TenderDbRow, "items" | "assignees"> & {
-  items: TenderListItem[];
-  assignees: { user_id: string }[];
+type TenderListDbRow = Omit<TenderDbRow, "items"> & {
+  items: (TenderListItem & { assignees: { user_id: string }[] })[];
 };
 
 export async function createTender(
@@ -522,12 +530,13 @@ export async function setItemOutcome(
 }
 
 /**
- * Assignees compete rather than divide (ADR-0004), so adding yourself is not a request
- * anyone has to approve — it is how you enrol in the Tender's reminders before you
- * start ringing suppliers. Adding or removing *somebody else* is the Owner's call.
+ * Adding yourself to an Item is not a request anyone has to approve — it is how you
+ * enrol in that Item's reminders before you start ringing suppliers (ADR-0004's rule,
+ * re-resolved against the Item by ADR-0033). Adding or removing *somebody else* is the
+ * Owner's call.
  */
 export async function addAssignee(
-  { tenderId, userId }: { tenderId: string; userId: string },
+  { tenderItemId, userId }: { tenderItemId: string; userId: string },
   store: SessionCookieStore,
 ): Promise<TenderResult> {
   const caller = await currentUser(store);
@@ -536,26 +545,26 @@ export async function addAssignee(
 
   const supabase = createSessionClient(store);
   const problem =
-    (await standingProblem({ tenderId, userId }, caller.id, supabase)) ??
-    // Only on the way in. Taking a Disabled colleague *off* a Tender has to keep
+    (await standingProblem({ tenderItemId, userId }, caller.id, supabase)) ??
+    // Only on the way in. Taking a Disabled colleague *off* an Item has to keep
     // working — that is exactly when somebody wants to.
     (await assignableProblem(userId, supabase));
 
   if (problem) return { ok: false, reason: problem };
 
   const { error } = await supabase
-    .from("tender_assignees")
+    .from("tender_item_assignees")
     // Idempotent on purpose: two people pressing "add me" is not a conflict to report.
     .upsert(
-      { tender_id: tenderId, user_id: userId, org_id: caller.orgId },
-      { onConflict: "tender_id,user_id", ignoreDuplicates: true },
+      { tender_item_id: tenderItemId, user_id: userId, org_id: caller.orgId },
+      { onConflict: "tender_item_id,user_id", ignoreDuplicates: true },
     );
 
   return error === null ? { ok: true } : { ok: false, reason: "failed" };
 }
 
 export async function removeAssignee(
-  { tenderId, userId }: { tenderId: string; userId: string },
+  { tenderItemId, userId }: { tenderItemId: string; userId: string },
   store: SessionCookieStore,
 ): Promise<TenderResult> {
   const caller = await currentUser(store);
@@ -563,14 +572,14 @@ export async function removeAssignee(
   if (!caller) return { ok: false, reason: "forbidden" };
 
   const supabase = createSessionClient(store);
-  const problem = await standingProblem({ tenderId, userId }, caller.id, supabase);
+  const problem = await standingProblem({ tenderItemId, userId }, caller.id, supabase);
 
   if (problem) return { ok: false, reason: problem };
 
   const { error } = await supabase
-    .from("tender_assignees")
+    .from("tender_item_assignees")
     .delete()
-    .eq("tender_id", tenderId)
+    .eq("tender_item_id", tenderItemId)
     .eq("user_id", userId);
 
   return error === null ? { ok: true } : { ok: false, reason: "failed" };
@@ -589,7 +598,7 @@ export async function listTenders(store: SessionCookieStore): Promise<TenderList
     .from("tenders")
     .select(
       `${tenderColumns}, owner:users!tenders_owner_user_id_fkey(name), ` +
-        `items:tender_items(id, outcome), assignees:tender_assignees(user_id)`,
+        `items:tender_items(id, outcome, assignees:tender_item_assignees(user_id))`,
     )
     // The reader's screen states two dates on every row, and the client's is only the
     // first of them: two Tenders due to the client on the same day are told apart by
@@ -603,12 +612,18 @@ export async function listTenders(store: SessionCookieStore): Promise<TenderList
 
   return (data ?? []).map((row) => ({
     ...tenderSummary(row),
-    items: row.items,
-    assigneeUserIds: row.assignees.map((assignee) => assignee.user_id),
+    items: row.items.map(({ id, outcome }) => ({ id, outcome })),
+    // The union, deduplicated: under competing the same person holds every Item, and
+    // Mine asks about them once.
+    assigneeUserIds: [
+      ...new Set(
+        row.items.flatMap((item) => item.assignees.map((assignee) => assignee.user_id)),
+      ),
+    ],
   }));
 }
 
-/** One Tender with its Items and Assignees, or null if the caller cannot see it. */
+/** One Tender with its Items and their Assignees, or null if the caller cannot see it. */
 export async function getTender(
   tenderId: string,
   store: SessionCookieStore,
@@ -617,7 +632,7 @@ export async function getTender(
     .from("tenders")
     .select(
       `${tenderColumns}, owner:users!tenders_owner_user_id_fkey(name), ` +
-        `items:tender_items(${itemColumns}), assignees:tender_assignees(user:users(id, name))`,
+        `items:tender_items(${itemColumns}, assignees:tender_item_assignees(user:users(id, name)))`,
     )
     .eq("id", tenderId)
     // `ordinal` is the order the Items were typed in; `id` only breaks a tie between two
@@ -641,11 +656,11 @@ export async function getTender(
       unit: item.unit,
       outcome: item.outcome,
       outcomeAt: item.outcome_at,
+      assignees: item.assignees
+        .map((row) => row.user)
+        .filter((user) => user !== null)
+        .sort(byNameThenId),
     })),
-    assignees: data.assignees
-      .map((row) => row.user)
-      .filter((user) => user !== null)
-      .sort(byNameThenId),
   };
 }
 
@@ -658,10 +673,10 @@ export async function getTender(
  * the name, as it is for the Items above.
  *
  * Exported because it is a rule rather than a step, and a rule has to be checkable. The
- * database cannot answer for this one: an untiebroken read of `tender_assignees` returns
- * ascending `user_id` or heap order depending on which plan Postgres picks that morning,
- * so a test that removed the `id` key and watched the read went green 11 times in 25
- * (#105). Here the failing case is a two-line array, and it fails every time.
+ * database cannot answer for this one: an untiebroken read of `tender_item_assignees`
+ * returns ascending `user_id` or heap order depending on which plan Postgres picks that
+ * morning, so a test that removed the `id` key and watched the read went green 11 times
+ * in 25 (#105). Here the failing case is a two-line array, and it fails every time.
  */
 export function byNameThenId(
   a: { id: string; name: string },
@@ -671,7 +686,7 @@ export function byNameThenId(
 }
 
 /** snake_case off the wire to the camelCase the app speaks, in one place for both reads. */
-function tenderSummary(row: Omit<TenderDbRow, "items" | "assignees">): TenderSummary {
+function tenderSummary(row: Omit<TenderDbRow, "items">): TenderSummary {
   return {
     id: row.id,
     reference: row.reference,
@@ -722,26 +737,34 @@ function itemRow(
 }
 
 /**
- * Has the caller the standing to change who is on this Tender?
+ * Has the caller the standing to change who is on this Item?
  *
  * Adding or removing *yourself* asks nobody: ADR-0004 makes self-assignment the step
- * that enrols you in the Tender's reminders, and its mirror has to exist or "add me"
- * becomes a decision you cannot take back. Doing it to somebody else is the Owner's.
+ * that enrols you in the Item's reminders, and its mirror has to exist or "add me"
+ * becomes a decision you cannot take back. Doing it to somebody else is the Owner's —
+ * the Item's Tender's Owner, resolved here rather than handed in, so the rule cannot
+ * be asked about one Tender and applied to another's Item.
  */
 async function standingProblem(
-  { tenderId, userId }: { tenderId: string; userId: string },
+  { tenderItemId, userId }: { tenderItemId: string; userId: string },
   callerId: string,
   supabase: ReturnType<typeof createSessionClient>,
 ): Promise<TenderProblem | null> {
-  const { data: tender } = await supabase
-    .from("tenders")
-    .select("id, owner_user_id")
-    .eq("id", tenderId)
-    .maybeSingle();
+  const { data: item } = await supabase
+    .from("tender_items")
+    .select("id, tender:tenders(owner_user_id)")
+    .eq("id", tenderItemId)
+    .maybeSingle()
+    .overrideTypes<
+      { id: string; tender: { owner_user_id: string } | null },
+      { merge: false }
+    >();
 
-  if (!tender) return "not_found";
+  if (!item?.tender) return "not_found";
 
-  return userId === callerId || tender.owner_user_id === callerId ? null : "forbidden";
+  return userId === callerId || item.tender.owner_user_id === callerId
+    ? null
+    : "forbidden";
 }
 
 /**

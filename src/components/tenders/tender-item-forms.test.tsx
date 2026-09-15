@@ -41,7 +41,13 @@ vi.mock("@/app/actions/tenders", () => ({
     posted.update(previous, formData),
   removeTenderItemAction: (previous: unknown, formData: FormData) =>
     posted.remove(previous, formData),
+  // The panel carries the Item's assignee controls now (ADR-0033); nothing in this
+  // suite presses them, so the stubs only have to exist.
+  addAssigneeAction: async () => ({}),
+  removeAssigneeAction: async () => ({}),
 }));
+
+const somchai = { id: "user-somchai", name: "Somchai Prasertkul" };
 
 const gloves: TenderItem = {
   id: "item-gloves",
@@ -51,6 +57,7 @@ const gloves: TenderItem = {
   unit: "piece",
   outcome: null,
   outcomeAt: null,
+  assignees: [somchai],
 };
 
 const masks: TenderItem = {
@@ -61,6 +68,7 @@ const masks: TenderItem = {
   unit: "box of 50",
   outcome: null,
   outcomeAt: null,
+  assignees: [],
 };
 
 /** The Items as the edit screen draws them: one form each, all of them removable. */
@@ -72,6 +80,9 @@ function drawn(items: TenderItem[], { only = false }: { only?: boolean } = {}) {
           key={item.id}
           tenderId="a-tender"
           item={item}
+          members={[somchai]}
+          callerId={somchai.id}
+          isOwner
           removable={!only}
           // What the page derives: the one Item on a one-Item Tender opens, because a
           // fold over a list of one is a tap in front of the only thing there is to edit.

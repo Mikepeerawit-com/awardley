@@ -176,6 +176,9 @@ export function screens(m: Messages) {
               key={item.id}
               tenderId={tender.id}
               item={item}
+              members={members}
+              callerId={tender.ownerUserId}
+              isOwner
               removable
               defaultOpen={openingItems}
             />
@@ -193,18 +196,6 @@ export function screens(m: Messages) {
           tenderId={tender.id}
           images={referenceImages}
           items={tender.items}
-        />
-      </Section>
-
-      {/* A `Section` here and a `Fold` on the Tender detail, which the page does too:
-          the same block is a lookup there and the work here. */}
-      <Section id="assignees" title={m.tenders.assignees.title}>
-        <AssigneeControls
-          tenderId={tender.id}
-          assignees={tender.assignees}
-          members={members}
-          callerId={tender.ownerUserId}
-          isOwner
         />
       </Section>
     </Body>
@@ -373,26 +364,35 @@ export function screens(m: Messages) {
               referenceImages={referenceImages}
             />
           </Section>
-          {/* Both folds **shut**, as the page draws them and as a reader arriving from a
-              Reminder really meets this screen. What is behind them is measured by
+          {/* The fold **shut**, as the page draws it and as a reader arriving from a
+              Reminder really meets this screen. What is behind it is measured by
               `"a tender with its folds open"` below rather than here — see the note on
               that entry for why the two are separate records instead of one compromise. */}
           <Fold id="tender-facts" title={m.tenders.sections.facts}>
             <TenderFacts tender={tender} />
           </Fold>
-          <Fold
-            id="assignees"
-            title={m.tenders.assignees.title}
-            count={tender.assignees.length}
-          >
-            <AssigneeControls
-              tenderId={tender.id}
-              assignees={tender.assignees}
-              members={members}
-              callerId="user-somchai"
-              isOwner
-            />
-          </Fold>
+          {/* A Section since ADR-0033, one block per Item: an Item nobody is sourcing
+              is work outstanding, which is exactly what a shut bar would hide. */}
+          <Section id="assignees" title={m.tenders.assignees.title}>
+            <div className="flex min-w-0 flex-col gap-group">
+              {tender.items.map((item) => (
+                <div key={item.id} className="flex min-w-0 flex-col gap-field">
+                  <h3 className="type-subhead min-w-0 break-words">
+                    {item.productName}
+                  </h3>
+                  <AssigneeControls
+                    tenderId={tender.id}
+                    itemId={item.id}
+                    itemName={item.productName}
+                    assignees={item.assignees}
+                    members={members}
+                    callerId="user-somchai"
+                    isOwner
+                  />
+                </div>
+              ))}
+            </div>
+          </Section>
         </Body>
       ),
     },
@@ -458,20 +458,26 @@ export function screens(m: Messages) {
           <Fold id="tender-facts" title={m.tenders.sections.facts} defaultOpen>
             <TenderFacts tender={tender} />
           </Fold>
-          <Fold
-            id="assignees"
-            title={m.tenders.assignees.title}
-            count={tender.assignees.length}
-            defaultOpen
-          >
-            <AssigneeControls
-              tenderId={tender.id}
-              assignees={tender.assignees}
-              members={members}
-              callerId="user-somchai"
-              isOwner
-            />
-          </Fold>
+          <Section id="assignees" title={m.tenders.assignees.title}>
+            <div className="flex min-w-0 flex-col gap-group">
+              {tender.items.map((item) => (
+                <div key={item.id} className="flex min-w-0 flex-col gap-field">
+                  <h3 className="type-subhead min-w-0 break-words">
+                    {item.productName}
+                  </h3>
+                  <AssigneeControls
+                    tenderId={tender.id}
+                    itemId={item.id}
+                    itemName={item.productName}
+                    assignees={item.assignees}
+                    members={members}
+                    callerId="user-somchai"
+                    isOwner
+                  />
+                </div>
+              ))}
+            </div>
+          </Section>
         </Body>
       ),
     },
@@ -517,24 +523,33 @@ export function screens(m: Messages) {
               referenceImages={referenceImages}
             />
           </Section>
-          {/* Shut, as the page draws them. What is inside is measured on
+          {/* Shut, as the page draws it. What is inside is measured on
               `"a tender with its folds open"`. */}
           <Fold id="tender-facts" title={m.tenders.sections.facts}>
             <TenderFacts tender={tender} />
           </Fold>
-          <Fold
-            id="assignees"
-            title={m.tenders.assignees.title}
-            count={tender.assignees.length}
-          >
-            <AssigneeControls
-              tenderId={tender.id}
-              assignees={tender.assignees}
-              members={members}
-              callerId="user-nok"
-              isOwner={false}
-            />
-          </Fold>
+          {/* The non-Owner's copy of the per-Item blocks: no picker, and a Remove only
+              on their own row. */}
+          <Section id="assignees" title={m.tenders.assignees.title}>
+            <div className="flex min-w-0 flex-col gap-group">
+              {tender.items.map((item) => (
+                <div key={item.id} className="flex min-w-0 flex-col gap-field">
+                  <h3 className="type-subhead min-w-0 break-words">
+                    {item.productName}
+                  </h3>
+                  <AssigneeControls
+                    tenderId={tender.id}
+                    itemId={item.id}
+                    itemName={item.productName}
+                    assignees={item.assignees}
+                    members={members}
+                    callerId="user-nok"
+                    isOwner={false}
+                  />
+                </div>
+              ))}
+            </div>
+          </Section>
         </Body>
       ),
     },
@@ -1331,6 +1346,21 @@ const deadRow: WorklistRow = {
  * the outstanding band names two of them. Held once, they cannot come to disagree about
  * what the client asked for.
  */
+/**
+ * Three on every Item, and the Owner one of them — the competing shape (ADR-0033).
+ *
+ * Two non-Owner Assignees are what make ADR-0020's reduction visible at all — it hides
+ * a colleague's price, and an Item with one Assignee has no colleague to hide — and the
+ * Owner is here because only an Assignee may enter a Quote (`CONTEXT.md`, **Assignee**).
+ * Without that, the Owner's sourcing screen draws a form the page would have refused
+ * them, and precedence is settled: a user who is both sees everything.
+ */
+const itemAssignees = [
+  { id: "user-somchai", name: "Somchai Prasertkul" },
+  { id: "user-nok", name: "Nok Wattanapong" },
+  { id: "user-wei", name: "Wei Zhang" },
+];
+
 const items: TenderItem[] = [
   {
     id: "item-gloves",
@@ -1341,6 +1371,7 @@ const items: TenderItem[] = [
     unit: "piece",
     outcome: null,
     outcomeAt: null,
+    assignees: itemAssignees,
   },
   {
     id: "item-masks",
@@ -1350,6 +1381,7 @@ const items: TenderItem[] = [
     unit: "box of 50",
     outcome: null,
     outcomeAt: null,
+    assignees: itemAssignees,
   },
   {
     id: "item-syringes",
@@ -1359,6 +1391,7 @@ const items: TenderItem[] = [
     unit: "piece",
     outcome: null,
     outcomeAt: null,
+    assignees: itemAssignees,
   },
   /* The Item every offer on which the Owner ruled out (#167), and the only reason this
      fixture has a fourth: the banner that says so is drawn on an Item whose quote table
@@ -1379,6 +1412,7 @@ const items: TenderItem[] = [
     unit: "piece",
     outcome: null,
     outcomeAt: null,
+    assignees: itemAssignees,
   },
 ];
 
@@ -1459,21 +1493,20 @@ export const fixtureToday = "2026-08-19";
 const ownerSections = [
   { id: "items", label: "tenders.sections.items" },
   { id: "outcome", label: "tenders.outcome.title" },
+  { id: "assignees", label: "tenders.assignees.title" },
 ];
 
 /**
- * One entry, which is one below what {@link TenderSections} will draw anything for — so
- * the Assignee's screen gets no bar, and that is the assertion rather than an omission.
- *
- * Their screen is 1,552px against the Owner's 5,656px — `npm run screen-length`, at 390px
- * in `en`, rather than a figure written down here — and its other two parts are folds,
- * which are 44px each whether open or shut. `density.layout.test.tsx` holds this screen to
- * an exact count of control rows, and a bar here spent two of them in `en` on a screen with
- * no distance to cover. It is passed the real list anyway rather than being left out of
- * the fixture, because *the bar deciding not to draw itself* is the behaviour worth
- * photographing.
+ * Two entries since ADR-0033 turned the Assignees into a Section, which is exactly the
+ * floor {@link TenderSections} draws a bar for — so the Assignee's screen gains the bar
+ * it used to be one part short of. Their screen also stopped being short in the same
+ * change: the per-Item assignee blocks put real distance under the bar, which is what a
+ * jump link is for.
  */
-const assigneeSections = [{ id: "items", label: "tenders.yourItems.title" }];
+const assigneeSections = [
+  { id: "items", label: "tenders.yourItems.title" },
+  { id: "assignees", label: "tenders.assignees.title" },
+];
 
 export const tender: Tender = {
   id: "8f14e45f-ceea-4d67-b4a7-4c5e2f6a1b90",
@@ -1491,17 +1524,6 @@ export const tender: Tender = {
   notes:
     "Client asked for the TFDA registration numbers alongside every line, and confirmation that gloves are non-sterile.",
   items,
-  // Three, and the Owner is one of them. Two non-Owner Assignees are what make the
-  // reduction visible at all — ADR-0020 hides a colleague's price, and a Tender with one
-  // Assignee on it has no colleague to hide — and the Owner is here because only an
-  // Assignee may enter a Quote (`CONTEXT.md`, **Assignee**). Without that, the Owner's
-  // sourcing screen below draws a form the page would have refused them, and precedence
-  // is settled: a user who is both sees everything.
-  assignees: [
-    { id: "user-somchai", name: "Somchai Prasertkul" },
-    { id: "user-nok", name: "Nok Wattanapong" },
-    { id: "user-wei", name: "Wei Zhang" },
-  ],
 };
 
 /**

@@ -54,11 +54,12 @@ export default async function ItemSourcingPage({
   const tenders = await getTranslations("tenders");
   const nav = await getTranslations("nav");
 
-  // Only an Assignee may enter a Quote on a Tender: they are the one who actually rang
-  // the supplier, and every Quote records which of them it was. Nothing is wrong with
-  // anybody else — Assignees enrol themselves (ADR-0004) — so the page offers the way in
-  // rather than refusing.
-  const isAssignee = tender.assignees.some((assignee) => assignee.id === user.id);
+  // Only an Assignee on *this Item* may enter a Quote on it (ADR-0033): they are the
+  // one who actually rang the supplier, and every Quote records which of them it was.
+  // Nothing is wrong with anybody else — Assignees enrol themselves (ADR-0004) — so the
+  // page offers the way in rather than refusing. Holding a different Item on the same
+  // Tender earns nothing here.
+  const isAssignee = item.assignees.some((assignee) => assignee.id === user.id);
 
   // One call, and every read inside it that can run alongside another does. It is a
   // function rather than a run of awaits here because that ordering has a silent failure
@@ -201,10 +202,13 @@ export default async function ItemSourcingPage({
             </p>
 
             {/* The way in, on the page that just said no — rather than a sentence sending
-                somebody back to a screen to find a control they have not seen. */}
+                somebody back to a screen to find a control they have not seen. Already
+                per-Item in context: this page *is* one Item. */}
             <AssigneeControls
               tenderId={tender.id}
-              assignees={tender.assignees}
+              itemId={item.id}
+              itemName={item.productName}
+              assignees={item.assignees}
               members={members ?? []}
               callerId={user.id}
               isOwner={tender.ownerUserId === user.id}

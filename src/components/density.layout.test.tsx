@@ -113,7 +113,16 @@ const budget = {
   // Assignee's screen draws a fourth *Source this item*. One row per Item is the rate this
   // screen has always charged, which is the thing worth checking when this number moves —
   // a budget that rose by two on one Item would be the screen getting denser.
-  tenderDetail: { en: 8, "zh-Hans": 8 },
+  //
+  // **Thirteen since #174**, and the five rows are bought, not leaked. ADR-0033 moved
+  // assignment onto the Item and made an Item nobody is sourcing a fact the screen must
+  // state, so the Assignees left their `Fold` for a `Section` with one block per Item —
+  // on this fixture, four *Take me off this item* rows where a shut disclosure used to
+  // count zero. The fifth is the jump bar: with two Sections the Assignee's screen
+  // reaches the floor `TenderSections` draws at, and the bar's links share one row. One
+  // row per Item is still the rate — a fifth Item costs this number two now, one to
+  // source and one to hold.
+  tenderDetail: { en: 13, "zh-Hans": 13 },
   sourcingScreen: { en: 10, "zh-Hans": 9 },
   quoteForm: { en: 2, "zh-Hans": 2 },
 } satisfies Record<string, Record<Locale, number>>;
@@ -124,10 +133,11 @@ describe(`the control-row budgets at ${phone.width}×${phone.height}`, () => {
    *
    * ADR-0020's screen: the comparison sheet and the Outcome panel are gone, and in their
    * place is a list of this reader's own work on each Item. What is left, on a Tender of
-   * four Items, is eight rows — the header's own control, the one Item the outstanding
-   * band still names for them, two image-count badges, and one *Source this item* per
-   * Item. The control that takes them off the Tender is behind the `Fold` and is not
-   * counted until somebody opens it.
+   * four Items, is thirteen rows — the jump bar, the header's own control, the one Item
+   * the outstanding band still names for them, two image-count badges, one *Source this
+   * item* per Item, and — since ADR-0033 put assignment on the Item — one *Take me off
+   * this item* per Item in the Assignees section, which stopped being a fold when an
+   * Item nobody is sourcing became a fact this screen must state.
    *
    * The fixture is the several-Item, several-Quote one #94 built, so the number is the
    * answer to a real Tender rather than to a Tender with one thing on it.

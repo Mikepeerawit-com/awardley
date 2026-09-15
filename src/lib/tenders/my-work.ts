@@ -22,11 +22,14 @@ import {
  * over a list of Tenders produces this one, because filtering Tenders yields Tenders.
  *
  * **Not Yet Sourced is per reader, not per Item.** `CONTEXT.md` defines it as an Item an
- * Assignee has neither Quoted nor marked No Supplier Found, and the Assignee in that
- * sentence is load-bearing: Assignees compete rather than divide (ADR-0004), so a
- * colleague's Quote is not this reader's answer and does not take the row away. The
- * worklist's `notYetSourced` counts the same word across everybody, which is the right
- * count for the Owner's question and the wrong one for this list.
+ * Assignee *holds* and has neither Quoted nor marked No Supplier Found, and both words
+ * in that sentence are load-bearing. Holds: assignment is per Item (ADR-0033), so only
+ * the Items this reader was put on — or put themselves on — appear at all, and reaching
+ * zero means they have answered everything anybody is asking them for. Per reader: under
+ * competing several people hold one Item, and a colleague's Quote is not this reader's
+ * answer and does not take the row away. The worklist's `notYetSourced` counts the same
+ * word across everybody, which is the right count for the Owner's question and the
+ * wrong one for this list.
  *
  * **The list is finishable, and that is the requirement.** Entering a Quote empties a
  * row; recording No Supplier Found empties it too, because both are answers and only
@@ -70,18 +73,20 @@ export type MyWorkRow = {
 };
 
 /**
- * Every Item this reader is an Assignee on and has not answered for, soonest first.
+ * Every Item this reader holds and has not answered for, soonest first.
  *
  * A plain array rather than the sectioned object `listWorklist` returns: there are no
  * groups here and there is no second count to carry, because the two emptinesses the
  * worklist has to tell apart do not exist on this screen. An empty My work means one
  * thing — this reader owes nobody a price — and it says so in one sentence.
  *
- * Three round trips however many Items there are: the Tenders this reader is on, those
- * Tenders' Items, and then — in one `answeredBy`, which issues its two queries together —
- * which of those Items they have already answered for. That last question is the whole of
- * "per reader" and the reason this cannot be assembled from the worklist's counts, which
- * count everybody's answers.
+ * Three round trips however many Items there are: the Items this reader is assigned,
+ * those Items themselves, and then — in one `answeredBy`, which issues its two queries
+ * together — which of them they have already answered for. That last question is the
+ * whole of "per reader" and the reason this cannot be assembled from the worklist's
+ * counts, which count everybody's answers. Assignment reads directly off
+ * `tender_item_assignees` — this list stopped walking through the Tender when
+ * assignment did (ADR-0033).
  */
 export async function listMyWork(
   today: string,
@@ -96,13 +101,13 @@ export async function listMyWork(
 
   const supabase = createSessionClient(store);
   const { data: assigned } = await supabase
-    .from("tender_assignees")
-    .select("tender_id")
+    .from("tender_item_assignees")
+    .select("tender_item_id")
     .eq("user_id", caller.id);
 
-  const tenderIds = (assigned ?? []).map((row) => row.tender_id);
+  const itemIds = (assigned ?? []).map((row) => row.tender_item_id);
 
-  if (tenderIds.length === 0) return [];
+  if (itemIds.length === 0) return [];
 
   const { data: items } = await supabase
     .from("tender_items")
@@ -110,7 +115,7 @@ export async function listMyWork(
       "id, product_name, ordinal, outcome, " +
         "tender:tenders!inner(id, reference, client_name, internal_quote_deadline, submitted_at)",
     )
-    .in("tender_id", tenderIds)
+    .in("id", itemIds)
     .overrideTypes<MyWorkDbRow[], { merge: false }>();
 
   // An Item that is decided, or that sits on a Tender already bid, is not work anybody

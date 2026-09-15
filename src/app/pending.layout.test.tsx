@@ -279,6 +279,11 @@ describe.each(locales)(`read in %s at ${phone.width}px`, (locale, messages) => {
         `${name} has a control that went dim and said nothing`,
       ).toEqual([]);
     },
+    // Not the 15s default: the walk redraws the whole screen per press, and the Tender
+    // detail is the record's heaviest — since ADR-0033 gave it a per-Item assignee
+    // block, its walk is eight presses longer and cleared 19s on the CI runner while
+    // passing at home. The budget is per screen, so the cheap ones still fail fast.
+    60_000,
   );
 
   it.each(

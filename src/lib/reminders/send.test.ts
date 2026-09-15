@@ -1123,7 +1123,7 @@ describe("the decision chase", () => {
     await setItemOutcome(
       { itemId: tender.itemIds[0], outcome: "lost", decidedAt: runInstant },
       await signedInAs(owner),
-      recordingRobot(),
+      { robot: recordingRobot(), email: recordingEmail() },
     );
 
     const robot = recordingRobot();

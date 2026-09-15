@@ -52,6 +52,28 @@ export const emailPaceMs = 200;
 const endpoint = "https://api.resend.com/emails";
 
 /**
+ * What the environment says about the email transport, for `/api/health` to report —
+ * the same discriminated pair as `appOrigin`, and for the same reason: the send path
+ * itself throws at the first real send rather than probing, so the place a deployment's
+ * missing configuration is caught has to be the probe the deployment gate reads, not
+ * the morning run that would otherwise be the first to notice.
+ */
+export type EmailConfig = { from: string; error: null } | { from: null; error: string };
+
+export function emailConfig(): EmailConfig {
+  const missing = ["RESEND_API_KEY", "EMAIL_FROM"].filter(
+    (name) => (process.env[name] ?? "").trim() === "",
+  );
+
+  return missing.length > 0
+    ? {
+        from: null,
+        error: `${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not set, so no reminder email can be sent.`,
+      }
+    : { from: (process.env.EMAIL_FROM ?? "").trim(), error: null };
+}
+
+/**
  * Send a batch of emails, paced, reporting each one's fate.
  *
  * Outcomes come back aligned with `emails` by index. One failure does not abandon the

@@ -443,7 +443,9 @@ _Avoid_: admin, owner, superuser, manager
 
 **Invite**:
 The email an Org Admin sends to bring someone into *their* organisation. The only way a
-Membership of an existing organisation is ever created, and the only email the app sends.
+Membership of an existing organisation is ever created. It leaves through Supabase
+Auth's own mailer rather than the app's Email transport — the one email that does,
+since ADR-0034 made Email the floor for Reminders, the Daily Summary and Outcome News.
 Scanning a WeCom QR code never creates an account. Signing up creates a new, empty
 organisation and never joins an existing one — so no stranger can put themselves inside
 another org's prices (ADR-0017). An Invite grants Membership only; becoming an Org Admin

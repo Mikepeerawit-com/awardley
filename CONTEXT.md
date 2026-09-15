@@ -13,6 +13,11 @@ free to say something a new colleague understands on first read.
 
 A term with no `_Label_` line is shown as it is written.
 
+A term carrying a `_Not built yet_` line is one this glossary has settled and the code has
+not caught up with. It is written down because the language is decided, and marked because
+a glossary that describes behaviour the app does not have is worse than one with a gap in
+it — a reader trusts every other entry here to be true of the running app.
+
 ### The client side
 
 **Tender**:
@@ -76,8 +81,8 @@ way to judge how far the substitute really is from what was asked for.
 _Avoid_: photo, image, supplier image, attachment
 
 **Not Yet Sourced**:
-A Tender Item an Assignee has neither Quoted nor marked No Supplier Found. The third
-sourcing state, and the only one that is overdue: an Item nobody has touched means
+A Tender Item an Assignee holds and has neither Quoted nor marked No Supplier Found. The
+third sourcing state, and the only one that is overdue: an Item nobody has touched means
 different work from one somebody has already given up on.
 
 It has a screen of its own: **My work** lists the Items an Assignee is Not Yet Sourced
@@ -97,10 +102,14 @@ _Avoid_: no quote, missing, blank, pending, unsourced — the last is the abbrev
 key reaches for, and it is still a second name for this
 
 **Assignee**:
-A user working a Tender. Several Assignees work the same Tender at once, each
-sourcing every Item they can through their own suppliers — they compete rather than
-divide, because comparing their Quotes is the point. Only an Assignee may enter
-Quotes on that Tender, since they are the one who actually asked the supplier.
+A user working a Tender Item. Assignment is per Item, and how many Assignees an Item
+carries is the whole of what a team's way of working says: several on one Item is
+competing, one Item each is dividing, and one Tender may do both (ADR-0033). Nothing asks
+an organisation which it does.
+
+Taihue competes — each Assignee sources every Item they can through their own suppliers,
+because comparing their Quotes is the point. Only an Assignee may enter Quotes on an Item
+they hold, since they are the one who actually asked the supplier.
 
 An Assignee sees their own Quotes and no one else's, and sees no money at all
 (ADR-0020). Comparing is the Owner's act, not theirs.
@@ -122,7 +131,8 @@ _Label_: en "Owner" · zh 负责人 — held for this term alone.
 _Avoid_: manager, admin, lead
 
 **Mine**:
-A Tender you own or are an Assignee on. Spans both roles deliberately: an Owner does not
+A Tender you own, or one holding an Item you are an Assignee on. Spans both roles
+deliberately: an Owner does not
 stop working a Tender because a colleague is sourcing it, and an Assignee's own suppliers
 are their work whoever owns the Tender.
 _Label_: en "Mine" · zh 我的.
@@ -180,7 +190,8 @@ When our Bid must reach the client. Missing it kills the Tender outright.
 _Avoid_: deadline, submission deadline
 
 **Sourcing Overdue**:
-The Internal Quote Deadline has passed and some Assignee's Item still has no Quote.
+The Internal Quote Deadline has passed and an Assignee still has no Quote on an Item
+they hold.
 Derived, never stored. Still fixable; concerns that Assignee alone.
 _Label_: named by who it is waiting on rather than by its own condition — "Waiting on
 you".
@@ -213,7 +224,7 @@ Tender *not* having been submitted — there is no decision coming on a Bid that
 _Avoid_: follow-up, chase-up reminder, decision reminder
 
 **Outcome News**:
-The group post that follows an Item being recorded `won` or `lost`. It reaches **every
+The message that follows an Item being recorded `won` or `lost`. It reaches **every
 Assignee who quoted that Item**, not only the one whose Quote we bid, and says a different
 thing to each: the losers' only feedback anywhere in this app on how their supplier
 compared comes from this message. `no_bid` and `cancelled` are silent — neither is a
@@ -221,11 +232,23 @@ verdict on anybody's sourcing. The one message that fires on a write rather than
 cron (ADR-0015).
 _Avoid_: outcome notification, result announcement, win notification
 
+**Email**:
+The channel every organisation has without configuring anything, and the floor every
+Reminder, Digest and piece of Outcome News reaches its people through (ADR-0034). Unlike
+the Group Robot it has exactly one reader, which makes it the one outbound surface written
+in the language that reader chose. It says no more than the group post does: a message
+that would need a price is still a message that should be a link.
+_Label_: not named on a screen as a channel — a Reminder is a Reminder, and which
+transport carried it is not the reader's business.
+_Avoid_: notification email, mail, transactional email, alerts
+_Not built yet_: the Group Robot is still the only transport in the code.
+
 **Group Robot**:
-The WeCom webhook every notification leaves through — one URL, posting into one group
-chat. The only WeCom surface this project is not gated out of, and the only outbound
-integration in v1. What it says is deliberately narrow: never a price, a Margin or a
-supplier's name (ADR-0012).
+The WeCom webhook a notification may *also* leave through — one URL, posting into one
+group chat. The only WeCom surface this project is not gated out of, and an extra rather
+than the floor: an organisation that sets none still gets everything by Email (ADR-0034).
+What it says is deliberately narrow: never a price, a Margin or a supplier's name
+(ADR-0012).
 _Label_: zh 群机器人 is WeCom's own name for the feature and lands instantly; the English
 calque does not, so en says "WeCom group". The one English sentence that keeps "robot" is
 the one walking somebody through WeCom's own interface to find the webhook: a wayfinding
@@ -233,7 +256,8 @@ instruction has to use the name the feature carries on the screen it is sending 
 _Avoid_: bot, webhook, notifier, WeCom integration
 
 **Reminder**:
-A nudge into the WeCom group that a Tender's deadline is coming. One stored row per
+A nudge that a Tender's deadline is coming, reaching its people by Email and, where an
+organisation has one, through the Group Robot as well. One stored row per
 Milestone per offset, carrying the day it comes due — so a run the cron missed catches
 up rather than skipping, and moving the deadline re-dates the whole set. Fires at
 thresholds only; the Digest is what answers "what is going on right now".
@@ -250,7 +274,7 @@ no offset at all and fires on the absolute day the Owner set.
 _Avoid_: event, trigger, deadline type
 
 **Digest**:
-The once-daily post to the WeCom group listing every open Tender and its next
+The once-daily message listing every open Tender and its next
 Milestone. Answers "what is going on right now"; distinct from a Reminder, which fires
 only when a specific deadline approaches. Open means what the tender list means by it:
 no Outcome recorded yet. It **@s nobody** — a daily mention is how a group learns to mute
@@ -265,11 +289,15 @@ _Avoid_: summary, daily report, standup
 ### Money
 
 **Reporting Currency**:
-Thai Baht (THB). The single currency comparison and dashboard figures are displayed
-in. Quotes are always stored in the currency the supplier quoted; conversion is for
-display only and is always marked as derived — which is a claim about provenance and
-not about prominence, so which of the two figures a given screen leads with is that
-screen's decision to make.
+The one currency an organisation's comparison and dashboard figures are displayed in.
+Thai Baht for a Thai trading company, and the organisation's own answer rather than the
+product's — a second customer reporting in THB because Taihue does would read every total
+on every screen in a currency they do not trade in. Quotes are always stored in the
+currency the supplier quoted; conversion is for display only and is always marked as
+derived — which is a claim about provenance and not about prominence, so which of the two
+figures a given screen leads with is that screen's decision to make.
+_Not built yet_: THB is written into the conversion, the Working Sheet and the quote form
+rather than held on the organisation the way the FX Buffer is.
 _Avoid_: base currency, home currency, display currency
 
 **FX Buffer**:
@@ -448,6 +476,9 @@ One person's place in one organisation, and where their Org Admin capability liv
 person may hold several. It is the Membership rather than the person that an Invite
 creates, that Disabling ends, and that RLS reads — which is why admin of one organisation
 grants nothing anywhere else.
+_Not built yet_: `org_id` and `is_org_admin` sit on the `users` row, one organisation per
+person. Holding several — and every sentence above that turns on it — is settled language
+and unwritten code.
 _Avoid_: role, org user, user_org, seat
 
 **Active Org**:
@@ -456,4 +487,5 @@ scoped to it, and a person holding several Memberships changes it deliberately r
 than seeing two organisations' Tenders in one list. The control that changes it does not
 render at all for the overwhelming majority who hold exactly one Membership — a global
 mode is worth its cost only to the people who actually have a second thing to switch to.
+_Not built yet_: there is nothing to switch between until a Membership can be held twice.
 _Avoid_: current org, selected org, workspace, tenant

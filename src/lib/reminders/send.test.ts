@@ -1499,6 +1499,303 @@ describe("the daily Digest", () => {
 });
 
 /**
+ * Email, the floor (ADR-0034).
+ *
+ * Its own org, with **no Group Robot on purpose**: the customer this ticket exists for
+ * is the one WeCom never reaches, and until #175 this org's every message went nowhere
+ * while the run reported it as merely unconfigured. What the run mails — and what it
+ * repeats or holds back across runs — is asserted through the email stub, the way the
+ * robot's suite reads its own.
+ *
+ * Four people: an English-reading Owner, a zh-Hans Assignee, a colleague who has never
+ * signed in (locale null), and a Disabled one. Between them they are the whole locale
+ * story and the whole audience story.
+ */
+describe("email, the floor", () => {
+  const mailClient = `Hat Yai Provincial ${run}`;
+  const mailOwner = {
+    id: "",
+    email: `mail-owner-${run}@example.test`,
+    wecom: `mail-owner-${run}`,
+  };
+  const somchai = {
+    id: "",
+    email: `mail-somchai-${run}@example.test`,
+    wecom: `mail-somchai-${run}`,
+  };
+  const newcomer = {
+    id: "",
+    email: `mail-newcomer-${run}@example.test`,
+    wecom: `mail-newcomer-${run}`,
+  };
+  const revoked = {
+    id: "",
+    email: `mail-revoked-${run}@example.test`,
+    wecom: `mail-revoked-${run}`,
+  };
+
+  let mailOrgId = "";
+
+  /** What one address was sent this run. Addresses are unique to this suite, so this is also "only ours". */
+  function emailsTo(stub: EmailStub, address: string) {
+    return stub.sent.map((sent) => sent.payload).filter((payload) => payload.to === address);
+  }
+
+  async function aMailTender(shape: TenderShape & { title?: string } = {}): Promise<{
+    id: string;
+    itemIds: string[];
+    reference: string;
+  }> {
+    const store = await signedInAs(mailOwner);
+    const result = await createTender(
+      {
+        clientName: mailClient,
+        title: shape.title ?? "Surgical consumables",
+        dateReceived: "2026-08-01",
+        internalQuoteDeadline: shape.internalQuoteDeadline ?? "2026-08-25",
+        clientSubmissionDeadline: shape.clientSubmissionDeadline ?? "2026-09-01",
+        expectedDecisionDate: shape.expectedDecisionDate ?? null,
+        ownerUserId: mailOwner.id,
+        notes: null,
+        items: (shape.items ?? ["Nitrile gloves"]).map((productName) => ({
+          productName,
+          description: null,
+          quantity: 500,
+          unit: "box",
+        })),
+      },
+      store,
+    );
+
+    if (!result.ok) throw new Error(`could not create a Tender: ${result.reason}`);
+
+    const { data } = await service
+      .from("tender_items")
+      .select("id")
+      .eq("tender_id", result.tenderId)
+      .order("ordinal");
+    const itemIds = (data ?? []).map((item) => item.id);
+
+    for (const assignee of shape.assignees ?? []) {
+      for (const tenderItemId of itemIds) {
+        const added = await addAssignee({ tenderItemId, userId: assignee.id }, store);
+
+        if (!added.ok) throw new Error(`could not assign: ${added.reason}`);
+      }
+    }
+
+    return {
+      id: result.tenderId,
+      itemIds,
+      reference: await referenceOf(result.tenderId),
+    };
+  }
+
+  beforeAll(async () => {
+    const { data: org, error } = await service
+      .from("orgs")
+      .insert({ name: `Mail ${run}` })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    mailOrgId = org.id;
+
+    await createMember(mailOwner, mailOrgId);
+    await createMember(somchai, mailOrgId);
+    await createMember(newcomer, mailOrgId);
+    await createMember(revoked, mailOrgId);
+
+    // The Owner chose English, the Assignee chose Chinese, the newcomer has never
+    // signed in and so never been asked — their `locale` stays null.
+    await service.from("users").update({ locale: "en" }).eq("id", mailOwner.id);
+    await service.from("users").update({ locale: "zh-Hans" }).eq("id", somchai.id);
+    await service
+      .from("users")
+      .update({ disabled_at: "2026-08-01T00:00:00.000Z" })
+      .eq("id", revoked.id);
+  });
+
+  afterAll(async () => {
+    await service.from("notifications").delete().eq("org_id", mailOrgId);
+    await service.from("tenders").delete().eq("org_id", mailOrgId);
+    await service.from("users").delete().eq("org_id", mailOrgId);
+
+    for (const member of [mailOwner, somchai, newcomer, revoked]) {
+      if (member.id !== "") await service.auth.admin.deleteUser(member.id);
+    }
+
+    await service.from("orgs").delete().eq("id", mailOrgId);
+  });
+
+  it("reaches everybody with nothing configured, in their own language, and settles the rows", async () => {
+    const tender = await aMailTender({
+      title: "Theatre consumables",
+      internalQuoteDeadline: "2026-08-11",
+      clientSubmissionDeadline: "2026-08-13",
+      items: ["Nitrile gloves", "Surgical masks"],
+      assignees: [somchai],
+    });
+    const email = recordingEmail();
+    const robot = recordingRobot();
+
+    const report = await sendDailyPosts(runInstant, { robot, email });
+
+    // The Assignee is chased for prices in the language they chose, and the email
+    // names the Items it is about — acting on it must not require opening the app to
+    // find out what it means.
+    const toSomchai = emailsTo(email, somchai.email).find((payload) =>
+      payload.subject.includes(tender.reference),
+    );
+
+    expect(toSomchai).toBeDefined();
+    expect(toSomchai!.subject).toContain(mailClient);
+    expect(toSomchai!.text).toContain("内部报价截止");
+    expect(toSomchai!.text).toContain("Nitrile gloves");
+    expect(toSomchai!.text).toContain("Surgical masks");
+
+    // The Owner is chased about the deadline that kills a Tender, in theirs.
+    const toOwner = emailsTo(email, mailOwner.email).find((payload) =>
+      payload.subject.includes(tender.reference),
+    );
+
+    expect(toOwner!.text).toContain("Client submission deadline");
+    expect(toOwner!.text).not.toContain("内部报价");
+
+    // Revoking access revokes every channel.
+    expect(emailsTo(email, revoked.email)).toEqual([]);
+
+    // No group post — there is no group — and no skip either: the org is complete on
+    // email alone, and `unconfigured` survives only as information.
+    expect(mine(robot, mailClient)).toEqual([]);
+    expect(report.unconfigured).toBeGreaterThanOrEqual(1);
+    expect(report.messages.email).toBeGreaterThanOrEqual(2);
+
+    const rows = await remindersOn(tender.id);
+
+    expect(rows.filter((row) => row.due_date <= today).every((row) => row.sent)).toBe(
+      true,
+    );
+  });
+
+  it("mails the daily summary to every member, named after nobody, null locale reading as English", async () => {
+    // The Tender the test above left open is the summary's subject matter.
+    const email = recordingEmail();
+
+    await sendDailyPosts(runInstant, { robot: recordingRobot(), email });
+
+    const summaryFor = (address: string, heading: string) =>
+      emailsTo(email, address).filter((payload) => payload.subject.includes(heading));
+
+    // One each, in each reader's own language — and the never-signed-in colleague is
+    // reached in the default language rather than silenced by a null preference.
+    expect(summaryFor(mailOwner.email, "Daily summary")).toHaveLength(1);
+    expect(summaryFor(somchai.email, "每日摘要")).toHaveLength(1);
+    expect(summaryFor(newcomer.email, "Daily summary")).toHaveLength(1);
+    expect(summaryFor(revoked.email, "")).toHaveLength(0);
+
+    // A summary, never a nag: it names Tenders and dates, not people.
+    const summary = summaryFor(mailOwner.email, "Daily summary")[0];
+
+    expect(summary.text).toContain(mailClient);
+
+    for (const member of [mailOwner, somchai, newcomer]) {
+      expect(summary.text).not.toContain(member.email);
+    }
+  });
+
+  it("does not mail again what the reader already got, when only the robot is retried", async () => {
+    // The main org, which has a robot: the cross-channel promise is that retrying one
+    // transport never re-sends the other (ADR-0034).
+    const tender = await aTender({
+      internalQuoteDeadline: "2026-08-11",
+      clientSubmissionDeadline: "2026-08-20",
+      assignees: [nok],
+    });
+    const reference = await referenceOf(tender.id);
+    const email = recordingEmail();
+
+    await sendDailyPosts(runInstant, {
+      robot: refusingRobot((content) => content.includes(reference)),
+      email,
+    });
+
+    // The email went out; the row is deliberately left unsent for the robot's retry.
+    expect(
+      emailsTo(email, nok.email).some((payload) => payload.subject.includes(reference)),
+    ).toBe(true);
+
+    const before = await remindersOn(tender.id);
+
+    expect(before.filter((row) => row.due_date <= today).some((row) => row.sent)).toBe(
+      false,
+    );
+
+    const retried = recordingEmail();
+    const robot = recordingRobot();
+
+    await sendDailyPosts(runInstant, { robot, email: retried });
+
+    // The robot's retry posts; the reader who already has the email is left in peace.
+    expect(reminderFor(robot, reference)).not.toBe("");
+    expect(
+      emailsTo(retried, nok.email).some((payload) =>
+        payload.subject.includes(reference),
+      ),
+    ).toBe(false);
+
+    const after = await remindersOn(tender.id);
+
+    expect(after.filter((row) => row.due_date <= today).every((row) => row.sent)).toBe(
+      true,
+    );
+  });
+
+  it("closes the delivery on a rejected address rather than retrying it for ever", async () => {
+    // A rejected address will be rejected again every morning until a human fixes it,
+    // so the one thing retrying buys is a daily failure (ADR-0034). The refusal is
+    // non-retryable, the delivery closes, and the row settles.
+    // The deadline is today, so the whole offset set is already due: tomorrow's run
+    // must owe this reader *nothing*, not merely nothing it already sent.
+    const tender = await aMailTender({
+      title: "Ward furniture",
+      internalQuoteDeadline: today,
+      clientSubmissionDeadline: "2026-09-01",
+      assignees: [somchai],
+    });
+
+    await sendDailyPosts(runInstant, {
+      robot: recordingRobot(),
+      email: refusingEmail(
+        (payload) => payload.subject.includes(tender.reference),
+        422,
+      ),
+    });
+
+    const rows = await remindersOn(tender.id);
+
+    expect(rows.filter((row) => row.due_date <= today).every((row) => row.sent)).toBe(
+      true,
+    );
+
+    // And tomorrow owes this reader nothing.
+    const tomorrow = recordingEmail();
+
+    await sendDailyPosts(new Date("2026-08-10T18:00:00Z"), {
+      robot: recordingRobot(),
+      email: tomorrow,
+    });
+
+    expect(
+      emailsTo(tomorrow, somchai.email).some((payload) =>
+        payload.subject.includes(tender.reference),
+      ),
+    ).toBe(false);
+  });
+});
+
+/**
  * The way into the app (#59).
  *
  * The wording of these messages already told the reader to go and follow up. What is

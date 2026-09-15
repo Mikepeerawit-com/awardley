@@ -165,6 +165,9 @@ describe("reminder_deliveries", () => {
         milestone: "internal_quote",
         days_before: 3,
         due_date: "2026-08-07",
+        // Settled already, so the send suite's concurrent runs — which sweep every
+        // org and deliver by email (ADR-0034) — leave this fixture's rows alone.
+        sent: true,
       })
       .select("id")
       .single();

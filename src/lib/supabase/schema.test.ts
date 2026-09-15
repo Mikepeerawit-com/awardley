@@ -746,6 +746,10 @@ describe("reminder_deliveries", () => {
       milestone: "internal_quote",
       days_before: 3,
       due_date: "2026-08-07",
+      // Settled already, so the send suite's runs — which sweep every org, this
+      // fixture's included, and write email deliveries as they go (ADR-0034) — can
+      // never race the inserts below for the same primary key.
+      sent: true,
     });
   });
 

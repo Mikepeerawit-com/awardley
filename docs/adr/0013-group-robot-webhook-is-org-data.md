@@ -1,5 +1,7 @@
 # The Group Robot's webhook is org data, not deployment config
 
+> **Narrowed by [ADR-0034](0034-email-is-the-channel-every-customer-has.md).** An org with no robot is still "unconfigured, never a send failure" — but it now hears everything by Email, so the consequence below that "a fresh deployment notifies nobody until an Org Admin sets it up" no longer holds.
+
 Ticket [#38](https://github.com/Mikepeerawit-com/tender-tracker/issues/38). **Supersedes the env-var bullets of [ADR-0012](0012-what-the-group-robot-may-say.md)** and the first acceptance criterion of [#32](https://github.com/Mikepeerawit-com/tender-tracker/issues/32) — *"the URL read from an environment variable"*. Everything else 0012 decided — financial silence, hardcoded Simplified Chinese, `text`-only, the injected boundary — stands unchanged.
 
 #32 shipped the webhook as `WECOM_ROBOT_WEBHOOK`, which is what `buildspec_2` assumed. That was wrong in two ways, and both were only visible once the seam existed.

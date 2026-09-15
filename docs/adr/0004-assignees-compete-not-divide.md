@@ -1,5 +1,7 @@
 # Assignees compete on a Tender rather than dividing it
 
+> **The cardinality here is superseded by [ADR-0033](0033-an-assignee-is-assigned-to-an-item.md).** Assignment is per **Tender Item**, not per Tender, so that competing and dividing are the same model at different cardinalities and the app is not only Taihue's. Competing is still what Taihue does and still what the comparison exists for; every consequence listed below stands, read against the Item.
+
 Several users are assigned to a Tender, and each sources **every** Item they can through their own suppliers. They are not splitting the work — they are competing, and comparing their Quotes is the entire point. Assignment is therefore many-to-many at the **Tender** level (a join table), never per-Item.
 
 Only an Assignee may enter Quotes on a Tender, because the Assignee is the person who actually spoke to the supplier and anyone entering on their behalf destroys attribution. Any user may add themselves to any Tender; the Owner may add or remove anyone.

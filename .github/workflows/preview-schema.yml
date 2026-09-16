@@ -26,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       preview_url:
-        description: Preview origin to ask, e.g. https://tender-tracker-abc123.vercel.app
+        description: Preview origin to ask, e.g. https://awardley-abc123.vercel.app
         required: true
 
 permissions:

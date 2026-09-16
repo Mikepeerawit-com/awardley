@@ -208,7 +208,7 @@ const { error: quoteError } = await db.from("quotes").insert({
 
 if (quoteError) die(`could not create the quote: ${quoteError.message}`);
 
-const app = process.env.MOCK_APP_URL ?? "https://tenders.mikepeerawit.com";
+const app = process.env.MOCK_APP_URL ?? "https://app.awardley.com";
 
 console.log(`
   Seeded ${tender.reference} — "${MOCK_TITLE}"

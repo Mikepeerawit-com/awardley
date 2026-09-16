@@ -208,8 +208,8 @@ finish() {
 TOTAL_STAGES=9
 
 ISSUE=68
-REPO="Mikepeerawit-com/tender-tracker"
-APP="${APP:-https://tenders.mikepeerawit.com}"
+REPO="Mikepeerawit-com/awardley"
+APP="${APP:-https://app.awardley.com}"
 
 # Answers live here, not in .env — nothing this wizard collects is configuration.
 ENV_FILE=".wizard/68-phone-checks.env"

@@ -1,6 +1,6 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues in [`Mikepeerawit-com/tender-tracker`](https://github.com/Mikepeerawit-com/tender-tracker). Use the `gh` CLI for all operations.
+Issues and specs for this repo live as GitHub issues in [`Mikepeerawit-com/awardley`](https://github.com/Mikepeerawit-com/awardley). Use the `gh` CLI for all operations.
 
 ## Conventions
 

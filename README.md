@@ -114,7 +114,7 @@ The phone in your hand is still the only fully honest renderer; see
 ## Deploying
 
 Vercel, with Supabase in Singapore (`ap-southeast-1`). Live at
-<https://tenders.mikepeerawit.com>.
+<https://app.awardley.com>.
 
 `GET /api/health` is the acceptance check for every step below. It answers four
 questions — can this deployment reach Postgres, is the schema the one this build was
@@ -126,7 +126,7 @@ is checkable rather than merely reassuring:
 200 {"status":"ok","database":"reachable",
      "schema":{"expected":"20260825020000","applied":"20260825020000","behind":0},
      "tables":{"probed":"tenders","readable":true},
-     "appOrigin":{"configured":true,"origin":"https://tenders.mikepeerawit.com"},
+     "appOrigin":{"configured":true,"origin":"https://app.awardley.com"},
      "checkedAt":"…"}
 ```
 
@@ -177,7 +177,7 @@ scheduled job, and **`SETUP_SECRET`**, which you set by hand and which §6 uses 
 are secrets in the ordinary sense — long, random, and not reused.
 
 A third, which is not a secret at all: **`APP_ORIGIN`**, the app's own public origin —
-`https://tenders.mikepeerawit.com` here, absolute, no trailing slash. It is what lets a
+`https://app.awardley.com` here, absolute, no trailing slash. It is what lets a
 reminder carry a link into the app, and nothing else in the environment can supply it,
 since every URL is built server-side in the cron run. Leave it out and the messages still
 go, without links; `/api/health` answers `no-app-origin` and the gate below stays red
@@ -255,7 +255,7 @@ DNS is at Cloudflare; Vercel still needs the hostname registered so it routes by
 header and issues the certificate.
 
 ```sh
-vercel domains add <host> tender-tracker
+vercel domains add <host> awardley
 vercel domains inspect <host>   # prints the exact record to create — do not recite one from memory
 ```
 

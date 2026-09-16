@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues live as GitHub issues in `Mikepeerawit-com/tender-tracker`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues live as GitHub issues in `Mikepeerawit-com/awardley`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

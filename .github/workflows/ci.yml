@@ -41,3 +41,36 @@ jobs:
       - run: npm test
 
       - run: npm run build
+
+  # The marketing site (#183). Its own package, its own `node_modules`, its own Vercel
+  # project with `landing` as the root directory — so it is its own job rather than four
+  # more steps on `verify`. It needs no Supabase and no database: there is nothing to
+  # store, which is the whole design of the waiting list.
+  landing:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: landing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+
+      - run: npm ci
+
+      # The 390px no-horizontal-overflow bar, which jsdom cannot measure. The headless
+      # shell is enough and is a third of the download — the same install the app's job
+      # does, for the same reason.
+      - run: npx playwright install --with-deps --only-shell chromium
+
+      - run: npm run typecheck
+
+      - run: npm run lint
+
+      - run: npm test

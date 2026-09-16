@@ -61,6 +61,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Not ours to lint.
     "prototypes/**",
+    // Its own package with its own lint run (the `landing` CI job).
+    "landing/**",
     // Written by `supabase start` — bundled vendor code, and which files land here
     // varies by CLI version, so it must be ignored by directory rather than by file.
     "supabase/.temp/**",

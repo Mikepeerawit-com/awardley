@@ -44,10 +44,16 @@ env:
 
 jobs:
   probe:
+    # Two Vercel projects deploy every commit: the app and the landing site (rootDirectory
+    # `landing`). Both report `environment: Preview`, so the only thing that tells them
+    # apart here is the deployment hostname, which Vercel prefixes with the project name.
+    # The landing site has no `/api/health` and its own Deployment Protection secret, so
+    # probing it can only ever fail; the app's own preview still posts the status.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.deployment_status.state == 'success' &&
-       github.event.deployment_status.environment != 'Production')
+       github.event.deployment_status.environment != 'Production' &&
+       !startsWith(github.event.deployment_status.environment_url, 'https://awardley-landing-'))
     runs-on: ubuntu-latest
 
     steps:

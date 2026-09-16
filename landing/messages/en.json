@@ -1,0 +1,106 @@
+{
+  "site": {
+    "name": "Awardley",
+    "description": "One record of what a client asked for, what suppliers quoted, what you bid, and whether you won."
+  },
+  "hero": {
+    "headline": "One record of what a client asked for, what suppliers quoted, what you bid, and whether you won.",
+    "sub": "Awardley is a tender workspace for trading companies.",
+    "screenshotAlt": "A Tender in Awardley on a phone, showing its Items and the Quotes against them."
+  },
+  "beats": {
+    "tender": {
+      "title": "A Tender, and every Item under it",
+      "body": "Record the Tender once. Every Item the client asked for sits under it with its own quantity, specification and reference images — so nothing is priced from a paragraph in somebody's inbox."
+    },
+    "quotes": {
+      "title": "Quotes compared on one sheet",
+      "body": "Every supplier's price for every Item, on one sheet, in one currency. Rule out what does not fit, select what does, and the Bid is built from the Quotes you chose rather than from memory."
+    },
+    "assignees": {
+      "title": "Assignees, and Reminders by email",
+      "body": "Assign an Item to whoever is chasing it. Reminders arrive by email, to the one person they are about, in the language that person reads — no group chat required."
+    }
+  },
+  "beta": {
+    "title": "Awardley is in closed beta",
+    "body": "The app is invite-only while we work with our first companies. Leave your email and we will keep you posted as it opens up.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@company.com",
+    "submit": "Keep me posted",
+    "submitting": "Sending…",
+    "honeypotLabel": "Leave this field empty",
+    "success": "Check your inbox. We have sent you a link to confirm — it is good for 48 hours.",
+    "invalid": "That does not look like an email address.",
+    "failed": "Something went wrong at our end. Try again in a moment.",
+    "privacyNote": "One email to confirm, then occasional updates. Unsubscribe any time.",
+    "privacyLink": "How we handle your email"
+  },
+  "footer": {
+    "signIn": "Sign in",
+    "privacy": "Privacy",
+    "languageLabel": "Language",
+    "otherLanguage": "中文",
+    "rights": "© {year} Awardley"
+  },
+  "confirm": {
+    "ready": {
+      "title": "One more step",
+      "body": "Press the button and this address joins the list. Nothing is stored until you do."
+    },
+    "button": "Confirm my email",
+    "pressing": "Confirming…",
+    "ok": {
+      "title": "You are on the list",
+      "body": "We will email you when there is something worth saying about Awardley, and nothing else. Every message carries an unsubscribe link."
+    },
+    "failed": {
+      "title": "That did not go through",
+      "body": "We could not add you just now. Your link is still valid; try again in a few minutes."
+    },
+    "expired": {
+      "title": "That link has expired",
+      "body": "Confirmation links are good for 48 hours. Enter your email again and we will send a fresh one.",
+      "home": "Back to the home page"
+    }
+  },
+  "email": {
+    "subject": "Confirm your email for Awardley updates",
+    "body": "Someone — we hope you — asked for updates on Awardley, a tender workspace for trading companies.\n\nConfirm that address by opening this link and pressing the button:\n\n{link}\n\nThe link is good for 48 hours. If this was not you, ignore this email: nothing is stored unless you confirm.\n\n— Awardley"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "intro": "This page covers the waiting list on this site and nothing else. It is short because we collect very little.",
+    "sections": {
+      "what": {
+        "title": "What we collect",
+        "body": "An email address, and only if you type one into the form on this page. No name, no company, no phone number. The form does not set a cookie."
+      },
+      "why": {
+        "title": "Why we collect it",
+        "body": "To send you updates on the Awardley project. Nothing else. We do not sell it, rent it, or pass it to anyone for their own use."
+      },
+      "where": {
+        "title": "Where it is held",
+        "body": "In an audience at Resend, the service that sends our email. Resend is a United States provider, so your address is held and processed outside Thailand. Your address is not added there until you confirm it from the email we send you — if you never confirm, nothing is ever stored."
+      },
+      "long": {
+        "title": "How long we keep it",
+        "body": "Until you unsubscribe or ask us to remove it. There is no other expiry: we are not going to decide on your behalf that you have stopped being interested."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "body": "This site uses Vercel Web Analytics, which is cookieless. It counts page views and where they came from. It does not set a cookie, does not follow you to other sites, and collects no personal data about you."
+      },
+      "remove": {
+        "title": "How to be removed",
+        "body": "Use the unsubscribe link at the foot of any email we send you, or write to hello@awardley.com and ask. Either one is enough; you do not have to give a reason."
+      },
+      "controller": {
+        "title": "Who is responsible",
+        "body": "Peerawit Chariyawongsiri, who runs Awardley as an individual, is the controller of this data. Questions, corrections and complaints go to hello@awardley.com."
+      }
+    },
+    "back": "Back to the home page"
+  }
+}

@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+/**
+ * The marketing site's palette, copied from the app's `src/app/globals.css` so that the
+ * page a reader sees before they sign in is the same object as the one they sign in to.
+ *
+ * **One difference, deliberate.** The app has three theme states, because a reader can
+ * pin light or dark in Preferences and the server writes that class onto `<html>` from
+ * its first byte (ADR-0024). There is nothing to pin here — no account, no cookie, no
+ * Preferences — so the site has only the app's *System* reading: `prefers-color-scheme`
+ * and nothing else. That is why this file has a media-query dark block where the app has
+ * a `@custom-variant` reached two ways, and why `color-scheme: light dark` sits on
+ * `:root` unconditionally rather than on a `.theme-system` class.
+ *
+ * The values themselves are not re-derived. Only the subset the site actually draws is
+ * carried over — ground, ink, the signal hue and its wash, hairlines, the two radii and
+ * the surface shadow. Every hue keeps the meaning ADR-0019 gives it: **signal** is
+ * *something is expected of you* and is spent here on exactly one control, the submit.
+ */
+
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /*
+   * Fira for Latin and numerals, the CJK stack declared rather than inherited — no Han
+   * webfont is fetched, for the reason the app states: a Han face cannot be subset, so
+   * web-loading one is megabytes over a phone network.
+   *
+   * The `var()` fallbacks are load-bearing rather than belt-and-braces. `next/font`
+   * defines `--font-fira-*` on `<html>`; a browser layout test renders this stylesheet
+   * *without* it, and an undefined variable invalidates the whole declaration at
+   * computed-value time and falls all the way back to the default serif.
+   */
+  --font-sans:
+    var(--font-fira-sans, "Fira Sans"), "PingFang SC", "Hiragino Sans GB",
+    "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono:
+    var(--font-fira-code, "Fira Code"), "SF Mono", ui-monospace, "PingFang SC",
+    "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", monospace;
+
+  --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
+  --color-signal-wash: var(--signal-wash);
+  --color-signal-edge: var(--signal-edge);
+
+  --color-ink-faint: var(--ink-faint);
+  --color-hairline: var(--border);
+  --color-hairline-soft: var(--hairline-soft);
+  --color-surface: var(--card);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-alarm: var(--alarm);
+  --color-alarm-ink: var(--alarm-ink);
+  --color-alarm-wash: var(--alarm-wash);
+
+  /*
+   * The form vocabulary (ADR-0028): a corner says what kind of thing it is.
+   * `rounded-control` — you operate it. `rounded-surface` — it contains other things.
+   */
+  --radius-control: calc(var(--radius) * 0.8);
+  --radius-surface: calc(var(--radius) * 1.4);
+
+  --shadow-surface: var(--surface-shadow);
+}
+
+@theme {
+  /* The spacing scale, named for what it separates rather than for how big it is. */
+  --spacing-label: 8px;
+  --spacing-field: 14px;
+  --spacing-group: 24px;
+  --spacing-landmark: 40px;
+}
+
+:root {
+  /*
+   * A warm paper ground with a blue-black ink over it. The device decides which of the
+   * two palettes it gets; `color-scheme` is what makes the canvas the browser paints
+   * *before this stylesheet arrives* the right ground, and keeps a form control from
+   * being the one light thing on a dark screen.
+   */
+  color-scheme: light dark;
+
+  --background: oklch(0.975 0.007 90);
+  --foreground: oklch(0.225 0.015 265);
+  --ink-faint: oklch(0.535 0.018 265);
+  --hairline-soft: oklch(0.935 0.008 90);
+
+  --signal: oklch(0.5 0.17 259);
+  --signal-ink: oklch(0.44 0.17 262);
+  --signal-wash: oklch(0.5 0.17 259 / 0.1);
+  --signal-edge: oklch(0.5 0.17 259 / 0.3);
+
+  --alarm: oklch(0.52 0.2 27);
+  --alarm-ink: oklch(0.46 0.165 27);
+  --alarm-wash: oklch(0.52 0.2 27 / 0.09);
+
+  --card: oklch(0.995 0.003 90);
+  --muted: oklch(0.945 0.008 90);
+  --muted-foreground: oklch(0.47 0.02 265);
+  --border: oklch(0.885 0.012 90);
+  --input: oklch(0.635 0.02 90);
+  --ring: var(--signal);
+
+  --radius: 0.625rem;
+
+  --surface-shadow:
+    0 1px 2px -1px oklch(0.225 0.015 265 / 0.07),
+    0 2px 6px -2px oklch(0.225 0.015 265 / 0.05);
+
+  /*
+   * The three bars of the mark, at the values the source artwork uses. They are tokens
+   * rather than literals in the SVG because the light theme has to invert the middle
+   * one: a near-white bar on warm paper is an invisible bar.
+   */
+  --mark-1: oklch(0.5 0.17 259);
+  --mark-2: oklch(0.225 0.015 265);
+  --mark-3: oklch(0.63 0.02 255);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.185 0.015 265);
+    --foreground: oklch(0.945 0.006 90);
+    --ink-faint: oklch(0.665 0.018 265);
+    --hairline-soft: oklch(0.285 0.014 265);
+
+    --signal: oklch(0.7 0.14 259);
+    --signal-ink: oklch(0.8 0.09 259);
+    --signal-wash: oklch(0.7 0.14 259 / 0.16);
+    --signal-edge: oklch(0.7 0.14 259 / 0.4);
+
+    --alarm: oklch(0.685 0.17 27);
+    --alarm-ink: oklch(0.81 0.1 27);
+    --alarm-wash: oklch(0.685 0.17 27 / 0.16);
+
+    --card: oklch(0.225 0.016 265);
+    --muted: oklch(0.275 0.016 265);
+    --muted-foreground: oklch(0.745 0.016 265);
+    --border: oklch(0.345 0.014 265);
+    --input: oklch(0.545 0.016 265);
+
+    --surface-shadow: none;
+
+    /* The mark as the source artwork draws it: sky blue, near-white, grey. */
+    --mark-1: oklch(0.74 0.15 240);
+    --mark-2: oklch(0.945 0.006 90);
+    --mark-3: oklch(0.63 0.02 255);
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  /*
+   * The focus ring for everything that does not draw its own. Solid, not a wash: at half
+   * strength signal measures under the 3:1 SC 1.4.11 asks of anything carrying
+   * information, in *both* themes.
+   */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+   * The three voices this page has. The app's scale is five tiers deep because a screen
+   * has to be navigated; a page with four parts needs a headline, a heading and body,
+   * and the tiers are sized so that the Han reading — which is denser per line and has no
+   * 400/700 contrast to spend — opens its leading rather than its size.
+   */
+  .type-display {
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .type-section {
+    font-size: 1.25rem;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .type-quiet {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--ink-faint);
+  }
+
+  :lang(zh-Hans) .type-display {
+    letter-spacing: 0;
+    line-height: 1.35;
+  }
+
+  :lang(zh-Hans) .type-section {
+    letter-spacing: 0;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -44,6 +44,7 @@
     "rights": "© {year} Awardley"
   },
   "confirm": {
+    "metaTitle": "Confirm your email",
     "ready": {
       "title": "One more step",
       "body": "Press the button and this address joins the list. Nothing is stored until you do."
@@ -69,12 +70,13 @@
     "body": "Someone — we hope you — asked for updates on Awardley, a tender workspace for trading companies.\n\nConfirm that address by opening this link and pressing the button:\n\n{link}\n\nThe link is good for 48 hours. If this was not you, ignore this email: nothing is stored unless you confirm.\n\n— Awardley"
   },
   "privacy": {
+    "metaTitle": "Privacy",
     "title": "Privacy",
     "intro": "This page covers the waiting list on this site and nothing else. It is short because we collect very little.",
     "sections": {
       "what": {
         "title": "What we collect",
-        "body": "An email address, and only if you type one into the form on this page. No name, no company, no phone number. The form does not set a cookie."
+        "body": "An email address, and only if you type one into the form on this page. No name, no company, no phone number. The form does not set a cookie. The language switch in the footer stores the language you picked in a cookie for a year, and nothing else."
       },
       "why": {
         "title": "Why we collect it",

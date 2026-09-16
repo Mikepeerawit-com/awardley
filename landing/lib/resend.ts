@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Resend over raw `fetch`, the same shape as the app's `src/lib/email/send.ts`.
  *

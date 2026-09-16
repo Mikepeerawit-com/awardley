@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { confirmSubscription, type ConfirmState } from "@/app/actions/confirm";
+import { SubmitButton } from "@/components/submit-button";
 import type { ConfirmStatus } from "@/lib/confirm";
 
 /**
@@ -55,22 +55,8 @@ export function ConfirmPanel({ token, initial }: { token: string; initial: Confi
 
       <form action={action}>
         <input type="hidden" name="token" value={token} />
-        <Press label={t("button")} pending={t("pressing")} />
+        <SubmitButton label={t("button")} pending={t("pressing")} />
       </form>
     </section>
-  );
-}
-
-function Press({ label, pending }: { label: string; pending: string }) {
-  const status = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={status.pending}
-      className="rounded-control bg-signal px-5 py-2.5 font-semibold text-background outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70"
-    >
-      {status.pending ? pending : label}
-    </button>
   );
 }

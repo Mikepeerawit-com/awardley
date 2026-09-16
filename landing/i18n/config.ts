@@ -12,13 +12,47 @@ export const defaultLocale: Locale = "en";
 /**
  * The same cookie name the app uses, so that a reader who picked 中文 here and then
  * followed **Sign in** does not have to pick it again — the two hosts are siblings under
- * `awardley.com` and a cookie written for the parent domain is read by both.
+ * `awardley.com` and a cookie written for the parent domain is read by both. Writing it
+ * for the parent is {@link cookieDomainFor}'s job, and without that the sentence above
+ * would simply be false.
+ *
+ * It travels both ways. The app's switcher writes the same parent-domain cookie, so
+ * whichever toggle was used last is the language on both hosts — there is one choice
+ * here, not one per host.
  *
  * The locale is deliberately not in the URL. The app made that choice so reminder deep
  * links need not encode one; the site inherits it so that `awardley.com/privacy` is one
  * address rather than three.
  */
 export const localeCookieName = "NEXT_LOCALE";
+
+/** The parent the site and the app are both under, and the only host pair worth sharing with. */
+const siteDomain = "awardley.com";
+
+/**
+ * The `domain` the locale cookie is written for, decided from the host that asked.
+ *
+ * On `awardley.com` and anything under it the answer is `.awardley.com`, which is what
+ * lets `app.awardley.com` read a choice made here. Anywhere else — `localhost`, a
+ * `*.vercel.app` preview — the answer is nothing at all: a browser refuses a `domain`
+ * that is not a parent of the host setting it, so naming one there would not widen the
+ * cookie, it would drop it, and the footer toggle would silently stop working on every
+ * preview deployment.
+ *
+ * The port is cut off first, because `localhost:3000` is a `Host` header and not a
+ * hostname.
+ */
+export function cookieDomainFor(host: string | null): string | undefined {
+  if (host === null) return undefined;
+
+  const hostname = host.split(":")[0].trim().toLowerCase();
+
+  if (hostname === siteDomain || hostname.endsWith(`.${siteDomain}`)) {
+    return `.${siteDomain}`;
+  }
+
+  return undefined;
+}
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && locales.includes(value as Locale);

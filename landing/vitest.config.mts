@@ -27,6 +27,14 @@ export default defineConfig({
     projects: [
       {
         resolve: { tsconfigPaths: true },
+        // Resolve packages the way the server runtime does, as the app's config does for
+        // the same reason: without `react-server`, `import "server-only"` throws on
+        // import and everything downstream of a server-only module is untestable.
+        ssr: {
+          resolve: {
+            conditions: ["react-server", "node", "module", "import", "default"],
+          },
+        },
         test: {
           name: "unit",
           environment: "node",

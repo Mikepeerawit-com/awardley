@@ -19,7 +19,19 @@ import { Wordmark } from "@/components/mark";
  * boilerplate clause that reserves a right nobody intends to use is a promise quietly
  * broken in advance.
  */
-export const metadata: Metadata = { title: "Privacy" };
+/**
+ * Localised like the layout's, and for the same reason: the tab is part of the page, and
+ * a reader who switched the site to 中文 should not find the browser still calling this
+ * "Privacy" in English.
+ *
+ * No site-name suffix, because the layout does not set a `title.template` to hang one
+ * on — it names the site on the home page and leaves the rest to say what they are.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("privacy");
+
+  return { title: t("metaTitle") };
+}
 
 const sections = [
   "what",

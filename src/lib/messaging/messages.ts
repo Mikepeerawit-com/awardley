@@ -108,7 +108,7 @@ export function testMentionMessage({
   wecomUserid: string;
 }): GroupMessage {
   return {
-    content: "【招标跟踪】测试通知：如果这条消息 @ 到了你，请在本群回复一句话确认收到。",
+    content: "【Awardley】测试通知：如果这条消息 @ 到了你，请在本群回复一句话确认收到。",
     mentions: [wecomUserid],
   };
 }
@@ -212,7 +212,7 @@ export function reminderMessage({
 }): GroupMessage {
   return {
     content: [
-      `【招标跟踪】${reference} · ${client} · ${title}`,
+      `【Awardley】${reference} · ${client} · ${title}`,
       ...milestones.map(({ milestone, date, daysLeft }) =>
         milestoneLines[milestone](date, daysLeft),
       ),
@@ -320,7 +320,7 @@ export function digestMessage({
   link: string | null;
 }): GroupMessage {
   const head = [
-    `【招标跟踪】每日摘要：共 ${tenders.length} 个进行中的招标`,
+    `【Awardley】每日摘要：共 ${tenders.length} 个进行中的招标`,
     // **In the head, not the footer** (#99). Once, because a listing that told somebody
     // what to do twelve times over is a Digest nobody reads to the bottom of — but at the
     // top, because that is the line everybody reads and the one line the truncation below
@@ -405,7 +405,7 @@ function outcomeHead(
   { reference, client, item }: { reference: string; client: string; item: string },
   outcome: AnnouncedOutcome,
 ): string {
-  return `【招标跟踪】${reference} · ${client} · ${item} — ${outcomeVerdicts[outcome]}`;
+  return `【Awardley】${reference} · ${client} · ${item} — ${outcomeVerdicts[outcome]}`;
 }
 
 /**

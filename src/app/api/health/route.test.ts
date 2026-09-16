@@ -148,7 +148,7 @@ describe("GET /api/health, on a deployment that cannot send email", () => {
     // here would let a deployment-wide typo be paid for in settled rows nobody was
     // ever mailed, because a 4xx closes deliveries (ADR-0034). One policy: this is the
     // same check sendEmails throws on.
-    vi.stubEnv("EMAIL_FROM", "Tender Tracker reminders@example.test");
+    vi.stubEnv("EMAIL_FROM", "Awardley reminders@example.test");
 
     const { status, body } = await health();
 
@@ -174,7 +174,7 @@ describe("GET /api/health, on a deployment that cannot send email", () => {
     expect(status).toBe(200);
     expect(body.email).toEqual({
       configured: true,
-      from: "Tender Tracker <test@example.test>",
+      from: "Awardley <test@example.test>",
     });
   });
 });

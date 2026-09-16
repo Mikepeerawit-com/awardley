@@ -69,7 +69,7 @@ describe("sendEmails", () => {
     // 4xx, and 4xx closes deliveries (ADR-0034) — rows settled with zero mail sent,
     // unrecoverably. So the shape is checked at the same gate /api/health probes, and
     // the morning run never gets far enough to pay for the typo in settled rows.
-    vi.stubEnv("EMAIL_FROM", "Tender Tracker reminders@example.test");
+    vi.stubEnv("EMAIL_FROM", "Awardley reminders@example.test");
 
     await expect(sendEmails([message], recordingEmail())).rejects.toThrow(/EMAIL_FROM/);
   });

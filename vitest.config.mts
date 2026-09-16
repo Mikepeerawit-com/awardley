@@ -196,7 +196,7 @@ function localSupabaseEnv(): Record<string, string> {
     // these never reach Resend. The one test about the blank-key throw stubs them back
     // out with `vi.stubEnv`.
     RESEND_API_KEY: "re_test_key_never_sent_anywhere",
-    EMAIL_FROM: "Tender Tracker <test@example.test>",
+    EMAIL_FROM: "Awardley <test@example.test>",
   };
 }
 

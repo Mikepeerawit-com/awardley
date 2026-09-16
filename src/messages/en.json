@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Tender Tracker",
+    "name": "Awardley",
     "description": "Tenders, the quotes gathered against them, and what was bid back.",
     "loading": "Loading…",
     "error": {
@@ -25,7 +25,7 @@
   },
   "login": {
     "title": "Sign in",
-    "description": "Tender Tracker is invitation-only. If you do not have an account yet, ask your Administrator to invite you.",
+    "description": "Awardley is invitation-only. If you do not have an account yet, ask your Administrator to invite you.",
     "email": "Email",
     "password": "Password",
     "submit": "Sign in",
@@ -640,7 +640,7 @@
   },
   "email": {
     "reminder": {
-      "subject": "[Tender Tracker] {reference} · {client} · {title}",
+      "subject": "[Awardley] {reference} · {client} · {title}",
       "milestone": {
         "internal_quote": "Internal quote deadline: {date} ({remaining}). Please open My Work and enter a quote for each of your items, or record that no supplier could be found.",
         "client_submission": "Client submission deadline: {date} ({remaining}). Please select a quote for each item, deliver the bid to the client, then come back and record the submission as sent.",
@@ -655,7 +655,7 @@
       "days": "{days, plural, one {# day left} other {# days left}}"
     },
     "digest": {
-      "subject": "[Tender Tracker] Daily summary: {count, plural, one {# tender} other {# tenders}} in progress",
+      "subject": "[Awardley] Daily summary: {count, plural, one {# tender} other {# tenders}} in progress",
       "intro": "Please find the tenders that concern you and act on them in the app: assignees enter quotes, owners select quotes and submit the bid.",
       "line": "{reference} · {client} · {title}: {summary}",
       "next": {
@@ -667,7 +667,7 @@
       "undated": "submitted, awaiting the client's decision (no expected date set)"
     },
     "outcome": {
-      "subject": "[Tender Tracker] {reference} · {client} · {item} — {verdict}",
+      "subject": "[Awardley] {reference} · {client} · {item} — {verdict}",
       "verdict": {
         "won": "won",
         "lost": "not won"

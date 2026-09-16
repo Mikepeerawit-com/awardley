@@ -249,7 +249,7 @@ observe() {
   write_env "$key" "${!key}"
 }
 
-banner "Tender Tracker — the phone checks after the redesign (#$ISSUE)"
+banner "Awardley — the phone checks after the redesign (#$ISSUE)"
 
 # ── 1 ─────────────────────────────────────────────────────────────────────
 stage "Preflight — what you are about to check, and on what"
@@ -307,7 +307,7 @@ if confirm "Post a reminder-shaped message with a real link (no real Tender data
   if [[ -n "${ROBOT_WEBHOOK:-}" && -n "${TENDER_ID:-}" ]]; then
     say "Posting..."
     if curl -fsS --max-time 20 -H 'Content-Type: application/json' \
-        -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"【招标跟踪】发布前检查·请在手机上点击以下链接。\\n$LINK\"}}" \
+        -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"【Awardley】发布前检查·请在手机上点击以下链接。\\n$LINK\"}}" \
         "$ROBOT_WEBHOOK" | head -c 200; then
       printf '\n'
       say "errcode 0 means WeCom accepted it — look at the group to see it arrive."

@@ -101,6 +101,9 @@ describe.each(others)("%s", (locale) => {
 
     expect(identical).toEqual(
       [
+        // The brand is a Latin-only word in both languages on purpose: Awardley is a
+        // name, not a description, and a name is not translated (#181).
+        "app.name",
         // Both locale names are written in their own language on purpose: someone who
         // cannot read the current one has to be able to find their way out.
         "localeSwitcher.en",

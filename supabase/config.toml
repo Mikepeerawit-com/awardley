@@ -2,7 +2,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "tender-tracker"
+project_id = "awardley"
 
 [api]
 enabled = true
@@ -253,7 +253,7 @@ otp_expiry = 3600
 # fragment — unreadable by a server, and readable only by client-side script that would
 # then persist the session where WebKit clears it after 7 days.
 [auth.email.template.invite]
-subject = "You have been invited / 邀请您加入 — Tender Tracker"
+subject = "You have been invited / 邀请您加入 — Awardley"
 content_path = "./supabase/templates/invite.html"
 
 # Uncomment to customize notification email template

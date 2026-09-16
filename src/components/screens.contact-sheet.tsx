@@ -237,7 +237,7 @@ function indexPage(taken: Shot[], resolved: ResolvedFace[]): string {
 
   return `<!doctype html>
 <meta charset="utf-8">
-<title>Contact sheet — tender-tracker</title>
+<title>Contact sheet — awardley</title>
 <style>
   :root { color-scheme: light dark; }
   body { font: 15px/1.5 system-ui, sans-serif; margin: 0; padding: 2rem; max-width: 1500px; }

@@ -318,7 +318,7 @@ describe("the rules themselves", () => {
    * looked like, and it satisfies every other rule in the list.
    */
   const reporting: GroupMessage = {
-    content: `【招标跟踪】${fixture.reference} · ${fixture.client}\n内部报价截止:2026-08-25`,
+    content: `【Awardley】${fixture.reference} · ${fixture.client}\n内部报价截止:2026-08-25`,
   };
 
   /**
@@ -328,7 +328,7 @@ describe("the rules themselves", () => {
    * above and is caught only by the one it is here for.
    */
   const stale: GroupMessage = {
-    content: "【招标跟踪】本标书的招标明细已有报价,请进入系统查看该条目下的产品。",
+    content: "【Awardley】本标书的招标明细已有报价,请进入系统查看该条目下的产品。",
   };
 
   it("catches a message that only reports a condition", () => {

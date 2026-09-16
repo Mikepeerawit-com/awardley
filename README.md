@@ -1,4 +1,4 @@
-# Tender Tracker
+# Awardley
 
 Tracks client tenders at a medical-supplies trading company: what a client asked for,
 what suppliers quoted in response, what we bid back, and whether we won.

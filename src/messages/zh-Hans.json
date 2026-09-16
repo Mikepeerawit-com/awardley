@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "招标跟踪",
+    "name": "Awardley",
     "description": "记录招标、针对招标收集的报价，以及我们最终的投标内容。",
     "loading": "加载中…",
     "error": {
@@ -25,7 +25,7 @@
   },
   "login": {
     "title": "登录",
-    "description": "招标跟踪仅限邀请使用。若您尚未有账号，请联系组织管理员邀请您。",
+    "description": "Awardley 仅限邀请使用。若您尚未有账号，请联系组织管理员邀请您。",
     "email": "邮箱",
     "password": "密码",
     "submit": "登录",
@@ -640,7 +640,7 @@
   },
   "email": {
     "reminder": {
-      "subject": "【招标跟踪】{reference} · {client} · {title}",
+      "subject": "【Awardley】{reference} · {client} · {title}",
       "milestone": {
         "internal_quote": "内部报价截止：{date}（{remaining}）。请打开“我的工作”，为你的每个产品项录入报价，或说明找不到供应商。",
         "client_submission": "客户投标截止：{date}（{remaining}）。请为每个产品项选定报价，把投标送到客户手上，再回来点“记录投标已送出”。",
@@ -655,7 +655,7 @@
       "days": "还剩 {days} 天"
     },
     "digest": {
-      "subject": "【招标跟踪】每日摘要：共 {count} 个进行中的招标",
+      "subject": "【Awardley】每日摘要：共 {count} 个进行中的招标",
       "intro": "请在下面找到与你有关的那几条，进入系统处理：参与人录入报价，负责人选定报价并提交投标。",
       "line": "{reference} · {client} · {title}：{summary}",
       "next": {
@@ -667,7 +667,7 @@
       "undated": "已提交，等待客户决标（未设预计决标日期）"
     },
     "outcome": {
-      "subject": "【招标跟踪】{reference} · {client} · {item} — {verdict}",
+      "subject": "【Awardley】{reference} · {client} · {item} — {verdict}",
       "verdict": {
         "won": "中标",
         "lost": "未中标"

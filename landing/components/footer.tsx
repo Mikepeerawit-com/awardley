@@ -27,8 +27,8 @@ export function Footer() {
   const other = useLocale() === "en" ? "zh-Hans" : "en";
 
   return (
-    <footer className="border-t border-hairline mt-landmark">
-      <div className="mx-auto w-full max-w-3xl px-5 py-group">
+    <footer className="border-t border-hairline">
+      <div className="mx-auto w-full max-w-6xl px-5 py-group md:px-8">
         <div className="flex flex-wrap items-center gap-x-group gap-y-field">
           <a
             href="https://app.awardley.com/login"

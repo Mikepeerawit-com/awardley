@@ -35,7 +35,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={status.pending}
-      className={`${className === undefined ? "" : `${className} `}rounded-control bg-signal px-5 py-2.5 font-semibold text-background outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70`}
+      className={`${className === undefined ? "" : `${className} `}min-h-12 rounded-control bg-signal px-5 text-base font-semibold text-background outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70`}
     >
       {status.pending ? pending : label}
     </button>

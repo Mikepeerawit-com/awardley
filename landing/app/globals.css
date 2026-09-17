@@ -163,10 +163,36 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+
+    /*
+     * The shop window's daylight (#194): one very faint wash of the signal hue behind
+     * the top-right of the page, so the hero sits in light rather than on flat paper.
+     * It is `--signal-wash` and not a new hue — the same token the closed-beta panel
+     * tints with — and it is spent on *ground*, which is why it costs nothing against
+     * ADR-0019's rule that signal means something is expected of you: a gradient asks
+     * for nothing. It does not repeat, so a long page fades to plain paper.
+     */
+    background-image: radial-gradient(
+      70rem 32rem at 80% -12%,
+      var(--signal-wash),
+      transparent 70%
+    );
+    background-repeat: no-repeat;
   }
 
   html {
     font-family: var(--font-sans);
+  }
+
+  /*
+   * The hero's call to action is an in-page jump to the form. Smooth only where the
+   * reader has not asked for less motion — `no-preference` rather than a `reduce`
+   * override, so a browser that reports nothing gets the instant jump.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   /*
@@ -182,23 +208,41 @@
 
 @layer components {
   /*
-   * The three voices this page has. The app's scale is five tiers deep because a screen
-   * has to be navigated; a page with four parts needs a headline, a heading and body,
-   * and the tiers are sized so that the Han reading — which is denser per line and has no
-   * 400/700 contrast to spend — opens its leading rather than its size.
+   * The four voices this page has. The app's scale is five tiers deep because a screen
+   * has to be navigated; a page with four parts needs an eyebrow, a headline, a heading
+   * and body, and the tiers are sized so that the Han reading — which is denser per line
+   * and has no 400/700 contrast to spend — opens its leading rather than its size.
+   *
+   * The display tier is fluid rather than fixed (#194): the measure is now `max-w-6xl`,
+   * and a headline set at one size for a 390px phone and a 1280px desk is either a
+   * shout on the phone or a whisper on the desk. `clamp` floors it at what the phone
+   * had and ceilings it before the line gets too long to track.
    */
   .type-display {
-    font-size: 2rem;
-    line-height: 1.2;
+    font-size: clamp(2.25rem, 1.4rem + 3.2vw, 3.75rem);
+    line-height: 1.08;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
   }
 
   .type-section {
-    font-size: 1.25rem;
-    line-height: 1.35;
+    font-size: 1.375rem;
+    line-height: 1.3;
     font-weight: 600;
     letter-spacing: -0.01em;
+  }
+
+  /*
+   * The line above a headline that says who is being addressed. Latin gets small caps
+   * by tracking; Han gets neither — uppercase does nothing to Han, and letter-spacing
+   * on Han is the thing that makes a line look machine-set rather than typeset — so it
+   * takes the size back instead.
+   */
+  .type-eyebrow {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
   }
 
   .type-quiet {
@@ -209,12 +253,18 @@
 
   :lang(zh-Hans) .type-display {
     letter-spacing: 0;
-    line-height: 1.35;
+    line-height: 1.3;
   }
 
   :lang(zh-Hans) .type-section {
     letter-spacing: 0;
     line-height: 1.5;
+  }
+
+  :lang(zh-Hans) .type-eyebrow {
+    font-size: 0.875rem;
+    text-transform: none;
+    letter-spacing: 0;
   }
 }
 

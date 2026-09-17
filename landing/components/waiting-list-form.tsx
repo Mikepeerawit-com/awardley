@@ -57,7 +57,7 @@ export function WaitingListForm() {
           placeholder={t("emailPlaceholder")}
           aria-invalid={state.status === "invalid"}
           aria-describedby={state.status === "idle" ? undefined : "waiting-list-message"}
-          className="min-w-0 flex-1 rounded-control border border-input bg-background px-3.5 py-2.5 outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+          className="h-12 min-w-0 flex-1 rounded-control border border-input bg-background px-3.5 text-base outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
         />
 
         <SubmitButton

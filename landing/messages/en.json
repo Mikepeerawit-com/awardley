@@ -4,8 +4,10 @@
     "description": "One record of what a client asked for, what suppliers quoted, what you bid, and whether you won."
   },
   "hero": {
+    "eyebrow": "For trading companies",
     "headline": "One record of what a client asked for, what suppliers quoted, what you bid, and whether you won.",
     "sub": "Awardley is a tender workspace for trading companies.",
+    "cta": "Join the waiting list",
     "screenshotAlt": "A Tender in Awardley on a phone, showing its Items and the Quotes against them."
   },
   "beats": {

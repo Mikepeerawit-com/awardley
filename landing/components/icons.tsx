@@ -1,15 +1,18 @@
 /**
- * The site's whole icon vocabulary, drawn rather than depended on.
+ * The site's whole icon vocabulary, drawn rather than depended on — and it is one glyph.
  *
- * Five glyphs is not a library. `lucide-react` would be a runtime dependency, a bundle
- * and a version to keep, in exchange for paths that fit on one screen — and these have
- * to be inline anyway, because every one of them is `currentColor` on a surface whose
- * ink changes with the theme and, in the closed-beta band, does not.
+ * It was five, then four, and the three that went were a document, a grid and a bell
+ * standing over the three how-it-works columns: icons that illustrated the nouns in the
+ * headings rather than telling the reader anything the headings did not. What is left is
+ * the one icon that carries information — the tick on the Quote that was chosen — and one
+ * glyph is emphatically not a reason for `lucide-react`, a runtime dependency and a
+ * version to keep in exchange for a path that fits on one line.
  *
- * All of them share the one geometry: a 24-unit box, `stroke-width` 1.75, round caps and
- * joins, no fill. They are `aria-hidden` without exception — each sits beside the words
- * it illustrates, and an icon that announced itself would make a screen reader read the
- * line twice.
+ * Inline anyway, because it is `currentColor` on a surface whose ink changes with the
+ * theme. The geometry is the one the set shared: a 24-unit box, `stroke-width` 1.75,
+ * round caps and joins, no fill. It is `aria-hidden`, and the cell it sits in carries a
+ * visually-hidden *Selected* — an icon that announced itself would make a screen reader
+ * read the row twice.
  */
 function Glyph({
   children,
@@ -35,51 +38,7 @@ function Glyph({
   );
 }
 
-/** A Tender: a sheet of paper with the Items listed down it. */
-export function DocumentIcon({ className }: { className?: string }) {
-  return (
-    <Glyph className={className}>
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-      <path d="M14 3v5h5" />
-      <path d="M9 13h6" />
-      <path d="M9 17h4" />
-    </Glyph>
-  );
-}
-
-/** The comparison sheet: one column per supplier, one row per Item. */
-export function SheetIcon({ className }: { className?: string }) {
-  return (
-    <Glyph className={className}>
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="M3 9h18" />
-      <path d="M9 9v11" />
-      <path d="M15 9v11" />
-    </Glyph>
-  );
-}
-
-/** A Reminder, which arrives in one person's inbox rather than in a group chat. */
-export function BellIcon({ className }: { className?: string }) {
-  return (
-    <Glyph className={className}>
-      <path d="M18 9a6 6 0 1 0-12 0c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6" />
-      <path d="M10 20a2 2 0 0 0 4 0" />
-    </Glyph>
-  );
-}
-
-/** A fact that is already true, rather than a promise. */
-export function CheckCircleIcon({ className }: { className?: string }) {
-  return (
-    <Glyph className={className}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m8.5 12 2.5 2.5 4.5-5" />
-    </Glyph>
-  );
-}
-
-/** The bare tick, for a list that has already drawn its own bullets. */
+/** The tick on the Quote that was chosen, beside a visually-hidden *Selected*. */
 export function CheckIcon({ className }: { className?: string }) {
   return (
     <Glyph className={className}>

@@ -37,7 +37,7 @@ export function Footer() {
   const other = useLocale() === "en" ? "zh-Hans" : "en";
 
   const link =
-    "inline-flex min-h-11 items-center rounded-control text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground";
+    "inline-flex min-h-11 items-center rounded-lg text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground";
 
   return (
     <footer className="border-t border-border">

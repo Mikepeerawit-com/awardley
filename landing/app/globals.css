@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /**
- * The shop window's palette (#194), and the one place either theme is stated.
+ * The site's palette and voice, and the one place either theme is stated.
  *
  * **Every colour is a `light-dark()` pair on `:root`, and there is no dark variant.**
  * The app has three theme states because a reader can pin one in Preferences and the
@@ -13,22 +13,22 @@
  * A `@custom-variant dark` and a second token block would have been two places to state
  * a colour and one of them would eventually be wrong.
  *
- * **The navy brand surface is the exception that proves it.** `--brand` does not swap:
- * the closed-beta band is the one place on the site that changes ground, and a band that
- * went pale in the light theme would stop being the thing the eye lands on.
+ * **Monochrome ground, one indigo accent, and no second ground anywhere.** The navy
+ * brand surface this replaces was a band the page changed colour for; a page whose
+ * sections are told apart by hairlines rather than by grounds does not need one, and the
+ * accent is worth more spent once on the button than spread over a stripe.
  *
- * Contrast is not eyeballed. `scratchpad/contrast.mjs` measures every text pair in both
- * readings against 4.5:1 and the control edges against 3:1, including white at 80% over
- * the navy gradient at both of its ends. The card hairline is deliberately below 3:1 and
- * deliberately not a control edge: SC 1.4.11 is about things carrying information, and a
- * hairline dark enough to pass it draws a wireframe rather than a Swiss grid.
+ * Contrast is held to 4.5:1 for text in both readings and 3:1 for anything you can
+ * operate — which is why `--input` is its own token a full step darker than `--border`.
+ * The hairline is deliberately below 3:1 and deliberately not a control edge: SC 1.4.11
+ * is about things carrying information, and a hairline dark enough to pass it draws a
+ * wireframe rather than a ruled page.
  */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
-  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -39,15 +39,20 @@
   --color-accent-wash: var(--accent-wash);
   --color-accent-edge: var(--accent-edge);
 
-  /* The navy band, and the only text colours that are safe on top of it. */
-  --color-brand: var(--brand);
-  --color-brand-foreground: var(--brand-foreground);
-  --color-brand-danger: var(--brand-danger);
+  --color-danger: var(--danger);
 
   /*
-   * The names the pages that are *not* being redesigned already ask for — privacy,
-   * confirm, the footer. They are aliases rather than a second palette, so those pages
-   * pick up the new hues without being rewritten for the sake of a class string.
+   * The bezel of the device frame in the product panel, and the one colour on the site
+   * that is neither ink nor hairline. A frame drawn at the hairline's 8% is not a frame:
+   * the phone would float with no edge, and the whole point of the crop is that the
+   * reader is looking *into* something.
+   */
+  --color-device-edge: var(--device-edge);
+
+  /*
+   * The names the pages that are *not* the home page already ask for — privacy, confirm,
+   * the footer. They are aliases rather than a second palette, so those pages pick up
+   * the new hues without being rewritten for the sake of a class string.
    */
   --color-signal: var(--accent);
   --color-signal-ink: var(--accent);
@@ -58,27 +63,28 @@
   --color-surface: var(--card);
 
   /*
-   * Plus Jakarta Sans for Latin and numerals, the CJK stack declared rather than
-   * inherited — no Han webfont is fetched, for the reason the app states: a Han face
-   * cannot be subset, so web-loading one is megabytes over a phone network.
+   * Inter for Latin and numerals, the CJK stack declared rather than inherited — no Han
+   * webfont is fetched, for the reason the app states: a Han face cannot be subset, so
+   * web-loading one is megabytes over a phone network.
    *
    * The `var()` fallback is load-bearing rather than belt-and-braces. `next/font`
-   * defines `--font-jakarta` on `<html>`; a browser layout test renders this stylesheet
+   * defines `--font-inter` on `<html>`; a browser layout test renders this stylesheet
    * *without* it, and an undefined variable invalidates the whole declaration at
    * computed-value time and falls all the way back to the default serif.
    */
   --font-sans:
-    var(--font-jakarta, "Plus Jakarta Sans"), "PingFang SC", "Hiragino Sans GB",
-    "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    var(--font-inter, "Inter"), "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC",
+    "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
 
   /*
-   * The form vocabulary (ADR-0028): a corner says what kind of thing it is.
-   * `rounded-control` — you operate it. `rounded-surface` — it contains other things.
+   * The form vocabulary (ADR-0028), stated as one number the whole site derives from
+   * rather than as a second radius scale beside Tailwind's: a corner says what kind of
+   * thing it is. `rounded-lg` (8px) — you operate it. `rounded-2xl` (16px) — it contains
+   * other things. `rounded-xl` is the one step between, for a panel that is a reply.
    */
-  --radius-control: calc(var(--radius) * 0.8);
-  --radius-surface: calc(var(--radius) * 1.4);
-
-  --shadow-surface: var(--surface-shadow);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
 }
 
 @theme {
@@ -97,53 +103,44 @@
    */
   color-scheme: light dark;
 
-  --background: light-dark(#f8fafc, #020617);
-  --card: light-dark(#ffffff, #0f172a);
-  --foreground: light-dark(#0f172a, #f1f5f9);
-  --muted-foreground: light-dark(#475569, #94a3b8);
-  --muted: light-dark(#f1f5f9, #0b1220);
+  --background: light-dark(#ffffff, #0a0a0b);
+  --card: light-dark(#fafafa, #121214);
+  --foreground: light-dark(#0a0a0a, #ededef);
+  --muted-foreground: light-dark(#5f6368, #9a9ba1);
 
-  /* The card hairline, and — separately — the edge of anything you can operate. */
-  --border: light-dark(#e2e8f0, #1e293b);
-  --input: #64748b;
+  /* The hairline, and — separately — the edge of anything you can operate. */
+  --border: light-dark(rgb(10 10 10 / 0.08), rgb(255 255 255 / 0.09));
+  --input: light-dark(#767676, rgb(255 255 255 / 0.42));
 
-  --accent: light-dark(#0369a1, #38bdf8);
-  --accent-foreground: light-dark(#ffffff, #020617);
-  --accent-wash: light-dark(rgb(3 105 161 / 0.1), rgb(56 189 248 / 0.14));
-  --accent-edge: light-dark(rgb(3 105 161 / 0.35), rgb(56 189 248 / 0.4));
+  --accent: light-dark(#4f46e5, #818cf8);
+  --accent-foreground: light-dark(#ffffff, #0a0a0b);
+  --accent-wash: light-dark(rgb(79 70 229 / 0.1), rgb(129 140 248 / 0.14));
+  --accent-edge: light-dark(rgb(79 70 229 / 0.4), rgb(129 140 248 / 0.45));
   --ring: var(--accent);
 
+  --danger: light-dark(#b91c1c, #f87171);
+
+  --device-edge: light-dark(#e6e6e9, #2b2b31);
+
   /*
-   * Navy in both themes, on purpose — see the note at the top of this file.
-   *
-   * The flat navy and the gradient are two tokens rather than one because `bg-brand` is
-   * a `background-color` and a gradient is not a colour: the flat value is what paints
-   * the band before `.brand-surface` lays the gradient over it, and what a browser that
-   * drops the image is left with.
+   * The light behind the product panel, and its own token rather than `--accent-wash`
+   * because the two are asked opposite questions. A wash sits *under text* and has to
+   * stay quiet enough to read through; this one is spread over 20rem and blurred, and at
+   * the wash's alpha it disappears entirely on the near-black ground — which is exactly
+   * where a light source is supposed to be visible.
    */
-  --brand: #0f172a;
-  --brand-gradient: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-  --brand-glow: rgb(56 189 248 / 0.22);
-  --brand-foreground: #ffffff;
-  --brand-danger: #fca5a5;
+  --glow: light-dark(rgb(79 70 229 / 0.12), rgb(129 140 248 / 0.26));
 
-  --radius: 0.625rem;
-
-  --surface-shadow:
-    light-dark(
-      0 1px 2px -1px rgb(15 23 42 / 0.07),
-      0 1px 2px -1px rgb(0 0 0 / 0.4)
-    ),
-    light-dark(0 2px 8px -3px rgb(15 23 42 / 0.08), 0 2px 8px -3px rgb(0 0 0 / 0.5));
+  --radius: 0.5rem;
 
   /*
    * The three bars of the mark. They are tokens rather than literals in the SVG because
    * the light theme has to invert the middle one: a near-white bar on white paper is an
    * invisible bar.
    */
-  --mark-1: light-dark(#0369a1, #38bdf8);
-  --mark-2: light-dark(#0f172a, #f1f5f9);
-  --mark-3: light-dark(#94a3b8, #64748b);
+  --mark-1: var(--accent);
+  --mark-2: var(--foreground);
+  --mark-3: var(--muted-foreground);
 }
 
 /**
@@ -176,11 +173,24 @@
     background-color: var(--background);
     color: var(--foreground);
     font-size: 16px;
-    line-height: 1.55;
+    line-height: 1.6;
+  }
+
+  @media (min-width: 48rem) {
+    body {
+      font-size: 17px;
+    }
   }
 
   html {
     font-family: var(--font-sans);
+
+    /*
+     * Inter ships an optical-size axis, and `auto` is what spends it: the display line
+     * gets the tighter, higher-contrast cut and the 14px table gets the open one. It is
+     * the difference between a scaled face and a set one.
+     */
+    font-optical-sizing: auto;
   }
 
   /*
@@ -192,6 +202,21 @@
     html {
       scroll-behavior: smooth;
     }
+  }
+
+  /*
+   * The parts of the page nobody draws. A selection highlight, a caret, a checkbox tick
+   * and an underline's clearance all ship with a default that belongs to no design
+   * system, and leaving them is the cheapest way to look assembled rather than built.
+   */
+  ::selection {
+    background-color: var(--accent-wash);
+    color: var(--foreground);
+  }
+
+  :root {
+    accent-color: var(--accent);
+    text-underline-offset: 0.2em;
   }
 
   /*
@@ -207,48 +232,40 @@
 
 @layer components {
   /*
-   * The voices this page has. The app's scale is five tiers deep because a screen has to
-   * be navigated; a page with five parts needs a display, a heading, an eyebrow and a
-   * quiet line, and the tiers are sized so that the Han reading — which is denser per
-   * line and has no 400/700 contrast to spend — opens its leading rather than its size.
+   * The voices this page has. Four tiers, no eyebrow — a label over a heading is a
+   * heading that did not trust itself. The tiers are sized so that the Han reading —
+   * which is denser per line and has no 400/700 contrast to spend — opens its leading
+   * rather than its size.
    *
    * The display tier is fluid: the measure is `max-w-6xl`, and a headline set at one
    * size for a 390px phone and a 1280px desk is either a shout on the phone or a whisper
    * on the desk.
    */
   .type-display {
-    font-size: clamp(2.5rem, 1.6rem + 3.4vw, 4.25rem);
+    /* 36px at 390, 64px at 1440, and neither end reached by accident. */
+    font-size: clamp(2.25rem, 1.6rem + 2.67vw, 4rem);
     line-height: 1.05;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-weight: 600;
+    letter-spacing: -0.03em;
   }
 
+  /*
+   * Capped at 36px, which is a full step under the display line at every width. A section
+   * heading that can reach 40px on a wide screen is a second display tier, and a page
+   * with two display tiers has none.
+   */
   .type-heading {
-    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
-    line-height: 1.15;
-    font-weight: 700;
+    font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.25rem);
+    line-height: 1.1;
+    font-weight: 600;
     letter-spacing: -0.02em;
   }
 
   .type-section {
-    font-size: 1.375rem;
+    font-size: 1.25rem;
     line-height: 1.3;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-  }
-
-  /*
-   * The line above a headline that says who is being addressed. Latin gets small caps by
-   * tracking; Han gets neither — uppercase does nothing to Han, and letter-spacing on Han
-   * is the thing that makes a line look machine-set rather than typeset — so it takes the
-   * size back instead.
-   */
-  .type-eyebrow {
-    font-size: 0.75rem;
-    line-height: 1.4;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: -0.01em;
   }
 
   .type-quiet {
@@ -257,6 +274,11 @@
     color: var(--muted-foreground);
   }
 
+  /*
+   * Han takes its tracking back at every tier and opens its leading instead. Negative
+   * letter-spacing on Han is the thing that makes a line look machine-set rather than
+   * typeset, and there is no uppercase anywhere on this page to suppress.
+   */
   :lang(zh-Hans) .type-display {
     letter-spacing: 0;
     line-height: 1.25;
@@ -268,17 +290,17 @@
     line-height: 1.45;
   }
 
-  :lang(zh-Hans) .type-eyebrow {
-    font-size: 0.875rem;
-    text-transform: none;
+  :lang(zh-Hans) .type-quiet {
     letter-spacing: 0;
+    line-height: 1.7;
   }
 
   /*
-   * The hero arriving rather than being already there (#194). Opacity and a 12px lift
-   * only — nothing moves sideways, nothing scales — and the stagger is an
-   * `animation-delay` on each child rather than a sequence, so the whole thing is over
-   * in under half a second and a reader who scrolls immediately never sees it running.
+   * The hero arriving rather than being already there. Opacity and a 12px lift only —
+   * nothing moves sideways, nothing scales — and the stagger is an `animation-delay` on
+   * each child rather than a sequence, so the whole thing is over in under half a second
+   * and a reader who scrolls immediately never sees it running. It happens once, in the
+   * hero, and nothing else on the page animates in.
    */
   @keyframes rise {
     from {
@@ -312,31 +334,9 @@
     animation-delay: 240ms;
   }
 
-  /*
-   * The navy ground, in the two places the page changes colour: the panel the product
-   * stands in, and the closed-beta band. A class rather than a utility because it is a
-   * `background-image` over `bg-brand`'s `background-color`, and the pair has to travel
-   * together or a browser that drops the gradient is left with nothing behind the white
-   * text.
-   */
-  .brand-surface {
-    background-image: var(--brand-gradient);
-
-    /*
-     * The band is navy in *both* readings, so the tokens inside it stop reading the
-     * theme and take their dark-on-navy values outright. This is why `SubmitButton`
-     * needs no idea which surface it is standing on: the one accent it asks for resolves
-     * to the light sky blue here and to the deep blue on paper, and the light theme's
-     * `#0369A1` — which is a dark blue on a dark navy — never gets drawn on top of navy.
-     */
-    --accent: #38bdf8;
-    --accent-foreground: #020617;
-    --accent-wash: rgb(56 189 248 / 0.16);
-    --accent-edge: rgb(56 189 248 / 0.45);
-    --ring: #7dd3fc;
-    --foreground: #ffffff;
-    --muted-foreground: rgb(255 255 255 / 0.75);
-    --border: rgb(255 255 255 / 0.2);
+  /* The product panel, last, so the page assembles top-down and ends on the thing it is about. */
+  .rise-5 {
+    animation-delay: 300ms;
   }
 }
 

@@ -1,2 +1,9 @@
 .vercel
 .env*.local
+
+# impeccable session artefacts (the surface brief in .impeccable/surfaces is committed)
+.impeccable/questions/
+.impeccable/review/
+.impeccable/build/
+.impeccable/mocks/
+.impeccable/hook.cache.json

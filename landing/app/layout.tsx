@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
@@ -15,15 +15,20 @@ import "./globals.css";
  * reached over a phone network in China, that is the difference between a page and a
  * download.
  *
- * Plus Jakarta Sans replaces Fira (#194). Fira is the app's face and the app is a dense
- * working screen; a shop window is set large, and Fira's display sizes read as a console
- * rather than as a brand. Five weights because this page actually spends them: 400 body,
- * 500 quiet links, 600 headings and labels, 700 section headings, 800 the display line.
+ * Inter, variable, with its optical-size axis. No `weight` array: a variable font is one
+ * file that answers every weight this page asks for, so listing five of them would fetch
+ * five static cuts instead. `axes: ["opsz"]` is what keeps `font-optical-sizing: auto`
+ * in `globals.css` from being a no-op — without the axis in the fetched file the 64px
+ * display line and the 14px table cell are the same drawing at two sizes.
+ *
+ * It replaces Plus Jakarta Sans, which replaced Fira. Fira is the app's face and reads
+ * as a console at display sizes; Jakarta has a humanist wobble that shows up at 64px.
+ * The bar for this page is Linear and Stripe, and Inter is what that bar is set in.
  */
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  axes: ["opsz"],
   display: "swap",
 });
 
@@ -53,7 +58,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={locale}
-      className={`${jakarta.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

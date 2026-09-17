@@ -7,7 +7,6 @@
     "howItWorks": "How it works"
   },
   "hero": {
-    "badge": "Closed beta · For trading companies",
     "headline": "Every tender, on one record.",
     "sub": "What the client asked for, what suppliers quoted, what you bid, and whether you won. One workspace for trading companies, in English and 中文.",
     "cta": "Join the waiting list",
@@ -19,8 +18,24 @@
     },
     "screenshotAlt": "A Tender in Awardley on a phone, showing its Items and the Quotes against them."
   },
+  "sheet": {
+    "example": "Example data",
+    "caption": "An example Quotes sheet: four Items down the left, three suppliers across, the selected Quote for each Item marked, and the Bid built from those four.",
+    "item": "Item",
+    "supplierA": "Supplier A",
+    "supplierB": "Supplier B",
+    "supplierC": "Supplier C",
+    "selected": "Selected",
+    "bid": "Bid",
+    "currency": "USD",
+    "rows": {
+      "gloves": "Nitrile gloves, M — 20,000",
+      "masks": "Surgical masks type IIR — 50,000",
+      "infusion": "Infusion set — 3,000",
+      "thermometer": "Infrared thermometer — 400"
+    }
+  },
   "how": {
-    "eyebrow": "How it works",
     "title": "From the client's request to the bid you send",
     "intro": "Three things, in the order they happen."
   },
@@ -57,7 +72,6 @@
     }
   },
   "beta": {
-    "eyebrow": "Closed beta",
     "title": "Awardley is in closed beta",
     "body": "The app is invite-only while we work with our first companies. Leave your email and we will keep you posted as it opens up.",
     "emailLabel": "Email address",

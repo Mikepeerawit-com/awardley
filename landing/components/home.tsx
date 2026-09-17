@@ -1,35 +1,29 @@
 import { useTranslations } from "next-intl";
 
 import { Footer } from "@/components/footer";
-import {
-  BellIcon,
-  CheckCircleIcon,
-  CheckIcon,
-  DocumentIcon,
-  SheetIcon,
-} from "@/components/icons";
+import { CheckIcon } from "@/components/icons";
 import { SiteHeader } from "@/components/site-header";
 import { WaitingListForm } from "@/components/waiting-list-form";
 
 /**
- * The shop window, rebuilt (#194): a bar, a hero with the product framed beside it, how
- * it works, who it is for, and the closed-beta band with the one form on the site.
+ * The home page: a bar, a centred headline, the product itself, how it works, who it is
+ * for, and the one form on the site.
  *
  * **Trust before persuasion.** The page has no logos, no customer count and no
  * testimonial, because there are no customers yet and inventing the furniture of proof
  * is the one thing a closed beta cannot afford to be caught doing. What fills that slot
- * instead is true and checkable: three facts under the hero, three beats that describe
- * the mechanism, and a screenshot of the actual screen.
+ * instead is true and checkable: three facts under the hero, a real capture of the app
+ * on a phone, and an example Quotes sheet that says on its face that it is an example.
  *
  * **No pricing anywhere**, which is a decision rather than an omission — the beta is
  * invite-only, and a price on a page nobody can buy from invites an argument about a
  * number that is not settled (ADR-0035).
  *
- * **One accent hue, spent once per band.** The CTA carries it as ground; everything else
- * that wears it — the badge dot, the eyebrow, the icon tiles, the ticks — carries it as
- * ink at small sizes, so the eye still lands on the button. The two navy surfaces are
- * the only places the ground changes, and both of them are about the product rather than
- * about the page.
+ * **One ground and one accent.** Every section is told apart by a hairline rather than
+ * by a change of colour, so the only saturated thing above the fold is the button, and
+ * the eye has nowhere else to go. The indigo appears three more times — behind the
+ * product panel as a wash of light, on the selected Quotes in the example sheet, and in
+ * the focus ring — and at no point as a stripe.
  *
  * **Why this is a component and `app/page.tsx` is three lines.** Every screen in the app
  * is an `async` Server Component and none of them is reachable from a browser test; what
@@ -57,51 +51,54 @@ export function HomeContent() {
 }
 
 /**
- * The sentence and the product, side by side.
+ * The sentence, the two doors, and the product directly under them.
  *
- * Six-and-six rather than the seven-and-five it was: the panel is now the thing that
- * says what this is, and a column that has to hold a phone at a readable size cannot be
- * the narrow one.
+ * Centred rather than the two-column split this replaces. A sentence and a screenshot
+ * side by side makes the reader choose which to look at first and gives the headline
+ * half a measure to say itself in; stacked, the headline gets the full width of the page
+ * to be read across and the product gets the full width to be looked at, and the order
+ * is no longer a matter of which side of the page the reader starts on.
  *
- * The children arrive on a stagger (`rise-*`). It is opacity and 12px of lift, it is
- * over in under half a second, and `prefers-reduced-motion: reduce` in `globals.css`
- * collapses all of it — a hero that animates is a hero that was worth waiting for, and a
- * hero that is still animating when you reach for the button is an obstacle.
+ * The four things above the panel, and then the panel, arrive on a stagger (`rise-*`). It is opacity and 12px
+ * of lift, it is over in under half a second, and `prefers-reduced-motion: reduce` in
+ * `globals.css` collapses all of it. Nothing below this section animates: one authored
+ * moment beats the same entrance repeated at every scroll position.
  */
 function Hero() {
   const t = useTranslations("hero");
   const facts = ["bilingual", "reminders", "phone"] as const;
 
   return (
-    <section className="mx-auto grid w-full max-w-6xl gap-landmark px-5 py-landmark md:px-8 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:items-center lg:py-[5.5rem]">
-      <div className="flex flex-col gap-group">
-        <p className="rise rise-1 inline-flex items-center gap-2 self-start rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
-          {t("badge")}
-        </p>
-
+    <section className="mx-auto w-full max-w-6xl px-5 pt-landmark md:px-8 lg:pt-[4.5rem]">
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-group text-center">
         <h1 className="rise rise-1 type-display text-balance">{t("headline")}</h1>
 
-        <p className="rise rise-2 max-w-[44ch] text-lg text-pretty text-muted-foreground lg:text-xl">
+        <p className="rise rise-2 max-w-[56ch] text-lg text-pretty text-muted-foreground md:text-xl">
           {t("sub")}
         </p>
 
-        <div className="rise rise-3 flex flex-wrap items-center gap-field">
+        <div className="rise rise-3 flex flex-wrap items-center justify-center gap-field">
+          {/*
+            The id is what the bar's own copy of this button watches: while this one is on
+            screen the bar does not draw one, so the first viewport has exactly one primary
+            action in it. See `components/header-cta.tsx`.
+          */}
           <a
+            id="hero-cta"
             href="#waiting-list"
-            className="inline-flex min-h-12 items-center justify-center rounded-control bg-accent px-6 text-base font-semibold text-accent-foreground transition-opacity duration-200 hover:opacity-90"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-base font-medium text-accent-foreground transition-opacity duration-200 hover:opacity-90"
           >
             {t("cta")}
           </a>
 
           {/*
-            Outline rather than a second filled button. Somebody who already holds an
-            Invite needs the door and nobody else can use it, so it has to be findable
-            and must not compete with the one thing this page is actually for.
+            Ghost rather than a second filled button. Somebody who already holds an Invite
+            needs the door and nobody else can use it, so it has to be findable and must
+            not compete with the one thing this page is actually for.
           */}
           <a
             href="https://app.awardley.com/login"
-            className="inline-flex min-h-12 items-center justify-center rounded-control border border-border bg-transparent px-6 text-base font-semibold transition-colors duration-200 hover:bg-card"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-border px-5 text-base font-medium transition-colors duration-200 hover:bg-card"
           >
             {t("secondary")}
           </a>
@@ -109,13 +106,20 @@ function Hero() {
 
         {/*
           The proof slot, and everything in it is checkable today. A Trust & Authority
-          page puts logos or numbers here; we have neither, and three true sentences
-          about what the product is beat three borrowed ones about who else uses it.
+          page puts logos or numbers here; we have neither, and three true facts about
+          what the product is beat three borrowed ones about who else uses it. Set as one
+          quiet line rather than as a ticked list, because a tick implies a comparison
+          against something that does not have the thing.
         */}
-        <ul className="rise rise-4 flex flex-wrap gap-x-group gap-y-label text-sm text-muted-foreground">
-          {facts.map((fact) => (
-            <li key={fact} className="inline-flex items-center gap-2">
-              <CheckCircleIcon className="h-4 w-4 shrink-0 text-accent" />
+        <ul className="rise rise-4 flex flex-col items-center justify-center gap-y-1 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-3">
+          {facts.map((fact, index) => (
+            <li key={fact} className="flex items-center gap-3 whitespace-nowrap">
+              {index > 0 ? (
+                <span aria-hidden="true" className="hidden text-muted-foreground/45 sm:inline">
+                  ·
+                </span>
+              ) : null}
+
               {t(`facts.${fact}`)}
             </li>
           ))}
@@ -128,93 +132,221 @@ function Hero() {
 }
 
 /**
- * The product, framed and cropped.
+ * The product, framed and cropped, with the sheet it is a phone-sized view of.
  *
  * The panel is a fixed height and the capture hangs off the bottom of it on purpose: a
  * phone shown whole and centred reads as an asset dropped onto a page, while one cut off
  * by its frame reads as a screen you are looking into — and the part worth seeing is the
- * top of it. Navy in both themes, because the screenshot is a light screen and a light
- * screenshot on a light panel has no edge.
+ * top of it.
+ *
+ * Beside it, the Quotes sheet as HTML rather than as a second raster. It is the one
+ * screen a phone capture cannot show — the comparison is a desk job — and rendering it
+ * means it is real text at the reader's own size, in the reader's own language, with
+ * tabular numerals that line up, on a page that has no second image to download.
+ *
+ * The light behind the panel is a blurred radial wash with an offset, not a halo drawn
+ * at zero offset around the frame. A glow that traces the shape it sits behind is
+ * decoration; this one is a source above and behind, which is why the panel has a top
+ * and a bottom.
  */
 function ProductPanel({ alt }: { alt: string }) {
+  const t = useTranslations("sheet");
+
   return (
-    <div className="rise rise-2 brand-surface relative h-[26rem] overflow-hidden rounded-surface bg-brand shadow-surface lg:h-[34rem]">
-      {/* One soft light above the phone, so the navy has a top and a bottom. */}
+    <div className="rise rise-5 relative mt-landmark lg:mt-[3.5rem]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(30rem_18rem_at_50%_-6%,var(--brand-glow),transparent_70%)]"
+        className="pointer-events-none absolute -top-28 inset-x-0 h-80 rounded-[50%] bg-[radial-gradient(closest-side,var(--glow),transparent)] blur-xl"
       />
 
-      {/*
-        The slot for the product screenshot, at the aspect ratio of the phone the app is
-        designed against (390 × 844). The file in `public/` is a real capture, English,
-        from local seed data with fictional names, refreshed by hand when the screen
-        changes.
+      <div className="relative h-[26rem] overflow-hidden rounded-2xl border border-border bg-card lg:h-[32rem]">
+        {/*
+          Said out loud rather than in the alt text. The sheet is synthetic and the
+          screenshot is seeded, and a page whose whole argument is that it does not invent
+          proof has to label the one thing on it that could be mistaken for a customer's
+          numbers.
+        */}
+        <p className="type-quiet absolute top-4 right-4 z-10">{t("example")}</p>
 
-        A plain `<img>` rather than `next/image`: one image, known size, above the fold,
-        and no optimiser worth a dependency on how the file is replaced.
-      */}
-      <div className="relative mx-auto w-[min(72%,290px)] translate-y-8 overflow-hidden rounded-[2.25rem] border-[6px] border-white/15 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.65)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/screenshot-tender.png"
-          alt={alt}
-          width={390}
-          height={844}
-          loading="eager"
-          fetchPriority="high"
-          className="block h-auto w-full"
-        />
+        <div className="grid h-full lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          {/*
+            The slot for the product screenshot, at the aspect ratio of the phone the app
+            is designed against, cropped to a whole element (390 × 767). The file in
+            `public/` is a real capture,
+            English, from local seed data with fictional names, refreshed by hand when the
+            screen changes.
+
+            A plain `<img>` rather than `next/image`: one image, known size, above the
+            fold, and no optimiser worth a dependency on how the file is replaced.
+          */}
+          <div className="flex min-w-0 justify-center">
+            <div className="w-[min(70%,280px)] translate-y-12 overflow-hidden rounded-[2rem] border-[6px] border-device-edge shadow-[0_28px_60px_-24px_rgb(0_0_0/0.45)] lg:translate-y-14">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/screenshot-tender.png"
+                alt={alt}
+                width={390}
+                height={767}
+                loading="eager"
+                fetchPriority="high"
+                className="block h-auto w-full"
+              />
+            </div>
+          </div>
+
+          {/*
+            The sheet gets a frame of its own, on the page's ground inside the panel's
+            card. Set as bare text it read as the page having written a table; framed, it
+            reads as the surface the phone beside it is a narrow view of — which is the
+            whole claim the panel is making.
+          */}
+          <div className="hidden min-w-0 flex-col justify-center py-8 pr-8 lg:flex">
+            <div className="overflow-hidden rounded-xl border border-border bg-background">
+              <QuotesSheet />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 /**
- * The three beats, as cards rather than as columns under a rule.
+ * Four Items down, three suppliers across, one Quote selected per Item, and the Bid those
+ * four add up to.
  *
- * A card with its own hairline and its own icon reads as one of a set of three things
- * you could pick between; the ruled columns this replaces read as one paragraph broken
- * into three, which is not what a mechanism looks like. The step numerals stay, because
- * they are the only thing saying these happen in an order.
+ * The amounts live here rather than in `messages/`, because they are the same numerals in
+ * both locales and because the Bid has to be the sum of the four selected cells — a total
+ * translated separately from its addends is a total that will eventually be wrong. The
+ * names of the things are copy and do live in `messages/`, item names included.
+ *
+ * The tick is not the only thing saying which Quote was chosen: the cell carries a wash,
+ * the tick carries a visually-hidden *Selected*, and a screen reader reading the row
+ * hears the word rather than a colour it cannot see.
+ */
+function QuotesSheet() {
+  const t = useTranslations("sheet");
+
+  const rows = [
+    { key: "gloves", quotes: [1840, 1795, 1910], selected: 1 },
+    { key: "masks", quotes: [4250, 4480, 4390], selected: 0 },
+    { key: "infusion", quotes: [1170, 1215, 1140], selected: 2 },
+    { key: "thermometer", quotes: [3600, 3480, 3720], selected: 1 },
+  ] as const;
+
+  const bid = rows.reduce((total, row) => total + row.quotes[row.selected], 0);
+  const suppliers = [t("supplierA"), t("supplierB"), t("supplierC")];
+
+  return (
+    <table className="w-full border-collapse text-left tabular-nums">
+      <caption className="sr-only">{t("caption")}</caption>
+
+      <thead className="bg-card">
+        <tr>
+          <th
+            scope="col"
+            className="border-b border-border px-4 py-2.5 text-xs font-medium text-muted-foreground"
+          >
+            {t("item")}
+          </th>
+
+          {suppliers.map((supplier) => (
+            <th
+              key={supplier}
+              scope="col"
+              className="border-b border-border px-3 py-2.5 text-right text-xs font-medium text-muted-foreground"
+            >
+              {supplier}
+            </th>
+          ))}
+        </tr>
+      </thead>
+
+      <tbody>
+        {rows.map((row, position) => (
+          <tr key={row.key} className={position === 0 ? undefined : "border-t border-border"}>
+            <th scope="row" className="px-4 py-2.5 text-sm font-normal">
+              {t(`rows.${row.key}`)}
+            </th>
+
+            {row.quotes.map((amount, index) =>
+              index === row.selected ? (
+                <td
+                  key={index}
+                  className="bg-accent-wash px-3 py-2.5 text-right text-sm font-medium"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <CheckIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
+                    <span className="sr-only">{t("selected")}</span>
+                    {money(amount)}
+                  </span>
+                </td>
+              ) : (
+                <td
+                  key={index}
+                  className="px-3 py-2.5 text-right text-sm text-muted-foreground"
+                >
+                  {money(amount)}
+                </td>
+              ),
+            )}
+          </tr>
+        ))}
+      </tbody>
+
+      <tfoot>
+        <tr className="border-t border-border">
+          <th scope="row" className="px-4 py-3 text-sm font-semibold">
+            {t("bid")}
+          </th>
+
+          <td colSpan={3} className="px-3 py-3 text-right text-sm font-semibold">
+            {t("currency")} {money(bid)}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  );
+}
+
+/**
+ * Grouped and two-placed, written out rather than left to `toLocaleString`: the sheet is
+ * one currency in one format, and a locale that grouped by four or swapped the separators
+ * would stop the column lining up under itself.
+ */
+function money(amount: number): string {
+  return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
+}
+
+/**
+ * The three beats, as columns under a rule.
+ *
+ * Not cards: a card with its own hairline and its own icon reads as one of a set of three
+ * things you could pick between, and these are three parts of one mechanism in the order
+ * they happen. Not numbered either — the order is in the sentences, and 01 / 02 / 03 over
+ * a three-item list is a label for something the reader can already see. And no icons
+ * either: a document, a grid and a bell over three paragraphs illustrate the nouns rather
+ * than the mechanism, and the rule is already saying where each column starts.
  */
 function HowItWorks() {
   const t = useTranslations("how");
   const tBeats = useTranslations("beats");
-  const beats = [
-    { key: "tender", Icon: DocumentIcon },
-    { key: "quotes", Icon: SheetIcon },
-    { key: "assignees", Icon: BellIcon },
-  ] as const;
+  const beats = ["tender", "quotes", "assignees"] as const;
 
   return (
     <section id="how" className="scroll-mt-20 border-t border-border">
       <div className="mx-auto w-full max-w-6xl px-5 py-landmark md:px-8 lg:py-[4.5rem]">
         <div className="flex max-w-[52ch] flex-col gap-label">
-          <p className="type-eyebrow text-accent">{t("eyebrow")}</p>
           <h2 className="type-heading text-balance">{t("title")}</h2>
           <p className="text-pretty text-muted-foreground">{t("intro")}</p>
         </div>
 
-        <div className="mt-landmark grid gap-group md:grid-cols-3">
-          {beats.map(({ key, Icon }, index) => (
-            <article
-              key={key}
-              className="flex flex-col gap-label rounded-surface border border-border bg-card p-6 transition duration-200 hover:-translate-y-0.5 hover:border-accent-edge md:p-8"
-            >
-              <span className="mb-label inline-flex h-10 w-10 items-center justify-center rounded-control bg-accent-wash text-accent">
-                <Icon className="h-5 w-5" />
-              </span>
+        <div className="mt-landmark grid gap-8 md:grid-cols-3">
+          {beats.map((key) => (
+            <article key={key} className="flex flex-col gap-label border-t border-border pt-6">
+              <h3 className="type-section">{tBeats(`${key}.title`)}</h3>
 
-              <p className="type-quiet tabular-nums">
-                {String(index + 1).padStart(2, "0")}
-              </p>
-
-              <h3 className="text-lg font-semibold">{tBeats(`${key}.title`)}</h3>
-
-              <p className="text-pretty text-muted-foreground">
-                {tBeats(`${key}.body`)}
-              </p>
+              <p className="text-pretty text-muted-foreground">{tBeats(`${key}.body`)}</p>
             </article>
           ))}
         </div>
@@ -236,25 +368,17 @@ function WhoItIsFor() {
 
   return (
     <section className="border-t border-border">
-      <div className="mx-auto grid w-full max-w-6xl gap-landmark px-5 py-landmark md:px-8 lg:grid-cols-2 lg:items-start lg:py-[4.5rem]">
+      <div className="mx-auto grid w-full max-w-6xl gap-group px-5 py-landmark md:px-8 lg:grid-cols-2 lg:items-start lg:gap-landmark lg:py-[4.5rem]">
         <div className="flex flex-col gap-label">
           <h2 className="type-heading text-balance">{t("title")}</h2>
           <p className="max-w-[46ch] text-pretty text-muted-foreground">{t("body")}</p>
         </div>
 
-        <ul className="flex flex-col gap-group">
+        <ul className="flex flex-col">
           {points.map((point) => (
-            <li key={point} className="flex gap-field">
-              <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-wash text-accent">
-                <CheckIcon className="h-3.5 w-3.5" />
-              </span>
-
-              <div className="flex min-w-0 flex-col gap-1">
-                <p className="font-semibold">{t(`points.${point}.title`)}</p>
-                <p className="text-pretty text-muted-foreground">
-                  {t(`points.${point}.body`)}
-                </p>
-              </div>
+            <li key={point} className="flex flex-col gap-1 border-t border-border py-5">
+              <p className="font-semibold">{t(`points.${point}.title`)}</p>
+              <p className="text-pretty text-muted-foreground">{t(`points.${point}.body`)}</p>
             </li>
           ))}
         </ul>
@@ -264,26 +388,27 @@ function WhoItIsFor() {
 }
 
 /**
- * Edge to edge and navy, so the one place on this site that asks something of the reader
- * is the one place the ground changes. Its bottom edge is the footer's top hairline —
- * two rules touching would draw as one thick line, so the band draws neither.
+ * The one thing the page asks for, on the page's own ground.
+ *
+ * The coloured band this replaces made the ask the loudest thing on the site, which is
+ * the wrong way round: the page has spent four sections earning the email, and a reader
+ * who has arrived here has already decided. A centred column under a hairline is enough
+ * to say *this is the end and this is the ask*, and it leaves the accent to the button.
  */
 function ClosedBeta() {
   const t = useTranslations("beta");
 
   return (
-    <section
-      id="waiting-list"
-      className="brand-surface scroll-mt-20 bg-brand text-brand-foreground"
-    >
-      <div className="mx-auto grid w-full max-w-6xl gap-group px-5 py-landmark md:px-8 lg:grid-cols-2 lg:items-start lg:gap-landmark lg:py-[4.5rem]">
-        <div className="flex flex-col gap-label">
-          <p className="type-eyebrow text-white/70">{t("eyebrow")}</p>
-          <h2 className="type-heading text-balance">{t("title")}</h2>
-          <p className="max-w-[46ch] text-pretty text-white/80">{t("body")}</p>
-        </div>
+    <section id="waiting-list" className="scroll-mt-20 border-t border-border">
+      <div className="mx-auto w-full max-w-6xl px-5 py-landmark md:px-8 lg:py-[4.5rem]">
+        <div className="mx-auto flex max-w-xl flex-col gap-group text-center">
+          <div className="flex flex-col gap-label">
+            <h2 className="type-heading text-balance">{t("title")}</h2>
+            <p className="text-pretty text-muted-foreground">{t("body")}</p>
+          </div>
 
-        <WaitingListForm />
+          <WaitingListForm />
+        </div>
       </div>
     </section>
   );

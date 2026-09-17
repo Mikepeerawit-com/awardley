@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { HeaderCta } from "@/components/header-cta";
 import { Wordmark } from "@/components/mark";
 
 /**
@@ -30,14 +31,14 @@ export function SiteHeader({ onHome = false }: { onHome?: boolean }) {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-field px-5 md:px-8">
-        <Link href="/" className="shrink-0 rounded-control">
+        <Link href="/" className="shrink-0 rounded-lg">
           <Wordmark name={t("site.name")} />
         </Link>
 
         <div className="flex shrink-0 items-center gap-1 md:gap-2">
           <a
             href={to("#how")}
-            className="hidden min-h-11 items-center rounded-control px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground md:inline-flex"
+            className="hidden min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground md:inline-flex"
           >
             {t("nav.howItWorks")}
           </a>
@@ -50,17 +51,19 @@ export function SiteHeader({ onHome = false }: { onHome?: boolean }) {
           */}
           <a
             href="https://app.awardley.com/login"
-            className="hidden min-h-11 items-center rounded-control px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground md:inline-flex"
+            className="hidden min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground md:inline-flex"
           >
             {t("footer.signIn")}
           </a>
 
-          <a
-            href={to("#waiting-list")}
-            className="inline-flex min-h-11 items-center whitespace-nowrap rounded-control bg-accent px-4 text-sm font-semibold text-accent-foreground transition-opacity duration-200 hover:opacity-90"
-          >
-            {t("hero.cta")}
-          </a>
+          {/*
+            The bar's control is 36px rather than the 44px the page's buttons are: it sits
+            beside two text links at 14px, and a button tall enough to be a phone tap
+            target here would outweigh them. The one it is a shortcut *to* is 44px and
+            above the fold at every width — and on the home page this one waits until that
+            one has gone, which is what `onHome` buys {@link HeaderCta}.
+          */}
+          <HeaderCta watch={onHome} href={to("#waiting-list")} label={t("hero.cta")} />
         </div>
       </div>
     </header>

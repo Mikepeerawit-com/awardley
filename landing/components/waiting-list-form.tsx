@@ -18,12 +18,11 @@ import { SubmitButton } from "@/components/submit-button";
  * the bait. `website` is the name because that is the field these things most reliably
  * want to fill.
  *
- * **It stands on the navy band (#194), and dresses for it.** The field is white with
- * slate ink rather than the page's ground and hairline, because a field the colour of
- * the band it sits on is not a field; the notice and the error take their colours from
- * white at an alpha rather than from the page's ink, which is the wrong ink twice over
- * on navy. The submit is the one thing that needs no special case — `.brand-surface`
- * hands it an accent that works here.
+ * **It stands on the page's own ground now**, not on a coloured band, so it dresses like
+ * everything else: the field is the page background inside a `--input` edge — a full step
+ * darker than the hairline, because SC 1.4.11 asks 3:1 of anything you can operate and a
+ * hairline that passed it would draw a wireframe everywhere else — and the notice and the
+ * error take the page's muted ink and its danger ink rather than an alpha off white.
  *
  * **Success and silence look the same.** `sent` is what comes back from a real send, a
  * filled honeypot, a BotID flag and a Resend outage alike; the only other answer is
@@ -39,7 +38,7 @@ export function WaitingListForm() {
   if (state.status === "sent") {
     return (
       <p
-        className="rounded-surface border border-white/25 bg-white/10 px-4 py-3 text-brand-foreground"
+        className="rounded-xl border border-border bg-card px-4 py-3 text-pretty"
         role="status"
       >
         {t("success")}
@@ -64,7 +63,7 @@ export function WaitingListForm() {
           placeholder={t("emailPlaceholder")}
           aria-invalid={state.status === "invalid"}
           aria-describedby={state.status === "idle" ? undefined : "waiting-list-message"}
-          className="h-12 min-w-0 flex-1 rounded-control border border-transparent bg-white px-3.5 text-base text-slate-900 outline-none placeholder:text-slate-500 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+          className="h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3.5 text-base text-left outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
         />
 
         <SubmitButton
@@ -84,16 +83,16 @@ export function WaitingListForm() {
       </div>
 
       {state.status !== "idle" && (
-        <p id="waiting-list-message" role="alert" className="text-sm text-brand-danger">
+        <p id="waiting-list-message" role="alert" className="text-sm text-danger">
           {t(state.status === "invalid" ? "invalid" : "failed")}
         </p>
       )}
 
-      <p className="text-sm leading-relaxed text-white/70">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         {t("privacyNote")}{" "}
         <Link
           href="/privacy"
-          className="text-white underline underline-offset-2 transition-opacity duration-200 hover:opacity-80"
+          className="text-foreground underline decoration-border transition-colors duration-200 hover:decoration-foreground"
         >
           {t("privacyLink")}
         </Link>

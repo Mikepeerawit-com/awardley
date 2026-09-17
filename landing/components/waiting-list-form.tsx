@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { joinWaitingList, type JoinState } from "@/app/actions/waiting-list";
+import { SubmitButton } from "@/components/submit-button";
 
 /**
  * One email field, one submit, and a field nobody is meant to see.
@@ -60,7 +60,12 @@ export function WaitingListForm() {
           className="min-w-0 flex-1 rounded-control border border-input bg-background px-3.5 py-2.5 outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
         />
 
-        <Submit label={t("submit")} pending={t("submitting")} />
+        <SubmitButton
+          label={t("submit")}
+          pending={t("submitting")}
+          // Beside a flexible field, so it may not be squeezed to fit the row.
+          className="shrink-0"
+        />
       </div>
 
       <div
@@ -84,23 +89,5 @@ export function WaitingListForm() {
         </Link>
       </p>
     </form>
-  );
-}
-
-/**
- * Its own component because `useFormStatus` reads the nearest enclosing `<form>` and
- * returns `false` for a component that renders the form itself.
- */
-function Submit({ label, pending }: { label: string; pending: string }) {
-  const status = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={status.pending}
-      className="shrink-0 rounded-control bg-signal px-5 py-2.5 font-semibold text-background outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70"
-    >
-      {status.pending ? pending : label}
-    </button>
   );
 }

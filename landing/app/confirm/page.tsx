@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { ConfirmPanel } from "@/components/confirm-panel";
 import { Footer } from "@/components/footer";
@@ -7,7 +8,17 @@ import { Wordmark } from "@/components/mark";
 import { confirmStep, type ConfirmStatus } from "@/lib/confirm";
 import { readSettings } from "@/lib/env";
 
-export const metadata: Metadata = { title: "Awardley" };
+/**
+ * Localised like the layout's, and for the same reason the privacy page gives. The tab
+ * says what this page wants of the reader rather than repeating the product name: the
+ * link was opened out of an inbox, often among several, and "Confirm your email" is the
+ * one that can still be found there an hour later.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("confirm");
+
+  return { title: t("metaTitle") };
+}
 
 /**
  * The other half of double opt-in — and **opening this page is not it**.

@@ -37,7 +37,14 @@ const jar = vi.hoisted(() => {
   };
 });
 
-vi.mock("next/headers", () => ({ cookies: async () => jar.cookies }));
+// `setLocale` reads the request's `Host` to decide how wide to write the cookie, so the
+// stub has to answer that too. A bare `localhost` keeps the write host-only, which is the
+// shape the jar below models — the width itself is `config.test.ts`'s subject, not this
+// suite's.
+vi.mock("next/headers", () => ({
+  cookies: async () => jar.cookies,
+  headers: async () => new Headers({ host: "localhost:3000" }),
+}));
 
 // `next/navigation` reaches for the client router's context, which does not exist under
 // the `react-server` condition this project resolves with — and `redirect()` is a throw

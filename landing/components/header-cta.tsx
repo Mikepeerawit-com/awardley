@@ -26,6 +26,18 @@ import { useEffect, useState } from "react";
  * If the observer finds no `#hero-cta` — a page that says it is home and has no hero,
  * which nothing does today — it shows the button rather than hiding it: a call to action
  * that has gone missing is worse than one that arrived early.
+ *
+ * **It fades rather than appears.** It used to swap `hidden` for `inline-flex`, which is a
+ * button materialising in a bar the reader is looking at — the one moment on the page where
+ * something happened *to* them rather than because of them. Now it is always laid out and
+ * only its opacity and a 1px lift change, over 200ms on the site's one curve, so the hero's
+ * button scrolls under the bar and this one is simply there by the time it has gone.
+ *
+ * Laid out, though, is not the same as present: while it is faded out it takes
+ * `pointer-events-none` so it cannot be clicked through, `tabIndex={-1}` so it is not a
+ * stop on the way to the nav links beside it, and `aria-hidden` so a screen reader is not
+ * offered the same call to action twice in one viewport. An invisible button that is still
+ * tabbable is worse than a button that snaps.
  */
 export function HeaderCta({
   watch,
@@ -63,7 +75,9 @@ export function HeaderCta({
   return (
     <a
       href={href}
-      className={`${shown ? "inline-flex" : "hidden"} h-9 items-center whitespace-nowrap rounded-lg bg-accent px-3.5 text-sm font-medium text-accent-foreground transition-opacity duration-150 hover:opacity-90`}
+      aria-hidden={shown ? undefined : true}
+      tabIndex={shown ? undefined : -1}
+      className={`${shown ? "" : "pointer-events-none translate-y-1 opacity-0 "}inline-flex h-9 items-center whitespace-nowrap rounded-lg bg-accent px-3.5 text-sm font-medium text-accent-foreground transition-[opacity,transform] duration-200 ease-(--ease-rise) hover:opacity-90`}
     >
       {label}
     </a>

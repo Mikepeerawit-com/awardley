@@ -136,7 +136,7 @@ Confirmed anti-references: the app's Fira + warm-paper brochure (`4238188`) and 
 - Sections divided by 8% hairlines; controls edged by a separate, darker `input` token.
 - Inter (variable, `opsz`) with tight negative tracking on Latin display; zero tracking and open leading under `:lang(zh-Hans)`.
 - Four type tiers (display, heading, section, quiet), all headings at 600, none heavier.
-- One authored entrance (`rise`, 420ms, 60ms stagger) in the hero; nothing else animates in; reduced-motion collapses everything.
+- One easing (`--ease-rise`) and one entrance (`rise`, 420ms, 60ms stagger) in the hero; one focal sequence, the Quotes sheet assembling, over by 2.2s; two sections borrow the entrance once each on scroll; the ask never animates; reduced-motion collapses everything.
 - Corner says what a thing is: 8px operated, 12px replies, 16px containers.
 
 ## Colors
@@ -243,7 +243,13 @@ An HTML table standing in for the product's comparison screen: header row on `ca
 Three bars of `--mark-1..3` (accent, ink, muted ink), inline SVG so the middle bar inverts with the theme; always beside the wordmark, never alone, except as `app/icon.svg` with the values written out.
 
 ### Motion
-One entrance, `rise`: opacity 0→1 with a 12px lift, 420ms, `cubic-bezier(0.16, 1, 0.3, 1)`, `both`. Five hero children stagger by `animation-delay` at 60ms steps (headline 60, sub 120, buttons 180, facts 240, panel 300), so the page assembles top-down and ends on the product. Nothing below the hero animates in. State transitions are 150–200ms on opacity or colour only. `scroll-behavior: smooth` is applied only under `prefers-reduced-motion: no-preference`; under `reduce`, every animation and transition collapses to 0.01ms with zero delay.
+One easing, `--ease-rise` (`cubic-bezier(0.16, 1, 0.3, 1)`), a hard ease-out with no bounce or overshoot, and every gesture on the site is written `both` from an already-visible default.
+
+- **Entrance** (`rise`): opacity 0→1 with a 12px lift, 420ms. Five hero children stagger by `animation-delay` at 60ms steps (headline 60, sub 120, buttons 180, facts 240, panel 300), so the page assembles top-down and ends on the product.
+- **Focal sequence**, the Quotes sheet assembling, once per load, in the order the work happens: the amounts arrive by supplier column (`quote-arrive`, 360ms, 4px lift, `--col` × 120ms from 520ms); the four chosen cells take the wash, full ink, weight 500 and a self-drawing tick (`quote-choose` 300ms and `tick-draw` 320ms via `pathLength="1"`, `--row` × 80ms from 1240ms, 120ms after the last column has landed); the Bid arrives last at 1860ms, 60ms after the last tick. Over by about 2.2s. Row and column headers are present from the start; only data moves. The chosen cell is styled as an unselected one by class and animated into its end state, so under reduced motion it lands there instantly.
+- **Reveal**: the How-it-works and Who-it-is-for blocks borrow `rise` once, the first time they are scrolled to (`components/reveal.tsx`: `IntersectionObserver`, `threshold: 0`, hides only a block that is off screen after hydration, disconnects after the first entrance, never created under reduced motion). The closed-beta heading and the form never animate: the ask is simply there.
+- **Feedback**: the bar's call to action fades and lifts 1px over 200ms instead of snapping, and is `aria-hidden` with `tabIndex -1` while faded; the form's success notice enters with `rise`. Other state transitions are 150–200ms on opacity or colour only.
+- **Off switches**: `scroll-behavior: smooth` only under `prefers-reduced-motion: no-preference`; under `reduce`, every animation and transition collapses to 0.01ms with zero delay and one iteration, so each lands on its end state. `@media print` resets every motion class to its end state so nothing is mid-gesture on paper.
 
 ### Browser surfaces
 `::selection` is `accent-wash` with full ink; `accent-color` is `accent`; `text-underline-offset` is 0.2em; `:focus-visible` is 2px solid `ring` at 2px offset everywhere; `color-scheme: light dark` paints the pre-stylesheet canvas and native controls in the right reading.
@@ -268,5 +274,5 @@ One entrance, `rise`: opacity 0→1 with a 12px lift, 420ms, `cubic-bezier(0.16,
 - **Don't** put a price, a signup link, logos, counts or testimonials on the page (ADR-0035; the only app link is `/login`, the only ask is the waiting list).
 - **Don't** use a weight above 600, uppercase labels, or negative tracking on Han.
 - **Don't** add shadows to buttons, inputs or panels; the one shadow is the phone's device drop.
-- **Don't** animate anything outside the hero's single `rise` sequence, or leave motion running under `prefers-reduced-motion: reduce`.
+- **Don't** add a second easing, a loop, a scroll-linked effect, or an entrance on the closed-beta section or the form; don't animate a size, margin or position in the flow; don't leave motion running under `prefers-reduced-motion: reduce`.
 - **Don't** add a second icon; the tick is the whole icon vocabulary, inline and `currentColor`.

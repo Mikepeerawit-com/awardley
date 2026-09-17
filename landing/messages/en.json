@@ -14,9 +14,9 @@
     "facts": {
       "bilingual": "English and 中文",
       "reminders": "Reminders by email",
-      "phone": "Made for a phone"
+      "device": "Works on any device"
     },
-    "screenshotAlt": "A Tender in Awardley on a phone, showing its Items and the Quotes against them."
+    "screenshotAlt": "A Tender in Awardley, as seen on a phone, showing its Items and the Quotes against them."
   },
   "sheet": {
     "example": "Example data",
@@ -67,7 +67,7 @@
       },
       "team": {
         "title": "The whole team",
-        "body": "On a phone, in English or 中文, looking at the same record."
+        "body": "On a desk or a phone, in English or 中文, looking at the same record."
       }
     }
   },

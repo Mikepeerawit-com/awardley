@@ -134,6 +134,16 @@
   --radius: 0.5rem;
 
   /*
+   * The one curve on the site, named once so that everything that moves is recognisably
+   * the same gesture. It is a hard ease-out — nearly all of the distance covered in the
+   * first third, then a long settle — which is what makes a 420ms entrance read as quick
+   * rather than slow. A second easing anywhere would be a second opinion about how this
+   * page moves; there is no bounce and no overshoot, because neither is true of paper or
+   * of software that is sure of itself.
+   */
+  --ease-rise: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /*
    * The three bars of the mark. They are tokens rather than literals in the SVG because
    * the light theme has to invert the middle one: a near-white bar on white paper is an
    * invisible bar.
@@ -315,7 +325,7 @@
   }
 
   .rise {
-    animation: rise 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: rise 420ms var(--ease-rise) both;
   }
 
   .rise-1 {
@@ -338,14 +348,197 @@
   .rise-5 {
     animation-delay: 300ms;
   }
+
+  /*
+   * The Quotes sheet assembling itself, once, as the page's one focal moment.
+   *
+   * The panel arrives at 300ms and has finished by 720ms; from there the sheet takes until
+   * about 2.2s to tell the product's story in the order it actually happens — **quotes
+   * arrive, one is chosen per Item, the Bid is derived** — and then stops for good. It is
+   * the only thing on the site that is a sequence rather than an entrance, and it earns
+   * that by being the thing the page is about.
+   *
+   * The clock, once, in one place: the three supplier columns land at 520/640/760ms and
+   * each takes 360ms, so the last amount is down at 1120ms; the four chosen cells and their
+   * ticks begin at 1240/1320/1400/1480ms, and the last tick has finished drawing at 1800ms;
+   * the Bid arrives at 1860ms and has settled at 2220ms. Nothing overlaps at a chosen cell:
+   * a cell is never still arriving when it is asked to become the answer.
+   *
+   * The amounts arrive **by supplier**, not by row and not all at once. A column at a
+   * time is what a tender actually looks like from the inside: a supplier comes back, and
+   * their whole quote lands. Row by row would draw a table being typed; all at once would
+   * say nothing at all. Everything else — the row headers, the column headers, the Bid
+   * row — is already there with the panel, so what moves is only the data.
+   *
+   * Nothing here animates a size, a margin or a position in the flow: opacity, a 4px
+   * lift, two colours and a stroke's dash offset, all of them compositable and none of
+   * them able to reflow the table under the reader's eye. The lift is 4px rather than the
+   * hero's 12 because these are twelve small things inside a frame, and the hero's throw
+   * at this scale reads as a jitter.
+   */
+  @keyframes quote-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /*
+   * `--col` is the supplier's index, set on each cell by the sheet. One class and one
+   * custom property rather than three classes, because the stagger is arithmetic and
+   * three hand-written delays are three numbers to keep in step with a fourth supplier.
+   */
+  .quote-cell {
+    animation: quote-arrive 360ms var(--ease-rise) both;
+    animation-delay: calc(520ms + var(--col) * 120ms);
+  }
+
+  /*
+   * Becoming the chosen Quote, starting 120ms after the last column has landed at 1120ms.
+   *
+   * The *from* state is not load-bearing: the chosen cell carries `text-muted-foreground`
+   * and no `font-medium` in its own class list, so before its moment it is styled exactly
+   * like an unselected cell by ordinary declarations, and the sheet shows twelve equal
+   * amounts whatever the keyframe does. What the keyframe adds is the crossing — animated
+   * values beat normal declarations, so the wash, the full ink and weight 500 win for the
+   * life of the animation and, on a `both` fill, for good afterwards. The weight is in
+   * here because Inter is a variable face, so 400 → 500 is a glide rather than a swap.
+   *
+   * The wash is 10% alpha, so mid-keyframe the ink and the weight are visibly ahead of it
+   * by a few frames — the number darkens a moment before its cell is seen to be tinted.
+   * That is accepted rather than stepped: splitting the wash onto its own earlier keyframe
+   * to hide it would be three animations on one cell to fix something nobody reads as a
+   * fault. The reduced-motion collapse below lands the cell on the end state with no delay.
+   */
+  @keyframes quote-choose {
+    from {
+      background-color: transparent;
+      color: var(--muted-foreground);
+      font-weight: 400;
+    }
+
+    to {
+      background-color: var(--accent-wash);
+      color: var(--foreground);
+      font-weight: 500;
+    }
+  }
+
+  /*
+   * Both animations on one cell: it keeps its place in the supplier stagger *and* takes
+   * the row stagger for being chosen. The shorthand resets `animation-delay`, so the two
+   * delays are restated as a list under it rather than folded into it.
+   */
+  .quote-cell-chosen {
+    animation:
+      quote-arrive 360ms var(--ease-rise) both,
+      quote-choose 300ms var(--ease-rise) both;
+    animation-delay:
+      calc(520ms + var(--col) * 120ms),
+      calc(1240ms + var(--row) * 80ms);
+  }
+
+  /*
+   * The tick drawing itself, with its cell rather than after it.
+   *
+   * `pathLength="1"` on the glyph is what makes this a single number instead of a measured
+   * one: the path is declared to be one unit long whatever its real geometry, so a dash of
+   * 1 offset by 1 hides it exactly and an offset of 0 shows all of it. The alternative is
+   * measuring `getTotalLength()` in JavaScript, which is a script to draw a tick.
+   *
+   * The visually-hidden *Selected* beside it is untouched and is present the whole time: a
+   * screen reader is told which Quote was chosen at the first word it reads, not a second
+   * and a half into an animation it cannot see.
+   */
+  @keyframes tick-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* The same base as the cell it sits in, so the four ticks draw on the rows' own beat. */
+  .tick-draw {
+    stroke-dasharray: 1;
+    animation: tick-draw 320ms var(--ease-rise) both;
+    animation-delay: calc(1240ms + var(--row) * 80ms);
+  }
+
+  /*
+   * The Bid, last, at 1860ms — 60ms after the fourth tick has finished drawing at 1800ms.
+   * It arrives whole, currency and figure in the one span, rather than counting: a counter
+   * needs a script and a clock of its own, and a total that rewinds to zero after the
+   * reader has seen it is a false total.
+   */
+  .bid-arrive {
+    animation: quote-arrive 360ms var(--ease-rise) both;
+    animation-delay: 1860ms;
+  }
+
+  /*
+   * A section waiting to be scrolled to — and the only state on the site that hides
+   * anything. It is set by `components/reveal.tsx` after hydration and only on a block
+   * that was off screen when the observer first looked, which is why it is safe for it to
+   * be opacity zero: nothing the reader can see is ever taken away, and the server never
+   * renders this class at all.
+   */
+  .reveal-out {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }
 
+/*
+ * The one switch that turns all of it off, and it is a collapse rather than a removal.
+ *
+ * Every animation on the site is written `both`, so squashing it to an instant with no
+ * delay lands each element on its keyframe's end state — the amount visible, the cell
+ * washed, the tick drawn, the section in place — instead of leaving a page of invisible
+ * things. `animation-iteration-count` is pinned to 1 because a duration of 0.01ms is not
+ * a stop: anything that repeated would repeat thousands of times a second, which is the
+ * one outcome worse than the motion the reader asked to be spared.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Paper has no first paint and no viewport, so nothing on it may be mid-gesture. A print
+ * stylesheet that forgot this is the reason pages come out of printers with holes in
+ * them: an element left at the start of an entrance, or a section the observer decided
+ * was off screen, is simply missing from the sheet.
+ */
+@media print {
+  .rise,
+  .reveal-out,
+  .quote-cell,
+  .quote-cell-chosen,
+  .tick-draw,
+  .bid-arrive {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .quote-cell-chosen {
+    background-color: var(--accent-wash) !important;
+    color: var(--foreground) !important;
+    font-weight: 500 !important;
   }
 }

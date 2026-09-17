@@ -38,11 +38,23 @@ function Glyph({
   );
 }
 
-/** The tick on the Quote that was chosen, beside a visually-hidden *Selected*. */
+/**
+ * The tick on the Quote that was chosen, beside a visually-hidden *Selected*.
+ *
+ * `pathLength="1"` is what lets the sheet draw it rather than fade it in. It declares the
+ * stroke to be one unit long whatever the geometry actually measures, so `stroke-dasharray:
+ * 1` with an offset running 1 → 0 hides it exactly and then reveals exactly all of it —
+ * see `.tick-draw` in `globals.css`. Both dash properties are inherited SVG presentation
+ * attributes, which is why that class goes on the `svg` the caller names and reaches this
+ * path without either of them being a prop.
+ *
+ * It costs nothing when nobody is animating: a path with a declared length and no dash
+ * pattern draws exactly as it did before.
+ */
 export function CheckIcon({ className }: { className?: string }) {
   return (
     <Glyph className={className}>
-      <path d="m5 12.5 4.5 4.5L19 7" />
+      <path d="m5 12.5 4.5 4.5L19 7" pathLength={1} />
     </Glyph>
   );
 }

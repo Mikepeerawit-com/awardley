@@ -14,7 +14,7 @@ The visitor to `awardley.com` is, in order of weight (confirmed 17 September 202
 2. **A colleague who received a Reminder** from the app and followed a link to find out what the tool is. Often reads Chinese first.
 3. **Investors and partners** assessing the project rather than buying.
 
-Market right now: **international, English first**; `zh-Hans` is a full second locale, not an afterthought, because the working staff of these firms often read Chinese. The people in the app itself are supplier-chasers on phones, frequently inside the WeCom webview (see `../CONTEXT.md`, `../docs/adr/0019-*`).
+Market right now: **international, English first**; `zh-Hans` is a full second locale, not an afterthought, because the working staff of these firms often read Chinese. The app is a web app and runs on any device; the people in it are supplier-chasers who are often on a phone, frequently inside the WeCom webview, and owners who compare on a desk (see `../CONTEXT.md`, `../docs/adr/0019-*`).
 
 ## Product Purpose
 
@@ -28,7 +28,7 @@ The mechanism a neighbouring product cannot truthfully copy: **the Tender, its I
 
 - Trading companies (the first is a medical-supplies trader in Thailand) that answer client tenders/RFQs by sourcing from several suppliers.
 - Client requests arrive as email with pictures; supplier quotes arrive piecemeal; the comparison is usually a spreadsheet somebody keeps.
-- Staff use phones, often inside WeCom; owners compare on a desk.
+- The app is on the web and works on any device: staff often use a phone, inside WeCom; owners compare on a desk.
 - Launch state: **closed beta**, invite-only. Self-serve signup does not exist yet.
 
 ## Capabilities and Constraints

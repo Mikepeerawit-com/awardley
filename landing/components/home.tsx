@@ -2,8 +2,18 @@ import { useTranslations } from "next-intl";
 
 import { Footer } from "@/components/footer";
 import { CheckIcon } from "@/components/icons";
+import { Reveal } from "@/components/reveal";
 import { SiteHeader } from "@/components/site-header";
 import { WaitingListForm } from "@/components/waiting-list-form";
+
+/**
+ * Grouped and two-placed, written out rather than left to `toLocaleString`: the sheet is
+ * one currency in one format, and a locale that grouped by four or swapped the separators
+ * would stop the column lining up under itself.
+ */
+function money(amount: number): string {
+  return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
+}
 
 /**
  * The home page: a bar, a centred headline, the product itself, how it works, who it is
@@ -32,6 +42,11 @@ import { WaitingListForm } from "@/components/waiting-list-form";
  * problem for the same reason — `getTranslations` is async — and takes the same answer.
  * `useTranslations` reads the provider rather than the request, so every part below
  * renders unchanged on the server and inside `test/home.layout.test.tsx`.
+ *
+ * That rule holds for the one client component the page reaches for as well. `Reveal` is
+ * `"use client"` but it is not `async`, and everything it is handed is a string or a node —
+ * a server component cannot pass a function across that boundary, so it takes no callback,
+ * no render prop and no formatter.
  */
 export function HomeContent() {
   return (
@@ -59,14 +74,16 @@ export function HomeContent() {
  * to be read across and the product gets the full width to be looked at, and the order
  * is no longer a matter of which side of the page the reader starts on.
  *
- * The four things above the panel, and then the panel, arrive on a stagger (`rise-*`). It is opacity and 12px
- * of lift, it is over in under half a second, and `prefers-reduced-motion: reduce` in
- * `globals.css` collapses all of it. Nothing below this section animates: one authored
- * moment beats the same entrance repeated at every scroll position.
+ * The four things above the panel, and then the panel, arrive on a stagger (`rise-*`). It is
+ * opacity and 12px of lift, the last of them has settled by 720ms, and
+ * `prefers-reduced-motion: reduce` in `globals.css` collapses all of it. The page then hands
+ * over to the sheet inside the panel, which takes until about 2.2s to say what the product
+ * does; the two sections between the panel and the form borrow the same entrance once each
+ * as they are scrolled to, the ask does not, and nothing anywhere repeats.
  */
 function Hero() {
   const t = useTranslations("hero");
-  const facts = ["bilingual", "reminders", "phone"] as const;
+  const facts = ["bilingual", "reminders", "device"] as const;
 
   return (
     <section className="mx-auto w-full max-w-6xl px-5 pt-landmark md:px-8 lg:pt-[4.5rem]">
@@ -148,6 +165,14 @@ function Hero() {
  * at zero offset around the frame. A glow that traces the shape it sits behind is
  * decoration; this one is a source above and behind, which is why the panel has a top
  * and a bottom.
+ *
+ * **The sheet joins at `md`, not at `lg`.** A tablet held in landscape is a desk, and the
+ * argument the panel makes — *this narrow screen is a view of that wide one* — does not
+ * survive the wide one being absent for a third of the widths the page is read at. What
+ * changes with it is the panel's height (30rem, so four Item names may wrap to three lines
+ * and still clear the "Example data" caption) and the phone's share of its column: the
+ * capture is widened at `md` so that it is still cut off by the panel's bottom edge, which
+ * is the whole reason it is cropped rather than centred.
  */
 function ProductPanel({ alt }: { alt: string }) {
   const t = useTranslations("sheet");
@@ -159,7 +184,7 @@ function ProductPanel({ alt }: { alt: string }) {
         className="pointer-events-none absolute -top-28 inset-x-0 h-80 rounded-[50%] bg-[radial-gradient(closest-side,var(--glow),transparent)] blur-xl"
       />
 
-      <div className="relative h-[26rem] overflow-hidden rounded-2xl border border-border bg-card lg:h-[32rem]">
+      <div className="relative h-[26rem] overflow-hidden rounded-2xl border border-border bg-card md:h-[30rem] lg:h-[32rem]">
         {/*
           Said out loud rather than in the alt text. The sheet is synthetic and the
           screenshot is seeded, and a page whose whole argument is that it does not invent
@@ -168,7 +193,7 @@ function ProductPanel({ alt }: { alt: string }) {
         */}
         <p className="type-quiet absolute top-4 right-4 z-10">{t("example")}</p>
 
-        <div className="grid h-full lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="grid h-full md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           {/*
             The slot for the product screenshot, at the aspect ratio of the phone the app
             is designed against, cropped to a whole element (390 × 767). The file in
@@ -180,7 +205,7 @@ function ProductPanel({ alt }: { alt: string }) {
             fold, and no optimiser worth a dependency on how the file is replaced.
           */}
           <div className="flex min-w-0 justify-center">
-            <div className="w-[min(70%,280px)] translate-y-12 overflow-hidden rounded-[2rem] border-[6px] border-device-edge shadow-[0_28px_60px_-24px_rgb(0_0_0/0.45)] lg:translate-y-14">
+            <div className="w-[min(70%,280px)] translate-y-12 overflow-hidden rounded-[2rem] border-[6px] border-device-edge shadow-[0_28px_60px_-24px_rgb(0_0_0/0.45)] md:w-[min(84%,280px)] md:translate-y-16 lg:w-[min(70%,280px)] lg:translate-y-14">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/screenshot-tender.png"
@@ -200,7 +225,7 @@ function ProductPanel({ alt }: { alt: string }) {
             reads as the surface the phone beside it is a narrow view of — which is the
             whole claim the panel is making.
           */}
-          <div className="hidden min-w-0 flex-col justify-center py-8 pr-8 lg:flex">
+          <div className="hidden min-w-0 flex-col justify-center py-8 pr-5 md:flex lg:pr-8">
             <div className="overflow-hidden rounded-xl border border-border bg-background">
               <QuotesSheet />
             </div>
@@ -223,6 +248,21 @@ function ProductPanel({ alt }: { alt: string }) {
  * The tick is not the only thing saying which Quote was chosen: the cell carries a wash,
  * the tick carries a visually-hidden *Selected*, and a screen reader reading the row
  * hears the word rather than a colour it cannot see.
+ *
+ * **The sheet is also the page's one piece of storytelling**, and the story is the order
+ * the work happens in: quotes arrive a supplier at a time, one per Item is chosen, and the
+ * Bid is what those four add up to. That is why each amount carries its supplier index as
+ * `--col` and each chosen cell its row index as `--row` — the timing lives in
+ * `globals.css` as arithmetic on those two numbers, so a fourth supplier or a fifth Item
+ * joins the sequence by existing rather than by having a delay written for it.
+ *
+ * The chosen cell is deliberately *not* given the wash and the full ink as classes: it
+ * carries `text-muted-foreground` and no `font-medium`, so before its moment it is styled
+ * exactly like an unselected cell by ordinary declarations rather than by a keyframe's
+ * backfill. The `quote-choose` keyframe then overrides them on its way to the wash, the
+ * full ink and weight 500 — animated values beat normal declarations — and its `both` fill
+ * holds that end state for good, including under reduced motion, where the whole sequence
+ * collapses onto it instantly.
  */
 function QuotesSheet() {
   const t = useTranslations("sheet");
@@ -273,10 +313,13 @@ function QuotesSheet() {
               index === row.selected ? (
                 <td
                   key={index}
-                  className="bg-accent-wash px-3 py-2.5 text-right text-sm font-medium"
+                  // `--row` inherits from here to the tick inside, which draws itself on
+                  // the same beat as the cell it is announcing.
+                  style={{ "--col": index, "--row": position } as React.CSSProperties}
+                  className="quote-cell quote-cell-chosen px-3 py-2.5 text-right text-sm text-muted-foreground"
                 >
                   <span className="inline-flex items-center gap-1.5">
-                    <CheckIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
+                    <CheckIcon className="tick-draw h-3.5 w-3.5 shrink-0 text-accent" />
                     <span className="sr-only">{t("selected")}</span>
                     {money(amount)}
                   </span>
@@ -284,7 +327,8 @@ function QuotesSheet() {
               ) : (
                 <td
                   key={index}
-                  className="px-3 py-2.5 text-right text-sm text-muted-foreground"
+                  style={{ "--col": index } as React.CSSProperties}
+                  className="quote-cell px-3 py-2.5 text-right text-sm text-muted-foreground"
                 >
                   {money(amount)}
                 </td>
@@ -300,22 +344,23 @@ function QuotesSheet() {
             {t("bid")}
           </th>
 
+          {/*
+            The Bid is the one number on the sheet that is derived rather than quoted, so it
+            is the last thing to appear: `.bid-arrive` in `globals.css` holds it back to
+            1860ms, 60ms after the last tick has finished drawing at 1800ms. It *arrives*
+            rather than counts, because a counter needs a script and a clock of its own, and
+            a total that rewinds to zero after the reader has seen it is a false total. The
+            currency and the figure are inside the one span so they arrive together.
+          */}
           <td colSpan={3} className="px-3 py-3 text-right text-sm font-semibold">
-            {t("currency")} {money(bid)}
+            <span className="bid-arrive">
+              {t("currency")} {money(bid)}
+            </span>
           </td>
         </tr>
       </tfoot>
     </table>
   );
-}
-
-/**
- * Grouped and two-placed, written out rather than left to `toLocaleString`: the sheet is
- * one currency in one format, and a locale that grouped by four or swapped the separators
- * would stop the column lining up under itself.
- */
-function money(amount: number): string {
-  return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
 }
 
 /**
@@ -327,6 +372,11 @@ function money(amount: number): string {
  * a three-item list is a label for something the reader can already see. And no icons
  * either: a document, a grid and a bell over three paragraphs illustrate the nouns rather
  * than the mechanism, and the rule is already saying where each column starts.
+ *
+ * The heading and the columns arrive once, the first time the section is scrolled to, one
+ * step apart on the hero's own stagger — a scroll reveal in the page's existing grammar
+ * rather than a second one. The `mx-auto` measure around them is deliberately not the thing
+ * that moves: the section's width is layout and must be settled before anything animates.
  */
 function HowItWorks() {
   const t = useTranslations("how");
@@ -336,12 +386,12 @@ function HowItWorks() {
   return (
     <section id="how" className="scroll-mt-20 border-t border-border">
       <div className="mx-auto w-full max-w-6xl px-5 py-landmark md:px-8 lg:py-[4.5rem]">
-        <div className="flex max-w-[52ch] flex-col gap-label">
+        <Reveal className="flex max-w-[52ch] flex-col gap-label">
           <h2 className="type-heading text-balance">{t("title")}</h2>
           <p className="text-pretty text-muted-foreground">{t("intro")}</p>
-        </div>
+        </Reveal>
 
-        <div className="mt-landmark grid gap-8 md:grid-cols-3">
+        <Reveal delay={1} className="mt-landmark grid gap-8 md:grid-cols-3">
           {beats.map((key) => (
             <article key={key} className="flex flex-col gap-label border-t border-border pt-6">
               <h3 className="type-section">{tBeats(`${key}.title`)}</h3>
@@ -349,7 +399,7 @@ function HowItWorks() {
               <p className="text-pretty text-muted-foreground">{tBeats(`${key}.body`)}</p>
             </article>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -369,19 +419,27 @@ function WhoItIsFor() {
   return (
     <section className="border-t border-border">
       <div className="mx-auto grid w-full max-w-6xl gap-group px-5 py-landmark md:px-8 lg:grid-cols-2 lg:items-start lg:gap-landmark lg:py-[4.5rem]">
-        <div className="flex flex-col gap-label">
+        <Reveal className="flex flex-col gap-label">
           <h2 className="type-heading text-balance">{t("title")}</h2>
           <p className="max-w-[46ch] text-pretty text-muted-foreground">{t("body")}</p>
-        </div>
+        </Reveal>
 
-        <ul className="flex flex-col">
-          {points.map((point) => (
-            <li key={point} className="flex flex-col gap-1 border-t border-border py-5">
-              <p className="font-semibold">{t(`points.${point}.title`)}</p>
-              <p className="text-pretty text-muted-foreground">{t(`points.${point}.body`)}</p>
-            </li>
-          ))}
-        </ul>
+        {/*
+          The `ul` stays a `ul` with the `li`s as its only children — the reveal wraps it
+          rather than replacing it, because a list that has had a `div` inserted between it
+          and its items is no longer a list of three things to anything reading the page
+          out loud.
+        */}
+        <Reveal delay={1}>
+          <ul className="flex flex-col">
+            {points.map((point) => (
+              <li key={point} className="flex flex-col gap-1 border-t border-border py-5">
+                <p className="font-semibold">{t(`points.${point}.title`)}</p>
+                <p className="text-pretty text-muted-foreground">{t(`points.${point}.body`)}</p>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
       </div>
     </section>
   );
@@ -407,6 +465,14 @@ function ClosedBeta() {
             <p className="text-pretty text-muted-foreground">{t("body")}</p>
           </div>
 
+          {/*
+            Nothing in this section animates, heading included. The ask is the one thing on
+            the page that must simply be there — a reader may arrive at it by following a
+            link straight to `#waiting-list`, and a field waiting on an observer to decide
+            whether it may be seen is a field that can be missed. A heading fading in above
+            a form that is already sitting under it inverts the section besides: the thing
+            being introduced would be on screen before its introduction.
+          */}
           <WaitingListForm />
         </div>
       </div>

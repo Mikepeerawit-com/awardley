@@ -37,8 +37,11 @@ export function WaitingListForm() {
 
   if (state.status === "sent") {
     return (
+      // `rise` because a reply is an arrival: the form was there and now this is, and the
+      // one gesture the page has is what says so. Same 420ms and same curve as the hero,
+      // with no delay — there is nothing for it to stagger against.
       <p
-        className="rounded-xl border border-border bg-card px-4 py-3 text-pretty"
+        className="rise rounded-xl border border-border bg-card px-4 py-3 text-pretty"
         role="status"
       >
         {t("success")}

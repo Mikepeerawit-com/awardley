@@ -18,6 +18,13 @@ import { SubmitButton } from "@/components/submit-button";
  * the bait. `website` is the name because that is the field these things most reliably
  * want to fill.
  *
+ * **It stands on the navy band (#194), and dresses for it.** The field is white with
+ * slate ink rather than the page's ground and hairline, because a field the colour of
+ * the band it sits on is not a field; the notice and the error take their colours from
+ * white at an alpha rather than from the page's ink, which is the wrong ink twice over
+ * on navy. The submit is the one thing that needs no special case — `.brand-surface`
+ * hands it an accent that works here.
+ *
  * **Success and silence look the same.** `sent` is what comes back from a real send, a
  * filled honeypot, a BotID flag and a Resend outage alike; the only other answer is
  * `invalid`, which is about the shape of what was typed and gives nothing away about
@@ -32,7 +39,7 @@ export function WaitingListForm() {
   if (state.status === "sent") {
     return (
       <p
-        className="rounded-surface border border-signal-edge bg-signal-wash px-4 py-3 text-signal-ink"
+        className="rounded-surface border border-white/25 bg-white/10 px-4 py-3 text-brand-foreground"
         role="status"
       >
         {t("success")}
@@ -57,7 +64,7 @@ export function WaitingListForm() {
           placeholder={t("emailPlaceholder")}
           aria-invalid={state.status === "invalid"}
           aria-describedby={state.status === "idle" ? undefined : "waiting-list-message"}
-          className="h-12 min-w-0 flex-1 rounded-control border border-input bg-background px-3.5 text-base outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+          className="h-12 min-w-0 flex-1 rounded-control border border-transparent bg-white px-3.5 text-base text-slate-900 outline-none placeholder:text-slate-500 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
         />
 
         <SubmitButton
@@ -77,14 +84,17 @@ export function WaitingListForm() {
       </div>
 
       {state.status !== "idle" && (
-        <p id="waiting-list-message" role="alert" className="text-sm text-alarm-ink">
+        <p id="waiting-list-message" role="alert" className="text-sm text-brand-danger">
           {t(state.status === "invalid" ? "invalid" : "failed")}
         </p>
       )}
 
-      <p className="type-quiet">
+      <p className="text-sm leading-relaxed text-white/70">
         {t("privacyNote")}{" "}
-        <Link href="/privacy" className="underline underline-offset-2">
+        <Link
+          href="/privacy"
+          className="text-white underline underline-offset-2 transition-opacity duration-200 hover:opacity-80"
+        >
           {t("privacyLink")}
         </Link>
       </p>

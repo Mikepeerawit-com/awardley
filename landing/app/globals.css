@@ -1,64 +1,75 @@
 @import "tailwindcss";
 
 /**
- * The marketing site's palette, copied from the app's `src/app/globals.css` so that the
- * page a reader sees before they sign in is the same object as the one they sign in to.
+ * The shop window's palette (#194), and the one place either theme is stated.
  *
- * **One difference, deliberate.** The app has three theme states, because a reader can
- * pin light or dark in Preferences and the server writes that class onto `<html>` from
- * its first byte (ADR-0024). There is nothing to pin here — no account, no cookie, no
- * Preferences — so the site has only the app's *System* reading: `prefers-color-scheme`
- * and nothing else. That is why this file has a media-query dark block where the app has
- * a `@custom-variant` reached two ways, and why `color-scheme: light dark` sits on
- * `:root` unconditionally rather than on a `.theme-system` class.
+ * **Every colour is a `light-dark()` pair on `:root`, and there is no dark variant.**
+ * The app has three theme states because a reader can pin one in Preferences and the
+ * server writes that class before the first byte (ADR-0024). Nothing here can be pinned:
+ * no account, no Preferences, no toggle. What the site needs is the app's *System*
+ * reading and a way for a reviewer to see the other one — and `light-dark()` gives both
+ * from a single declaration, because setting `document.documentElement.style.colorScheme`
+ * in devtools flips the whole page with no class to add and no media query to emulate.
+ * A `@custom-variant dark` and a second token block would have been two places to state
+ * a colour and one of them would eventually be wrong.
  *
- * The values themselves are not re-derived. Only the subset the site actually draws is
- * carried over — ground, ink, the signal hue and its wash, hairlines, the two radii and
- * the surface shadow. Every hue keeps the meaning ADR-0019 gives it: **signal** is
- * *something is expected of you* and is spent here on exactly one control, the submit.
+ * **The navy brand surface is the exception that proves it.** `--brand` does not swap:
+ * the closed-beta band is the one place on the site that changes ground, and a band that
+ * went pale in the light theme would stop being the thing the eye lands on.
+ *
+ * Contrast is not eyeballed. `scratchpad/contrast.mjs` measures every text pair in both
+ * readings against 4.5:1 and the control edges against 3:1, including white at 80% over
+ * the navy gradient at both of its ends. The card hairline is deliberately below 3:1 and
+ * deliberately not a control edge: SC 1.4.11 is about things carrying information, and a
+ * hairline dark enough to pass it draws a wireframe rather than a Swiss grid.
  */
-
-@custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
-  /*
-   * Fira for Latin and numerals, the CJK stack declared rather than inherited — no Han
-   * webfont is fetched, for the reason the app states: a Han face cannot be subset, so
-   * web-loading one is megabytes over a phone network.
-   *
-   * The `var()` fallbacks are load-bearing rather than belt-and-braces. `next/font`
-   * defines `--font-fira-*` on `<html>`; a browser layout test renders this stylesheet
-   * *without* it, and an undefined variable invalidates the whole declaration at
-   * computed-value time and falls all the way back to the default serif.
-   */
-  --font-sans:
-    var(--font-fira-sans, "Fira Sans"), "PingFang SC", "Hiragino Sans GB",
-    "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
-  --font-mono:
-    var(--font-fira-code, "Fira Code"), "SF Mono", ui-monospace, "PingFang SC",
-    "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", monospace;
-
-  --color-signal: var(--signal);
-  --color-signal-ink: var(--signal-ink);
-  --color-signal-wash: var(--signal-wash);
-  --color-signal-edge: var(--signal-edge);
-
-  --color-ink-faint: var(--ink-faint);
-  --color-hairline: var(--border);
-  --color-hairline-soft: var(--hairline-soft);
-  --color-surface: var(--card);
   --color-card: var(--card);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-alarm: var(--alarm);
-  --color-alarm-ink: var(--alarm-ink);
-  --color-alarm-wash: var(--alarm-wash);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-edge: var(--accent-edge);
+
+  /* The navy band, and the only text colours that are safe on top of it. */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-danger: var(--brand-danger);
+
+  /*
+   * The names the pages that are *not* being redesigned already ask for — privacy,
+   * confirm, the footer. They are aliases rather than a second palette, so those pages
+   * pick up the new hues without being rewritten for the sake of a class string.
+   */
+  --color-signal: var(--accent);
+  --color-signal-ink: var(--accent);
+  --color-signal-wash: var(--accent-wash);
+  --color-signal-edge: var(--accent-edge);
+  --color-ink-faint: var(--muted-foreground);
+  --color-hairline: var(--border);
+  --color-surface: var(--card);
+
+  /*
+   * Plus Jakarta Sans for Latin and numerals, the CJK stack declared rather than
+   * inherited — no Han webfont is fetched, for the reason the app states: a Han face
+   * cannot be subset, so web-loading one is megabytes over a phone network.
+   *
+   * The `var()` fallback is load-bearing rather than belt-and-braces. `next/font`
+   * defines `--font-jakarta` on `<html>`; a browser layout test renders this stylesheet
+   * *without* it, and an undefined variable invalidates the whole declaration at
+   * computed-value time and falls all the way back to the default serif.
+   */
+  --font-sans:
+    var(--font-jakarta, "Plus Jakarta Sans"), "PingFang SC", "Hiragino Sans GB",
+    "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
 
   /*
    * The form vocabulary (ADR-0028): a corner says what kind of thing it is.
@@ -80,79 +91,80 @@
 
 :root {
   /*
-   * A warm paper ground with a blue-black ink over it. The device decides which of the
-   * two palettes it gets; `color-scheme` is what makes the canvas the browser paints
-   * *before this stylesheet arrives* the right ground, and keeps a form control from
-   * being the one light thing on a dark screen.
+   * `color-scheme` is what makes the canvas the browser paints *before this stylesheet
+   * arrives* the right ground, keeps a form control from being the one light thing on a
+   * dark screen — and is the switch every `light-dark()` below reads.
    */
   color-scheme: light dark;
 
-  --background: oklch(0.975 0.007 90);
-  --foreground: oklch(0.225 0.015 265);
-  --ink-faint: oklch(0.535 0.018 265);
-  --hairline-soft: oklch(0.935 0.008 90);
+  --background: light-dark(#f8fafc, #020617);
+  --card: light-dark(#ffffff, #0f172a);
+  --foreground: light-dark(#0f172a, #f1f5f9);
+  --muted-foreground: light-dark(#475569, #94a3b8);
+  --muted: light-dark(#f1f5f9, #0b1220);
 
-  --signal: oklch(0.5 0.17 259);
-  --signal-ink: oklch(0.44 0.17 262);
-  --signal-wash: oklch(0.5 0.17 259 / 0.1);
-  --signal-edge: oklch(0.5 0.17 259 / 0.3);
+  /* The card hairline, and — separately — the edge of anything you can operate. */
+  --border: light-dark(#e2e8f0, #1e293b);
+  --input: #64748b;
 
-  --alarm: oklch(0.52 0.2 27);
-  --alarm-ink: oklch(0.46 0.165 27);
-  --alarm-wash: oklch(0.52 0.2 27 / 0.09);
+  --accent: light-dark(#0369a1, #38bdf8);
+  --accent-foreground: light-dark(#ffffff, #020617);
+  --accent-wash: light-dark(rgb(3 105 161 / 0.1), rgb(56 189 248 / 0.14));
+  --accent-edge: light-dark(rgb(3 105 161 / 0.35), rgb(56 189 248 / 0.4));
+  --ring: var(--accent);
 
-  --card: oklch(0.995 0.003 90);
-  --muted: oklch(0.945 0.008 90);
-  --muted-foreground: oklch(0.47 0.02 265);
-  --border: oklch(0.885 0.012 90);
-  --input: oklch(0.635 0.02 90);
-  --ring: var(--signal);
+  /*
+   * Navy in both themes, on purpose — see the note at the top of this file.
+   *
+   * The flat navy and the gradient are two tokens rather than one because `bg-brand` is
+   * a `background-color` and a gradient is not a colour: the flat value is what paints
+   * the band before `.brand-surface` lays the gradient over it, and what a browser that
+   * drops the image is left with.
+   */
+  --brand: #0f172a;
+  --brand-gradient: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  --brand-glow: rgb(56 189 248 / 0.22);
+  --brand-foreground: #ffffff;
+  --brand-danger: #fca5a5;
 
   --radius: 0.625rem;
 
   --surface-shadow:
-    0 1px 2px -1px oklch(0.225 0.015 265 / 0.07),
-    0 2px 6px -2px oklch(0.225 0.015 265 / 0.05);
+    light-dark(
+      0 1px 2px -1px rgb(15 23 42 / 0.07),
+      0 1px 2px -1px rgb(0 0 0 / 0.4)
+    ),
+    light-dark(0 2px 8px -3px rgb(15 23 42 / 0.08), 0 2px 8px -3px rgb(0 0 0 / 0.5));
 
   /*
-   * The three bars of the mark, at the values the source artwork uses. They are tokens
-   * rather than literals in the SVG because the light theme has to invert the middle
-   * one: a near-white bar on warm paper is an invisible bar.
+   * The three bars of the mark. They are tokens rather than literals in the SVG because
+   * the light theme has to invert the middle one: a near-white bar on white paper is an
+   * invisible bar.
    */
-  --mark-1: oklch(0.5 0.17 259);
-  --mark-2: oklch(0.225 0.015 265);
-  --mark-3: oklch(0.63 0.02 255);
+  --mark-1: light-dark(#0369a1, #38bdf8);
+  --mark-2: light-dark(#0f172a, #f1f5f9);
+  --mark-3: light-dark(#94a3b8, #64748b);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.185 0.015 265);
-    --foreground: oklch(0.945 0.006 90);
-    --ink-faint: oklch(0.665 0.018 265);
-    --hairline-soft: oklch(0.285 0.014 265);
+/**
+ * The preview switch, and the reason it is an attribute rather than devtools.
+ *
+ * Next builds this file through Lightning CSS, whose targets still predate native
+ * `light-dark()`, so every pair above ships as its polyfill — which follows
+ * `prefers-color-scheme` and cannot see an inline `style.colorScheme` set by hand. These
+ * two rules are what give the polyfill a switch it *can* see: a reviewer runs
+ *
+ *     document.documentElement.dataset.theme = "light"   // or "dark"
+ *
+ * and the whole page flips, with no toggle shipped to a reader and no second palette.
+ * Nothing in the site sets this attribute; it exists for the person checking the work.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
 
-    --signal: oklch(0.7 0.14 259);
-    --signal-ink: oklch(0.8 0.09 259);
-    --signal-wash: oklch(0.7 0.14 259 / 0.16);
-    --signal-edge: oklch(0.7 0.14 259 / 0.4);
-
-    --alarm: oklch(0.685 0.17 27);
-    --alarm-ink: oklch(0.81 0.1 27);
-    --alarm-wash: oklch(0.685 0.17 27 / 0.16);
-
-    --card: oklch(0.225 0.016 265);
-    --muted: oklch(0.275 0.016 265);
-    --muted-foreground: oklch(0.745 0.016 265);
-    --border: oklch(0.345 0.014 265);
-    --input: oklch(0.545 0.016 265);
-
-    --surface-shadow: none;
-
-    /* The mark as the source artwork draws it: sky blue, near-white, grey. */
-    --mark-1: oklch(0.74 0.15 240);
-    --mark-2: oklch(0.945 0.006 90);
-    --mark-3: oklch(0.63 0.02 255);
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 @layer base {
@@ -163,21 +175,8 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-
-    /*
-     * The shop window's daylight (#194): one very faint wash of the signal hue behind
-     * the top-right of the page, so the hero sits in light rather than on flat paper.
-     * It is `--signal-wash` and not a new hue — the same token the closed-beta panel
-     * tints with — and it is spent on *ground*, which is why it costs nothing against
-     * ADR-0019's rule that signal means something is expected of you: a gradient asks
-     * for nothing. It does not repeat, so a long page fades to plain paper.
-     */
-    background-image: radial-gradient(
-      70rem 32rem at 80% -12%,
-      var(--signal-wash),
-      transparent 70%
-    );
-    background-repeat: no-repeat;
+    font-size: 16px;
+    line-height: 1.55;
   }
 
   html {
@@ -185,9 +184,9 @@
   }
 
   /*
-   * The hero's call to action is an in-page jump to the form. Smooth only where the
-   * reader has not asked for less motion — `no-preference` rather than a `reduce`
-   * override, so a browser that reports nothing gets the instant jump.
+   * Both calls to action are in-page jumps to the form. Smooth only where the reader has
+   * not asked for less motion — `no-preference` rather than a `reduce` override, so a
+   * browser that reports nothing gets the instant jump.
    */
   @media (prefers-reduced-motion: no-preference) {
     html {
@@ -197,8 +196,8 @@
 
   /*
    * The focus ring for everything that does not draw its own. Solid, not a wash: at half
-   * strength signal measures under the 3:1 SC 1.4.11 asks of anything carrying
-   * information, in *both* themes.
+   * strength the accent measures under the 3:1 SC 1.4.11 asks of anything carrying
+   * information, in *both* readings.
    */
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -208,39 +207,46 @@
 
 @layer components {
   /*
-   * The four voices this page has. The app's scale is five tiers deep because a screen
-   * has to be navigated; a page with four parts needs an eyebrow, a headline, a heading
-   * and body, and the tiers are sized so that the Han reading — which is denser per line
-   * and has no 400/700 contrast to spend — opens its leading rather than its size.
+   * The voices this page has. The app's scale is five tiers deep because a screen has to
+   * be navigated; a page with five parts needs a display, a heading, an eyebrow and a
+   * quiet line, and the tiers are sized so that the Han reading — which is denser per
+   * line and has no 400/700 contrast to spend — opens its leading rather than its size.
    *
-   * The display tier is fluid rather than fixed (#194): the measure is now `max-w-6xl`,
-   * and a headline set at one size for a 390px phone and a 1280px desk is either a
-   * shout on the phone or a whisper on the desk. `clamp` floors it at what the phone
-   * had and ceilings it before the line gets too long to track.
+   * The display tier is fluid: the measure is `max-w-6xl`, and a headline set at one
+   * size for a 390px phone and a 1280px desk is either a shout on the phone or a whisper
+   * on the desk.
    */
   .type-display {
-    font-size: clamp(2.25rem, 1.4rem + 3.2vw, 3.75rem);
-    line-height: 1.08;
+    font-size: clamp(2.5rem, 1.6rem + 3.4vw, 4.25rem);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .type-heading {
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+    line-height: 1.15;
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
   }
 
   .type-section {
     font-size: 1.375rem;
     line-height: 1.3;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    letter-spacing: -0.015em;
   }
 
   /*
-   * The line above a headline that says who is being addressed. Latin gets small caps
-   * by tracking; Han gets neither — uppercase does nothing to Han, and letter-spacing
-   * on Han is the thing that makes a line look machine-set rather than typeset — so it
-   * takes the size back instead.
+   * The line above a headline that says who is being addressed. Latin gets small caps by
+   * tracking; Han gets neither — uppercase does nothing to Han, and letter-spacing on Han
+   * is the thing that makes a line look machine-set rather than typeset — so it takes the
+   * size back instead.
    */
   .type-eyebrow {
     font-size: 0.75rem;
     line-height: 1.4;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
   }
@@ -248,23 +254,89 @@
   .type-quiet {
     font-size: 0.875rem;
     line-height: 1.6;
-    color: var(--ink-faint);
+    color: var(--muted-foreground);
   }
 
   :lang(zh-Hans) .type-display {
     letter-spacing: 0;
-    line-height: 1.3;
+    line-height: 1.25;
   }
 
+  :lang(zh-Hans) .type-heading,
   :lang(zh-Hans) .type-section {
     letter-spacing: 0;
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
   :lang(zh-Hans) .type-eyebrow {
     font-size: 0.875rem;
     text-transform: none;
     letter-spacing: 0;
+  }
+
+  /*
+   * The hero arriving rather than being already there (#194). Opacity and a 12px lift
+   * only — nothing moves sideways, nothing scales — and the stagger is an
+   * `animation-delay` on each child rather than a sequence, so the whole thing is over
+   * in under half a second and a reader who scrolls immediately never sees it running.
+   */
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .rise {
+    animation: rise 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .rise-1 {
+    animation-delay: 60ms;
+  }
+
+  .rise-2 {
+    animation-delay: 120ms;
+  }
+
+  .rise-3 {
+    animation-delay: 180ms;
+  }
+
+  .rise-4 {
+    animation-delay: 240ms;
+  }
+
+  /*
+   * The navy ground, in the two places the page changes colour: the panel the product
+   * stands in, and the closed-beta band. A class rather than a utility because it is a
+   * `background-image` over `bg-brand`'s `background-color`, and the pair has to travel
+   * together or a browser that drops the gradient is left with nothing behind the white
+   * text.
+   */
+  .brand-surface {
+    background-image: var(--brand-gradient);
+
+    /*
+     * The band is navy in *both* readings, so the tokens inside it stop reading the
+     * theme and take their dark-on-navy values outright. This is why `SubmitButton`
+     * needs no idea which surface it is standing on: the one accent it asks for resolves
+     * to the light sky blue here and to the deep blue on paper, and the light theme's
+     * `#0369A1` — which is a dark blue on a dark navy — never gets drawn on top of navy.
+     */
+    --accent: #38bdf8;
+    --accent-foreground: #020617;
+    --accent-wash: rgb(56 189 248 / 0.16);
+    --accent-edge: rgb(56 189 248 / 0.45);
+    --ring: #7dd3fc;
+    --foreground: #ffffff;
+    --muted-foreground: rgb(255 255 255 / 0.75);
+    --border: rgb(255 255 255 / 0.2);
   }
 }
 
@@ -273,6 +345,7 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
   }
 }

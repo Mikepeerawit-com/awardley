@@ -31,12 +31,16 @@ export function Mark({ className }: { className?: string }) {
   );
 }
 
-/** The mark and the wordmark, which never appear apart. Fira Sans is the whole brand. */
+/**
+ * The mark and the wordmark, which never appear apart. The name is set in the one face
+ * this site loads — Plus Jakarta Sans (#194) — at 700, because a wordmark sitting beside
+ * an 800-weight display line has to be quieter than it without being a different thing.
+ */
 export function Wordmark({ name }: { name: string }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <Mark className="h-6 w-6 shrink-0" />
-      <span className="text-[1.15rem] font-bold tracking-[-0.015em]">{name}</span>
+      <span className="text-[1.125rem] font-bold tracking-[-0.01em]">{name}</span>
     </span>
   );
 }

@@ -24,7 +24,7 @@ export function ConfirmPanel({ token, initial }: { token: string; initial: Confi
   if (state.status === "ok") {
     return (
       <section className="flex flex-col gap-label pb-group">
-        <h1 className="type-display">{t("ok.title")}</h1>
+        <h1 className="type-heading">{t("ok.title")}</h1>
         <p className="text-pretty text-muted-foreground">{t("ok.body")}</p>
       </section>
     );
@@ -33,7 +33,7 @@ export function ConfirmPanel({ token, initial }: { token: string; initial: Confi
   if (state.status === "expired") {
     return (
       <section className="flex flex-col gap-label pb-group">
-        <h1 className="type-display">{t("expired.title")}</h1>
+        <h1 className="type-heading">{t("expired.title")}</h1>
         <p className="text-pretty text-muted-foreground">{t("expired.body")}</p>
         <p>
           <Link href="/" className="text-signal-ink underline underline-offset-2">
@@ -49,7 +49,7 @@ export function ConfirmPanel({ token, initial }: { token: string; initial: Confi
   return (
     <section className="flex flex-col gap-group pb-group">
       <div className="flex flex-col gap-label">
-        <h1 className="type-display">{t(`${heading}.title`)}</h1>
+        <h1 className="type-heading">{t(`${heading}.title`)}</h1>
         <p className="text-pretty text-muted-foreground">{t(`${heading}.body`)}</p>
       </div>
 

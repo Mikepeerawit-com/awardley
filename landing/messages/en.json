@@ -3,12 +3,26 @@
     "name": "Awardley",
     "description": "One record of what a client asked for, what suppliers quoted, what you bid, and whether you won."
   },
+  "nav": {
+    "howItWorks": "How it works"
+  },
   "hero": {
-    "eyebrow": "For trading companies",
-    "headline": "One record of what a client asked for, what suppliers quoted, what you bid, and whether you won.",
-    "sub": "Awardley is a tender workspace for trading companies.",
+    "badge": "Closed beta · For trading companies",
+    "headline": "Every tender, on one record.",
+    "sub": "What the client asked for, what suppliers quoted, what you bid, and whether you won. One workspace for trading companies, in English and 中文.",
     "cta": "Join the waiting list",
+    "secondary": "Sign in",
+    "facts": {
+      "bilingual": "English and 中文",
+      "reminders": "Reminders by email",
+      "phone": "Made for a phone"
+    },
     "screenshotAlt": "A Tender in Awardley on a phone, showing its Items and the Quotes against them."
+  },
+  "how": {
+    "eyebrow": "How it works",
+    "title": "From the client's request to the bid you send",
+    "intro": "Three things, in the order they happen."
   },
   "beats": {
     "tender": {
@@ -24,7 +38,26 @@
       "body": "Assign an Item to whoever is chasing it. Reminders arrive by email, to the one person they are about, in the language that person reads — no group chat required."
     }
   },
+  "who": {
+    "title": "Built for the people who actually chase the quotes",
+    "body": "A tender is never one person's job. Awardley gives each of them the part they need, without a group chat.",
+    "points": {
+      "owner": {
+        "title": "The owner",
+        "body": "Compares every supplier's price on one sheet before the bid goes out."
+      },
+      "assignee": {
+        "title": "The colleague chasing a supplier",
+        "body": "Gets one Reminder in their inbox, in the language they read."
+      },
+      "team": {
+        "title": "The whole team",
+        "body": "On a phone, in English or 中文, looking at the same record."
+      }
+    }
+  },
   "beta": {
+    "eyebrow": "Closed beta",
     "title": "Awardley is in closed beta",
     "body": "The app is invite-only while we work with our first companies. Leave your email and we will keep you posted as it opens up.",
     "emailLabel": "Email address",
@@ -39,6 +72,7 @@
     "privacyLink": "How we handle your email"
   },
   "footer": {
+    "tagline": "One record of what a client asked for, what suppliers quoted, what you bid, and whether you won.",
     "signIn": "Sign in",
     "privacy": "Privacy",
     "languageLabel": "Language",

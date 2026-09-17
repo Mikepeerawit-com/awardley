@@ -15,6 +15,10 @@ import { useFormStatus } from "react-dom";
  * page that can say the press was received, and a reader on a phone in China may be
  * waiting on it for a while.
  *
+ * It asks for `bg-accent` and nothing about the surface under it. `.brand-surface` in
+ * `globals.css` redefines `--accent` for the navy band, so the same string draws a deep
+ * blue on paper and a sky blue on navy without this component knowing which it is on.
+ *
  * `className` is prefixed rather than appended, so a caller that needs one layout
  * utility of its own — the waiting-list row needs `shrink-0`, because its button sits
  * beside a flexible field and must not be squeezed — renders exactly the string it
@@ -35,7 +39,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={status.pending}
-      className={`${className === undefined ? "" : `${className} `}min-h-12 rounded-control bg-signal px-5 text-base font-semibold text-background outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70`}
+      className={`${className === undefined ? "" : `${className} `}min-h-12 rounded-control bg-accent px-5 text-base font-semibold text-accent-foreground outline-none transition-opacity duration-200 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70`}
     >
       {status.pending ? pending : label}
     </button>

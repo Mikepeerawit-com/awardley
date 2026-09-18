@@ -39,7 +39,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={status.pending}
-      className={`${className === undefined ? "" : `${className} `}h-11 rounded-lg bg-accent px-5 text-base font-medium text-accent-foreground outline-none transition-opacity duration-200 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70`}
+      className={`${className === undefined ? "" : `${className} `}h-11 rounded-lg bg-accent px-5 text-base font-medium text-accent-foreground transition-opacity duration-200 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-70`}
     >
       {status.pending ? pending : label}
     </button>

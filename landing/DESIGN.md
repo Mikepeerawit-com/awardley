@@ -223,7 +223,7 @@ Confident, filled, and without ornament: the accent is the button and the button
 
 ### Inputs / Fields
 - **Style:** page `background` inside a 1px `input` edge (the darker control edge, not the hairline), 8px radius, 44px tall, `px-3.5`, 16px; placeholder in muted ink.
-- **Focus:** `outline-none` replaced by the global ring, 2px solid `ring` at 2px offset.
+- **Focus:** the global ring, 2px solid `ring` at 2px offset — reached by `focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2` and by nothing else beside it.
 - **Error:** `aria-invalid` and a 14px `danger` message below with `role="alert"`; success replaces the form with a 12px-radius `card` notice under a hairline.
 - **Honeypot:** an off-screen `website` field hidden by geometry, `aria-hidden`, `tabIndex -1`.
 
@@ -293,6 +293,7 @@ Two easings and nothing else: **events rise, continuous motion drifts.** `--ease
 - **Don't** put a price, a signup link, logos, counts or testimonials on the page (ADR-0035; the only app link is `/login`, the only ask is the waiting list).
 - **Don't** use a weight above 600, uppercase labels, or negative tracking on Han.
 - **Don't** add shadows to buttons, inputs or panels; the one shadow is the phone's device drop.
+- **Don't** put `outline-none` on a control that draws the ring with `outline-*`: it sets `--tw-outline-style: none`, which `outline-2` reads back at focus time, and the ring then never draws — a control with no focus ring looks exactly like one nobody has focused.
 - **Don't** add a third easing, a scroll-linked effect, or an entrance on the closed-beta section or the form; don't animate a size, margin or position in the flow; don't leave motion running under `prefers-reduced-motion: reduce`.
 - **Don't** loop anything but ambient motion inside the product panel, and never loop anything the reader has to read. A loop is allowed only if it is slow, quiet, paused when it is off screen or the tab is hidden, and removed outright under `prefers-reduced-motion: reduce`; everything else on the page happens once.
 - **Don't** put the accent, the `accent-wash` or the tick on a trace: the problem section shows what happens *without* the product, and the accent is the product working.

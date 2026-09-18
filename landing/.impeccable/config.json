@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "components/home.tsx"
+        ],
+        "createdAt": "2026-09-17T12:51:42.131Z",
+        "reason": "agent verified: the only <img> here is /screenshot-tender.png, a real 216KB 390x844 capture in public/ that the brief names as the page's only raster"
+      }
+    ]
+  }
+}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { Footer } from "@/components/footer";
-import { Wordmark } from "@/components/mark";
+import { SiteHeader } from "@/components/site-header";
 
 /**
  * **DRAFT FOR MIKE'S REVIEW.** Written by an agent, not a lawyer, and not yet read by
@@ -48,16 +48,12 @@ export default async function PrivacyPage() {
 
   return (
     <>
-      <main className="flex-1">
-        <div className="mx-auto w-full max-w-3xl px-5">
-          <header className="pt-group pb-landmark">
-            <Link href="/">
-              <Wordmark name="Awardley" />
-            </Link>
-          </header>
+      <SiteHeader />
 
+      <main className="flex-1">
+        <div className="mx-auto w-full max-w-3xl px-5 pt-landmark">
           <article className="flex flex-col gap-group pb-group">
-            <h1 className="type-display">{t("title")}</h1>
+            <h1 className="type-heading">{t("title")}</h1>
             <p className="text-pretty text-muted-foreground">{t("intro")}</p>
 
             {sections.map((section) => (

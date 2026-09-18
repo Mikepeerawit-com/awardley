@@ -5,12 +5,11 @@
  * rounded ends, on a 24-unit square. It reads as a list getting shorter, which is the
  * one thing this app does to a pile of Quotes.
  *
- * **Inline rather than a file**, because the middle bar has to change colour with the
- * theme. The source artwork is sky blue over near-white over grey on a dark navy ground;
- * a near-white bar on the light theme's warm paper is an invisible bar, so light inverts
- * that one to ink and leaves the other two where they are. The values live in
- * `globals.css` as `--mark-1..3` so both themes are stated in the one place every other
- * colour in this site is stated.
+ * **Inline rather than a file**, so the bars are drawn from the palette rather than
+ * baked in: the middle bar is the page's ink, and it should stay the page's ink if that
+ * ever moves. The three bars are the accent, the ink and the muted ink — `--mark-1..3` in
+ * `globals.css`, aliases onto the palette rather than three more colours, so the mark
+ * cannot drift away from the page it sits on.
  *
  * `app/icon.svg` is the same geometry with the values written out, since a favicon is
  * fetched without a stylesheet.
@@ -31,12 +30,17 @@ export function Mark({ className }: { className?: string }) {
   );
 }
 
-/** The mark and the wordmark, which never appear apart. Fira Sans is the whole brand. */
+/**
+ * The mark and the wordmark, which never appear apart. The name is set in the one face
+ * this site loads — Inter — at 600, the same weight as every heading on the page: the
+ * display line is bigger than this, not heavier than it, so a wordmark at 700 would be
+ * the boldest thing on a page whose headline is supposed to be.
+ */
 export function Wordmark({ name }: { name: string }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <Mark className="h-6 w-6 shrink-0" />
-      <span className="text-[1.15rem] font-bold tracking-[-0.015em]">{name}</span>
+      <span className="text-[1.0625rem] font-semibold tracking-[-0.015em]">{name}</span>
     </span>
   );
 }

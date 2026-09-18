@@ -1,73 +1,89 @@
 @import "tailwindcss";
 
 /**
- * The marketing site's palette, copied from the app's `src/app/globals.css` so that the
- * page a reader sees before they sign in is the same object as the one they sign in to.
+ * The site's palette and voice, and the one place a colour is stated.
  *
- * **One difference, deliberate.** The app has three theme states, because a reader can
- * pin light or dark in Preferences and the server writes that class onto `<html>` from
- * its first byte (ADR-0024). There is nothing to pin here — no account, no cookie, no
- * Preferences — so the site has only the app's *System* reading: `prefers-color-scheme`
- * and nothing else. That is why this file has a media-query dark block where the app has
- * a `@custom-variant` reached two ways, and why `color-scheme: light dark` sits on
- * `:root` unconditionally rather than on a `.theme-system` class.
+ * **The site is light only, and every colour is a plain value on `:root`.** The app has
+ * three theme states because a reader can pin one in Preferences and the server writes
+ * that class before the first byte (ADR-0024). Nothing here can be pinned: no account,
+ * no Preferences, no toggle — and a page that is judged in one reading is better spent
+ * being finished in that one than hedged across two. `color-scheme: light` says so to
+ * the browser, so the canvas it paints before this stylesheet arrives and the form
+ * controls it draws are light even when the device is dark. A second token block would
+ * have been two places to state a colour and one of them would eventually be wrong.
  *
- * The values themselves are not re-derived. Only the subset the site actually draws is
- * carried over — ground, ink, the signal hue and its wash, hairlines, the two radii and
- * the surface shadow. Every hue keeps the meaning ADR-0019 gives it: **signal** is
- * *something is expected of you* and is spent here on exactly one control, the submit.
+ * **Monochrome ground, one indigo accent, and no second ground anywhere.** The navy
+ * brand surface this replaces was a band the page changed colour for; a page whose
+ * sections are told apart by hairlines rather than by grounds does not need one, and the
+ * accent is worth more spent once on the button than spread over a stripe.
+ *
+ * Contrast is held to 4.5:1 for text and 3:1 for anything you can
+ * operate — which is why `--input` is its own token a full step darker than `--border`.
+ * The hairline is deliberately below 3:1 and deliberately not a control edge: SC 1.4.11
+ * is about things carrying information, and a hairline dark enough to pass it draws a
+ * wireframe rather than a ruled page.
  */
-
-@custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
-  /*
-   * Fira for Latin and numerals, the CJK stack declared rather than inherited — no Han
-   * webfont is fetched, for the reason the app states: a Han face cannot be subset, so
-   * web-loading one is megabytes over a phone network.
-   *
-   * The `var()` fallbacks are load-bearing rather than belt-and-braces. `next/font`
-   * defines `--font-fira-*` on `<html>`; a browser layout test renders this stylesheet
-   * *without* it, and an undefined variable invalidates the whole declaration at
-   * computed-value time and falls all the way back to the default serif.
-   */
-  --font-sans:
-    var(--font-fira-sans, "Fira Sans"), "PingFang SC", "Hiragino Sans GB",
-    "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
-  --font-mono:
-    var(--font-fira-code, "Fira Code"), "SF Mono", ui-monospace, "PingFang SC",
-    "Hiragino Sans GB", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", monospace;
-
-  --color-signal: var(--signal);
-  --color-signal-ink: var(--signal-ink);
-  --color-signal-wash: var(--signal-wash);
-  --color-signal-edge: var(--signal-edge);
-
-  --color-ink-faint: var(--ink-faint);
-  --color-hairline: var(--border);
-  --color-hairline-soft: var(--hairline-soft);
-  --color-surface: var(--card);
   --color-card: var(--card);
-  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-alarm: var(--alarm);
-  --color-alarm-ink: var(--alarm-ink);
-  --color-alarm-wash: var(--alarm-wash);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-edge: var(--accent-edge);
+
+  --color-danger: var(--danger);
 
   /*
-   * The form vocabulary (ADR-0028): a corner says what kind of thing it is.
-   * `rounded-control` — you operate it. `rounded-surface` — it contains other things.
+   * The bezel of the device frame in the product panel, and the one colour on the site
+   * that is neither ink nor hairline. A frame drawn at the hairline's 8% is not a frame:
+   * the phone would float with no edge, and the whole point of the crop is that the
+   * reader is looking *into* something.
    */
-  --radius-control: calc(var(--radius) * 0.8);
-  --radius-surface: calc(var(--radius) * 1.4);
+  --color-device-edge: var(--device-edge);
 
-  --shadow-surface: var(--surface-shadow);
+  /*
+   * The names the pages that are *not* the home page already ask for — privacy, confirm,
+   * the footer. They are aliases rather than a second palette, so those pages pick up
+   * the new hues without being rewritten for the sake of a class string.
+   */
+  --color-signal: var(--accent);
+  --color-signal-ink: var(--accent);
+  --color-signal-wash: var(--accent-wash);
+  --color-signal-edge: var(--accent-edge);
+  --color-ink-faint: var(--muted-foreground);
+  --color-hairline: var(--border);
+  --color-surface: var(--card);
+
+  /*
+   * Inter for Latin and numerals, the CJK stack declared rather than inherited — no Han
+   * webfont is fetched, for the reason the app states: a Han face cannot be subset, so
+   * web-loading one is megabytes over a phone network.
+   *
+   * The `var()` fallback is load-bearing rather than belt-and-braces. `next/font`
+   * defines `--font-inter` on `<html>`; a browser layout test renders this stylesheet
+   * *without* it, and an undefined variable invalidates the whole declaration at
+   * computed-value time and falls all the way back to the default serif.
+   */
+  --font-sans:
+    var(--font-inter, "Inter"), "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC",
+    "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  /*
+   * The form vocabulary (ADR-0028), stated as one number the whole site derives from
+   * rather than as a second radius scale beside Tailwind's: a corner says what kind of
+   * thing it is. `rounded-lg` (8px) — you operate it. `rounded-2xl` (16px) — it contains
+   * other things. `rounded-xl` is the one step between, for a panel that is a reply.
+   */
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
 }
 
 @theme {
@@ -80,79 +96,80 @@
 
 :root {
   /*
-   * A warm paper ground with a blue-black ink over it. The device decides which of the
-   * two palettes it gets; `color-scheme` is what makes the canvas the browser paints
-   * *before this stylesheet arrives* the right ground, and keeps a form control from
-   * being the one light thing on a dark screen.
+   * The site is light, and `color-scheme` is how the browser is told before it reads
+   * anything else here: the canvas it paints *before this stylesheet arrives* is paper,
+   * and the controls it draws itself are light too, on a device set to dark.
    */
-  color-scheme: light dark;
+  color-scheme: light;
 
-  --background: oklch(0.975 0.007 90);
-  --foreground: oklch(0.225 0.015 265);
-  --ink-faint: oklch(0.535 0.018 265);
-  --hairline-soft: oklch(0.935 0.008 90);
+  --background: #ffffff;
+  --card: #fafafa;
+  --foreground: #0a0a0a;
+  --muted-foreground: #5f6368;
 
-  --signal: oklch(0.5 0.17 259);
-  --signal-ink: oklch(0.44 0.17 262);
-  --signal-wash: oklch(0.5 0.17 259 / 0.1);
-  --signal-edge: oklch(0.5 0.17 259 / 0.3);
+  /* The hairline, and — separately — the edge of anything you can operate. */
+  --border: rgb(10 10 10 / 0.08);
+  --input: #767676;
 
-  --alarm: oklch(0.52 0.2 27);
-  --alarm-ink: oklch(0.46 0.165 27);
-  --alarm-wash: oklch(0.52 0.2 27 / 0.09);
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+  --accent-wash: rgb(79 70 229 / 0.1);
+  --accent-edge: rgb(79 70 229 / 0.4);
+  --ring: var(--accent);
 
-  --card: oklch(0.995 0.003 90);
-  --muted: oklch(0.945 0.008 90);
-  --muted-foreground: oklch(0.47 0.02 265);
-  --border: oklch(0.885 0.012 90);
-  --input: oklch(0.635 0.02 90);
-  --ring: var(--signal);
+  --danger: #b91c1c;
 
-  --radius: 0.625rem;
-
-  --surface-shadow:
-    0 1px 2px -1px oklch(0.225 0.015 265 / 0.07),
-    0 2px 6px -2px oklch(0.225 0.015 265 / 0.05);
+  --device-edge: #e6e6e9;
 
   /*
-   * The three bars of the mark, at the values the source artwork uses. They are tokens
-   * rather than literals in the SVG because the light theme has to invert the middle
-   * one: a near-white bar on warm paper is an invisible bar.
+   * The light behind the product panel, and its own token rather than `--accent-wash`
+   * because the two are asked opposite questions. A wash sits *under text* and has to
+   * stay quiet enough to read through; this one is spread over 20rem and blurred, so it
+   * carries a little more alpha to still read as a light source at that size.
    */
-  --mark-1: oklch(0.5 0.17 259);
-  --mark-2: oklch(0.225 0.015 265);
-  --mark-3: oklch(0.63 0.02 255);
-}
+  --glow: rgb(79 70 229 / 0.12);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.185 0.015 265);
-    --foreground: oklch(0.945 0.006 90);
-    --ink-faint: oklch(0.665 0.018 265);
-    --hairline-soft: oklch(0.285 0.014 265);
+  /*
+   * The light that travels the panel's top hairline, and the one place the accent is
+   * carried near full strength. The glow's 0.12 is spread over 20rem and blurred; the
+   * same value drawn one pixel tall is not faint, it is absent — measured on the page at
+   * 0.4 the line could not be found at all. A pixel has no area to be loud with, so the
+   * alpha buys back what the height gives away. It is still not a stripe: a segment of a
+   * hairline, lit for as long as it takes to pass.
+   */
+  --edge-light: rgb(79 70 229 / 0.7);
 
-    --signal: oklch(0.7 0.14 259);
-    --signal-ink: oklch(0.8 0.09 259);
-    --signal-wash: oklch(0.7 0.14 259 / 0.16);
-    --signal-edge: oklch(0.7 0.14 259 / 0.4);
+  --radius: 0.5rem;
 
-    --alarm: oklch(0.685 0.17 27);
-    --alarm-ink: oklch(0.81 0.1 27);
-    --alarm-wash: oklch(0.685 0.17 27 / 0.16);
+  /*
+   * The one curve on the site, named once so that everything that moves is recognisably
+   * the same gesture. It is a hard ease-out — nearly all of the distance covered in the
+   * first third, then a long settle — which is what makes a 420ms entrance read as quick
+   * rather than slow. A second easing anywhere would be a second opinion about how this
+   * page moves; there is no bounce and no overshoot, because neither is true of paper or
+   * of software that is sure of itself.
+   */
+  --ease-rise: cubic-bezier(0.16, 1, 0.3, 1);
 
-    --card: oklch(0.225 0.016 265);
-    --muted: oklch(0.275 0.016 265);
-    --muted-foreground: oklch(0.745 0.016 265);
-    --border: oklch(0.345 0.014 265);
-    --input: oklch(0.545 0.016 265);
+  /*
+   * The second curve, and the last: **events rise, continuous motion drifts.** An
+   * ease-out is a curve for something that has just happened — it arrives fast and
+   * settles — and a loop eased that way lurches at every turn, because its start and its
+   * end are the same moment. This one is symmetric, so an ambient gesture leaves and
+   * returns at the same speed and has no edge to notice. It is spent on exactly two
+   * things, the capture's pan and the glow's breath; anything the reader is meant to read
+   * as a change — a quote arriving, a cell becoming the answer — keeps `--ease-rise`.
+   */
+  --ease-drift: cubic-bezier(0.45, 0, 0.55, 1);
 
-    --surface-shadow: none;
-
-    /* The mark as the source artwork draws it: sky blue, near-white, grey. */
-    --mark-1: oklch(0.74 0.15 240);
-    --mark-2: oklch(0.945 0.006 90);
-    --mark-3: oklch(0.63 0.02 255);
-  }
+  /*
+   * The three bars of the mark. They are tokens rather than literals in the SVG so the
+   * mark stays tied to the palette: change the ink or the accent here and the bars
+   * follow, instead of three hex values drifting out of the page they sit on.
+   */
+  --mark-1: var(--accent);
+  --mark-2: var(--foreground);
+  --mark-3: var(--muted-foreground);
 }
 
 @layer base {
@@ -163,16 +180,57 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  @media (min-width: 48rem) {
+    body {
+      font-size: 17px;
+    }
   }
 
   html {
     font-family: var(--font-sans);
+
+    /*
+     * Inter ships an optical-size axis, and `auto` is what spends it: the display line
+     * gets the tighter, higher-contrast cut and the 14px table gets the open one. It is
+     * the difference between a scaled face and a set one.
+     */
+    font-optical-sizing: auto;
+  }
+
+  /*
+   * Both calls to action are in-page jumps to the form. Smooth only where the reader has
+   * not asked for less motion — `no-preference` rather than a `reduce` override, so a
+   * browser that reports nothing gets the instant jump.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /*
+   * The parts of the page nobody draws. A selection highlight, a caret, a checkbox tick
+   * and an underline's clearance all ship with a default that belongs to no design
+   * system, and leaving them is the cheapest way to look assembled rather than built.
+   */
+  ::selection {
+    background-color: var(--accent-wash);
+    color: var(--foreground);
+  }
+
+  :root {
+    accent-color: var(--accent);
+    text-underline-offset: 0.2em;
   }
 
   /*
    * The focus ring for everything that does not draw its own. Solid, not a wash: at half
-   * strength signal measures under the 3:1 SC 1.4.11 asks of anything carrying
-   * information, in *both* themes.
+   * strength the accent measures under the 3:1 SC 1.4.11 asks of anything carrying
+   * information, in *both* readings.
    */
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -182,21 +240,38 @@
 
 @layer components {
   /*
-   * The three voices this page has. The app's scale is five tiers deep because a screen
-   * has to be navigated; a page with four parts needs a headline, a heading and body,
-   * and the tiers are sized so that the Han reading — which is denser per line and has no
-   * 400/700 contrast to spend — opens its leading rather than its size.
+   * The voices this page has. Four tiers, no eyebrow — a label over a heading is a
+   * heading that did not trust itself. The tiers are sized so that the Han reading —
+   * which is denser per line and has no 400/700 contrast to spend — opens its leading
+   * rather than its size.
+   *
+   * The display tier is fluid: the measure is `max-w-6xl`, and a headline set at one
+   * size for a 390px phone and a 1280px desk is either a shout on the phone or a whisper
+   * on the desk.
    */
   .type-display {
-    font-size: 2rem;
-    line-height: 1.2;
-    font-weight: 700;
+    /* 36px at 390, 64px at 1440, and neither end reached by accident. */
+    font-size: clamp(2.25rem, 1.6rem + 2.67vw, 4rem);
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+
+  /*
+   * Capped at 36px, which is a full step under the display line at every width. A section
+   * heading that can reach 40px on a wide screen is a second display tier, and a page
+   * with two display tiers has none.
+   */
+  .type-heading {
+    font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.25rem);
+    line-height: 1.1;
+    font-weight: 600;
     letter-spacing: -0.02em;
   }
 
   .type-section {
     font-size: 1.25rem;
-    line-height: 1.35;
+    line-height: 1.3;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
@@ -204,25 +279,523 @@
   .type-quiet {
     font-size: 0.875rem;
     line-height: 1.6;
-    color: var(--ink-faint);
+    color: var(--muted-foreground);
   }
 
+  /*
+   * Han takes its tracking back at every tier and opens its leading instead. Negative
+   * letter-spacing on Han is the thing that makes a line look machine-set rather than
+   * typeset, and there is no uppercase anywhere on this page to suppress.
+   */
   :lang(zh-Hans) .type-display {
     letter-spacing: 0;
-    line-height: 1.35;
+    line-height: 1.25;
   }
 
+  :lang(zh-Hans) .type-heading,
   :lang(zh-Hans) .type-section {
     letter-spacing: 0;
-    line-height: 1.5;
+    line-height: 1.45;
+  }
+
+  :lang(zh-Hans) .type-quiet {
+    letter-spacing: 0;
+    line-height: 1.7;
+  }
+
+  /*
+   * The hero arriving rather than being already there. Opacity and a 12px lift only —
+   * nothing moves sideways, nothing scales — and the stagger is an `animation-delay` on
+   * each child rather than a sequence, so the whole thing is over in under half a second
+   * and a reader who scrolls immediately never sees it running. It happens once, in the
+   * hero, and nothing else on the page animates in.
+   */
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .rise {
+    animation: rise 420ms var(--ease-rise) both;
+  }
+
+  .rise-1 {
+    animation-delay: 60ms;
+  }
+
+  .rise-2 {
+    animation-delay: 120ms;
+  }
+
+  .rise-3 {
+    animation-delay: 180ms;
+  }
+
+  .rise-4 {
+    animation-delay: 240ms;
+  }
+
+  /* The product panel, last, so the page assembles top-down and ends on the thing it is about. */
+  .rise-5 {
+    animation-delay: 300ms;
+  }
+
+  /*
+   * The Quotes sheet assembling itself, once, as the page's one focal moment.
+   *
+   * The panel arrives at 300ms and has finished by 720ms; from there the sheet takes until
+   * about 2.2s to tell the product's story in the order it actually happens — **quotes
+   * arrive, one is chosen per Item, the Bid is derived** — and then hands the sheet over to
+   * its living cycle, which goes on telling that story a quote at a time with the stagger
+   * taken out (`components/quotes-sheet.tsx`). It is the only thing on the site that is a
+   * sequence rather than an entrance, and it earns that by being the thing the page is
+   * about. What is timed below is the assemble alone.
+   *
+   * The clock, once, in one place: the three supplier columns land at 520/640/760ms and
+   * each takes 360ms, so the last amount is down at 1120ms; the four chosen cells and their
+   * ticks begin at 1240/1320/1400/1480ms, and the last tick has finished drawing at 1800ms;
+   * the Bid arrives at 1860ms and has settled at 2220ms. Nothing overlaps at a chosen cell:
+   * a cell is never still arriving when it is asked to become the answer.
+   *
+   * The amounts arrive **by supplier**, not by row and not all at once. A column at a
+   * time is what a tender actually looks like from the inside: a supplier comes back, and
+   * their whole quote lands. Row by row would draw a table being typed; all at once would
+   * say nothing at all. Everything else — the row headers, the column headers, the Bid
+   * row — is already there with the panel, so what moves is only the data.
+   *
+   * Nothing here animates a size, a margin or a position in the flow: opacity, a 4px
+   * lift, two colours and a stroke's dash offset, all of them compositable and none of
+   * them able to reflow the table under the reader's eye. The lift is 4px rather than the
+   * hero's 12 because these are twelve small things inside a frame, and the hero's throw
+   * at this scale reads as a jitter.
+   */
+  @keyframes quote-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /*
+   * `--col` is the supplier's index, set on each cell by the sheet. One class and one
+   * custom property rather than three classes, because the stagger is arithmetic and
+   * three hand-written delays are three numbers to keep in step with a fourth supplier.
+   */
+  .quote-cell {
+    animation: quote-arrive 360ms var(--ease-rise) both;
+    animation-delay: calc(520ms + var(--col) * 120ms);
+  }
+
+  /*
+   * Becoming the chosen Quote, starting 120ms after the last column has landed at 1120ms.
+   *
+   * The *from* state is not load-bearing: the chosen cell carries `text-muted-foreground`
+   * and no `font-medium` in its own class list, so before its moment it is styled exactly
+   * like an unselected cell by ordinary declarations, and the sheet shows twelve equal
+   * amounts whatever the keyframe does. What the keyframe adds is the crossing — animated
+   * values beat normal declarations, so the wash, the full ink and weight 500 win for the
+   * life of the animation and, on a `both` fill, for good afterwards. The weight is in
+   * here because Inter is a variable face, so 400 → 500 is a glide rather than a swap.
+   *
+   * The wash is 10% alpha, so mid-keyframe the ink and the weight are visibly ahead of it
+   * by a few frames — the number darkens a moment before its cell is seen to be tinted.
+   * That is accepted rather than stepped: splitting the wash onto its own earlier keyframe
+   * to hide it would be three animations on one cell to fix something nobody reads as a
+   * fault. The reduced-motion collapse below lands the cell on the end state with no delay.
+   */
+  @keyframes quote-choose {
+    from {
+      background-color: transparent;
+      color: var(--muted-foreground);
+      font-weight: 400;
+    }
+
+    to {
+      background-color: var(--accent-wash);
+      color: var(--foreground);
+      font-weight: 500;
+    }
+  }
+
+  /*
+   * Both animations on one cell: it keeps its place in the supplier stagger *and* takes
+   * the row stagger for being chosen. The shorthand resets `animation-delay`, so the two
+   * delays are restated as a list under it rather than folded into it.
+   */
+  .quote-cell-chosen {
+    animation:
+      quote-arrive 360ms var(--ease-rise) both,
+      quote-choose 300ms var(--ease-rise) both;
+    animation-delay:
+      calc(520ms + var(--col) * 120ms),
+      calc(1240ms + var(--row) * 80ms);
+  }
+
+  /*
+   * The tick drawing itself, with its cell rather than after it.
+   *
+   * `pathLength="1"` on the glyph is what makes this a single number instead of a measured
+   * one: the path is declared to be one unit long whatever its real geometry, so a dash of
+   * 1 offset by 1 hides it exactly and an offset of 0 shows all of it. The alternative is
+   * measuring `getTotalLength()` in JavaScript, which is a script to draw a tick.
+   *
+   * Nothing here is what tells a screen reader which Quote was chosen. The cell is a button
+   * carrying `aria-pressed`, true from the first render, so the state is announced with the
+   * control at the first word it reads rather than a second and a half into an animation it
+   * cannot see — and the tick is free to be what it looks like, a drawing.
+   */
+  @keyframes tick-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* The same base as the cell it sits in, so the four ticks draw on the rows' own beat. */
+  .tick-draw {
+    stroke-dasharray: 1;
+    animation: tick-draw 320ms var(--ease-rise) both;
+    animation-delay: calc(1240ms + var(--row) * 80ms);
+  }
+
+  /*
+   * The Bid, last, at 1860ms — 60ms after the fourth tick has finished drawing at 1800ms.
+   * It arrives whole, currency and figure in the one span, rather than counting: a counter
+   * needs a script and a clock of its own, and a total that rewinds to zero after the
+   * reader has seen it is a false total.
+   */
+  .bid-arrive {
+    animation: quote-arrive 360ms var(--ease-rise) both;
+    animation-delay: 1860ms;
+  }
+
+  /*
+   * The same sequence's vocabulary, without the clock — the sheet's **living** state.
+   *
+   * Once the assemble has finished at 2220ms the sheet keeps working: a supplier re-quotes,
+   * the row recounts, and the Bid follows (`components/quotes-sheet.tsx` holds the script
+   * and the timer). Those are events, not ambience, so they keep `--ease-rise` and the
+   * three keyframes the assemble already wrote. What they drop is the stagger: a cell that
+   * arrives twenty seconds in is not the third supplier's column landing, it is one number
+   * changing, and a `--col` delay would leave it blank for most of a second first.
+   *
+   * A cell is re-run by being remounted under a new React key rather than by having a class
+   * toggled, because restarting a finished CSS animation on a live node is a trick; a new
+   * node simply plays it. The one thing that *is* toggled is the choosing, since the cell
+   * that loses the tick has not otherwise changed: it takes `quote-choose` in `reverse`,
+   * which is the same 300ms crossing walked backwards rather than a second keyframe.
+   */
+  .quote-refresh {
+    animation: quote-arrive 360ms var(--ease-rise) both;
+  }
+
+  .quote-choose-live {
+    animation: quote-choose 300ms var(--ease-rise) both;
+  }
+
+  .quote-unchoose {
+    animation: quote-choose 300ms var(--ease-rise) reverse both;
+  }
+
+  /* The shorthand is one list, so a cell doing both states them together, as the assemble does. */
+  .quote-refresh.quote-choose-live {
+    animation:
+      quote-arrive 360ms var(--ease-rise) both,
+      quote-choose 300ms var(--ease-rise) both;
+  }
+
+  .quote-refresh.quote-unchoose {
+    animation:
+      quote-arrive 360ms var(--ease-rise) both,
+      quote-choose 300ms var(--ease-rise) reverse both;
+  }
+
+  .tick-draw-live {
+    stroke-dasharray: 1;
+    animation: tick-draw 320ms var(--ease-rise) both;
+  }
+
+  /*
+   * The two ambient gestures: the page moving while the reader is not.
+   *
+   * Everything above is an event — it happens once, because something happened. These two
+   * are the opposite, and are the only loops on the site: a capture that pans as if
+   * somebody were idly scrolling it, and a light that breathes behind the panel. They are
+   * slow enough (16s and 18s) that neither is a thing you watch; they are there so that a
+   * still page is not a dead one, which is the whole of what Stripe's and Apple's panels
+   * are doing.
+   *
+   * Both are stopped rather than merely slowed when nobody is looking: `components/ambient-stage.tsx`
+   * marks the panel `stage-still` when it leaves the viewport or the tab is hidden, and the
+   * reduced-motion block below removes them outright. A loop is the one kind of motion that
+   * cannot be allowed to run unwatched, because it never ends by itself.
+   */
+  @keyframes capture-pan {
+    0%,
+    10% {
+      transform: none;
+    }
+
+    90%,
+    100% {
+      transform: translateY(calc(-1 * var(--pan-distance)));
+    }
+  }
+
+  /*
+   * 16s a pass on `alternate`, so the travel takes 12.8s each way and the capture rests for
+   * 3.2s at each end — the pause is in the keyframes rather than in a delay, because a delay
+   * only ever holds the first pass. The distance is deliberately short: this is a thumb
+   * resting on a screen, not a tour of the app.
+   */
+  .capture-pan {
+    --pan-distance: 2rem;
+    animation: capture-pan 16s var(--ease-drift) infinite alternate;
+    will-change: transform;
+  }
+
+  /*
+   * Under the 390px the page is drawn for, the capture is narrow enough that the
+   * screenshot barely overtops its frame, and a pan would scroll past the end of the image
+   * and show bare bezel. It holds still instead: the distance is what is dropped, not the
+   * animation, so there is one rule to read rather than a second breakpoint's worth.
+   */
+  @media (max-width: 23.5rem) {
+    .capture-pan {
+      --pan-distance: 0px;
+    }
+  }
+
+  @keyframes glow-drift {
+    from {
+      opacity: 0.8;
+      transform: translateX(-2%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(2%);
+    }
+  }
+
+  /*
+   * 18s, and 4% of travel across a light that is already 20rem wide and blurred — under a
+   * stare it is barely there, which is the point. A glow that pulsed visibly would be the
+   * second saturated thing above the fold, and the accent is spent.
+   */
+  .glow-drift {
+    animation: glow-drift 18s var(--ease-drift) infinite alternate;
+  }
+
+  /*
+   * The two things the panel's beat draws that are *not* on the sheet.
+   *
+   * Both are events rather than ambience — they happen because a quote landed — so both
+   * take `--ease-rise` and neither loops: they are mounted on the beat by
+   * `components/panel-glow.tsx` and `components/phone-notice.tsx`, play once, and are over
+   * well inside the four seconds before the next one. There is no third easing and no
+   * fourth loop; the panel learns no new gesture, it just has two more places to make the
+   * one it has.
+   */
+
+  /*
+   * The light lifting when something lands. It is drawn on the *inner* of the glow's two
+   * elements, so the 18s breath on the outer one is never restarted; the two opacities and
+   * the two transforms simply compose. The resting 0.92 is what makes a lift possible at
+   * all — opacity has no headroom above 1, so the glow sits a hair under full and the beat
+   * is it returning there. Nobody watching the panel will be able to say what moved, which
+   * is the correct amount for a light behind a page.
+   */
+  @keyframes glow-beat {
+    from {
+      opacity: 0.92;
+      transform: scale(1);
+    }
+
+    30% {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+
+    to {
+      opacity: 0.92;
+      transform: scale(1);
+    }
+  }
+
+  .glow-beat {
+    animation: glow-beat 1400ms var(--ease-rise) both;
+  }
+
+  /*
+   * The Reminder arriving on the phone. It comes down from off the top of the screen the
+   * way a phone's own banner does, holds for two thirds of the beat — long enough to read
+   * eight words at that size — and then goes by fading rather than by sliding back up: a
+   * notification that leaves the way it came in reads as a mistake being undone, and this
+   * one is not undone, it is simply no longer new. Held in the keyframes rather than in a
+   * delay, because the element is mounted on the beat and a delay would only ever be a
+   * banner sitting invisibly on the screen waiting for its turn.
+   */
+  @keyframes notice-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(-150%);
+    }
+
+    12% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    78% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(0);
+    }
+  }
+
+  .notice-arrive {
+    animation: notice-arrive 3400ms var(--ease-rise) both;
+  }
+
+  /*
+   * The light travelling the panel's top edge.
+   *
+   * The third ambient loop, and it is the page's own hairline being lit rather than a new
+   * thing to look at: the panel is told apart from the page by one 8% rule, and this is a
+   * segment of that rule brightening as it passes and leaving it exactly as it was. It
+   * takes twenty seconds to cross, which is slower than either of the other two loops on
+   * purpose — the capture pans because somebody is reading it and the glow breathes behind
+   * it, while this one is the panel simply being made of something.
+   *
+   * `alternate` rather than a wrap, for the same reason as the other two: a segment that
+   * runs off the right edge and reappears on the left has a seam in it, and there is no
+   * moment in a drift that is allowed to be an event. Travel is stated in percentages of
+   * the segment's own width so the gesture is the same at every panel width.
+   */
+  @keyframes edge-travel {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(230%);
+    }
+  }
+
+  .edge-light {
+    animation: edge-travel 20s var(--ease-drift) infinite alternate;
+  }
+
+  .stage-still .capture-pan,
+  .stage-still .edge-light,
+  .stage-still .glow-drift,
+  .stage-still .glow-beat,
+  .stage-still .notice-arrive {
+    animation-play-state: paused;
+  }
+
+  /*
+   * A section waiting to be scrolled to — and the only state on the site that hides
+   * anything. It is set by `components/reveal.tsx` after hydration and only on a block
+   * that was off screen when the observer first looked, which is why it is safe for it to
+   * be opacity zero: nothing the reader can see is ever taken away, and the server never
+   * renders this class at all.
+   */
+  .reveal-out {
+    opacity: 0;
+    transform: translateY(12px);
   }
 }
 
+/*
+ * The one switch that turns all of it off, and it is a collapse rather than a removal.
+ *
+ * Every animation on the site is written `both`, so squashing it to an instant with no
+ * delay lands each element on its keyframe's end state — the amount visible, the cell
+ * washed, the tick drawn, the section in place — instead of leaving a page of invisible
+ * things. `animation-iteration-count` is pinned to 1 because a duration of 0.01ms is not
+ * a stop: anything that repeated would repeat thousands of times a second, which is the
+ * one outcome worse than the motion the reader asked to be spared.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /*
+   * The two loops are removed rather than collapsed. Squashing a finite gesture to an
+   * instant lands it on its end state, which is where it was going anyway; doing that to a
+   * loop would land the capture panned forty pixels off its top and the glow parked at one
+   * end of its travel, which is not a still page, it is a page stopped mid-gesture.
+   * `animation: none` leaves both exactly where the stylesheet put them. The panel's beat
+   * is not a stylesheet's business: `components/ambient-stage.tsx` reads the same query and
+   * never starts its clock, so the turn stays 0 — which is also why `glow-beat` and
+   * `notice-arrive` need no rule here. Nothing ever mounts an element carrying them.
+   */
+  .capture-pan,
+  .edge-light,
+  .glow-drift {
+    animation: none !important;
+  }
+}
+
+/*
+ * Paper has no first paint and no viewport, so nothing on it may be mid-gesture. A print
+ * stylesheet that forgot this is the reason pages come out of printers with holes in
+ * them: an element left at the start of an entrance, or a section the observer decided
+ * was off screen, is simply missing from the sheet.
+ */
+@media print {
+  .rise,
+  .reveal-out,
+  .quote-cell,
+  .quote-cell-chosen,
+  .quote-refresh,
+  .quote-choose-live,
+  .quote-unchoose,
+  .tick-draw,
+  .tick-draw-live,
+  .bid-arrive,
+  .capture-pan,
+  .edge-light,
+  .glow-drift,
+  .glow-beat,
+  .notice-arrive {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .quote-cell-chosen,
+  .quote-choose-live {
+    background-color: var(--accent-wash) !important;
+    color: var(--foreground) !important;
+    font-weight: 500 !important;
   }
 }

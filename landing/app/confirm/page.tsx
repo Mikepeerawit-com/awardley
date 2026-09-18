@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { ConfirmPanel } from "@/components/confirm-panel";
 import { Footer } from "@/components/footer";
-import { Wordmark } from "@/components/mark";
+import { SiteHeader } from "@/components/site-header";
 import { confirmStep, type ConfirmStatus } from "@/lib/confirm";
 import { readSettings } from "@/lib/env";
 
@@ -42,14 +41,10 @@ export default async function ConfirmPage({ searchParams }: PageProps<"/confirm"
 
   return (
     <>
-      <main className="flex-1">
-        <div className="mx-auto w-full max-w-3xl px-5">
-          <header className="pt-group pb-landmark">
-            <Link href="/">
-              <Wordmark name="Awardley" />
-            </Link>
-          </header>
+      <SiteHeader />
 
+      <main className="flex-1">
+        <div className="mx-auto w-full max-w-3xl px-5 pt-landmark">
           <ConfirmPanel token={token} initial={await inspect(token)} />
         </div>
       </main>

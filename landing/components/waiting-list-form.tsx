@@ -18,6 +18,12 @@ import { SubmitButton } from "@/components/submit-button";
  * the bait. `website` is the name because that is the field these things most reliably
  * want to fill.
  *
+ * **It stands on the page's own ground now**, not on a coloured band, so it dresses like
+ * everything else: the field is the page background inside a `--input` edge — a full step
+ * darker than the hairline, because SC 1.4.11 asks 3:1 of anything you can operate and a
+ * hairline that passed it would draw a wireframe everywhere else — and the notice and the
+ * error take the page's muted ink and its danger ink rather than an alpha off white.
+ *
  * **Success and silence look the same.** `sent` is what comes back from a real send, a
  * filled honeypot, a BotID flag and a Resend outage alike; the only other answer is
  * `invalid`, which is about the shape of what was typed and gives nothing away about
@@ -31,8 +37,11 @@ export function WaitingListForm() {
 
   if (state.status === "sent") {
     return (
+      // `rise` because a reply is an arrival: the form was there and now this is, and the
+      // one gesture the page has is what says so. Same 420ms and same curve as the hero,
+      // with no delay — there is nothing for it to stagger against.
       <p
-        className="rounded-surface border border-signal-edge bg-signal-wash px-4 py-3 text-signal-ink"
+        className="rise rounded-xl border border-border bg-card px-4 py-3 text-pretty"
         role="status"
       >
         {t("success")}
@@ -57,7 +66,7 @@ export function WaitingListForm() {
           placeholder={t("emailPlaceholder")}
           aria-invalid={state.status === "invalid"}
           aria-describedby={state.status === "idle" ? undefined : "waiting-list-message"}
-          className="min-w-0 flex-1 rounded-control border border-input bg-background px-3.5 py-2.5 outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+          className="h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3.5 text-base text-left outline-none placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
         />
 
         <SubmitButton
@@ -77,14 +86,17 @@ export function WaitingListForm() {
       </div>
 
       {state.status !== "idle" && (
-        <p id="waiting-list-message" role="alert" className="text-sm text-alarm-ink">
+        <p id="waiting-list-message" role="alert" className="text-sm text-danger">
           {t(state.status === "invalid" ? "invalid" : "failed")}
         </p>
       )}
 
-      <p className="type-quiet">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         {t("privacyNote")}{" "}
-        <Link href="/privacy" className="underline underline-offset-2">
+        <Link
+          href="/privacy"
+          className="text-foreground underline decoration-border transition-colors duration-200 hover:decoration-foreground"
+        >
           {t("privacyLink")}
         </Link>
       </p>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fira_Code, Fira_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
@@ -7,7 +7,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 /**
- * The same two faces the app loads, for the same reasons and with the same subset.
+ * One face, and only its Latin.
  *
  * `subsets: ["latin"]` is the whole of what is fetched. A Han face cannot be subset —
  * there is no 100-glyph slice of a script with tens of thousands of characters — so the
@@ -15,20 +15,20 @@ import "./globals.css";
  * reached over a phone network in China, that is the difference between a page and a
  * download.
  *
- * Fewer weights than the app carries: this site has a headline, a heading and body, and
- * the 500 the app spends on its middle tiers has nothing to do here.
+ * Inter, variable, with its optical-size axis. No `weight` array: a variable font is one
+ * file that answers every weight this page asks for, so listing five of them would fetch
+ * five static cuts instead. `axes: ["opsz"]` is what keeps `font-optical-sizing: auto`
+ * in `globals.css` from being a no-op — without the axis in the fetched file the 64px
+ * display line and the 14px table cell are the same drawing at two sizes.
+ *
+ * It replaces Plus Jakarta Sans, which replaced Fira. Fira is the app's face and reads
+ * as a console at display sizes; Jakarta has a humanist wobble that shows up at 64px.
+ * The bar for this page is Linear and Stripe, and Inter is what that bar is set in.
  */
-const firaSans = Fira_Sans({
-  variable: "--font-fira-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  display: "swap",
-});
-
-const firaCode = Fira_Code({
-  variable: "--font-fira-code",
-  subsets: ["latin"],
-  weight: ["400"],
+  axes: ["opsz"],
   display: "swap",
 });
 
@@ -45,11 +45,9 @@ export async function generateMetadata(): Promise<Metadata> {
  * **There is no theme class here, and that is the difference from the app.**
  *
  * The app writes `dark`, `theme-system` or nothing onto `<html>` from the server's first
- * byte, because a reader can pin a theme in Preferences and the server is the only thing
- * that can answer before the first paint. Nothing on this site can be pinned: there is
- * no account to remember it on. So the site has only the app's *System* reading, which
- * `globals.css` answers with a `prefers-color-scheme` media query — settled before the
- * first paint rather than corrected after it, and with no script involved.
+ * byte, because a reader can pin a theme in Preferences (ADR-0024). This site is light
+ * only, so there is nothing to write: `color-scheme: light` in `globals.css` settles the
+ * canvas and the native controls before the first paint, with no class and no script.
  */
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
@@ -57,7 +55,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={locale}
-      className={`${firaSans.variable} ${firaCode.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

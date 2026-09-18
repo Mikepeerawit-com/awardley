@@ -342,25 +342,32 @@ function Problem() {
           {points.map(({ key, Trace }) => (
             <article
               key={key}
-              className="grid gap-1 border-t border-border py-5 md:grid-cols-[minmax(0,26ch)_minmax(0,1fr)] md:gap-8"
+              className="grid gap-x-8 border-t border-border py-5 md:grid-cols-[minmax(0,26ch)_minmax(0,1fr)] lg:grid-cols-[minmax(0,26ch)_minmax(0,1fr)_minmax(0,24rem)]"
             >
               <h3 className="font-semibold text-pretty">{t(`points.${key}.title`)}</h3>
 
-              <div>
-                <p className="text-pretty text-muted-foreground">{t(`points.${key}.body`)}</p>
+              {/*
+                The three cells are siblings rather than a title beside a nested block,
+                because at `lg` the trace becomes a column of its own and a child cannot
+                leave its parent to do that. The row gap is therefore 0 and each cell sets
+                its own top margin: the grid decides the columns, the margins decide the
+                stacked rhythm, and neither is added to the other at any width.
+              */}
+              <p className="mt-1 text-pretty text-muted-foreground md:mt-0">
+                {t(`points.${key}.body`)}
+              </p>
 
-                {/*
-                  `field` rather than `label` between the sentence and the plate, for the
-                  reason the how-it-works column puts `group` under its specimen: at the 8px
-                  that binds a heading to its paragraph the trace read as the paragraph's
-                  own last line, and it is the thing the paragraph is about. `sm` is a
-                  measure a two-column plate can be read at rather than a width — the row's
-                  right-hand cell is over 60ch on a desk, and a trace stretched across it
-                  would be a table.
-                */}
-                <div className="mt-field max-w-sm">
-                  <Trace />
-                </div>
+              {/*
+                Under the sentence up to `md`, beside it from `lg`. Stacked, `field` rather
+                than `label` holds it off the sentence, for the reason the how-it-works
+                column puts `group` under its specimen: at the 8px that binds a heading to
+                its paragraph the trace read as the paragraph's own last line, and it is
+                the thing the paragraph is about. Beside, it needs neither — the column gap
+                is the separation, and the third column is the measure `sm` was standing in
+                for, so the row fills the width the hairline above it already draws.
+              */}
+              <div className="mt-field max-w-sm md:col-start-2 lg:col-start-3 lg:row-start-1 lg:mt-0 lg:max-w-none">
+                <Trace />
               </div>
             </article>
           ))}

@@ -5,9 +5,9 @@
  * rounded ends, on a 24-unit square. It reads as a list getting shorter, which is the
  * one thing this app does to a pile of Quotes.
  *
- * **Inline rather than a file**, because the middle bar has to change colour with the
- * theme: it is the page's ink, and ink on a near-black ground is the opposite of ink on
- * white. The three bars are the accent, the ink and the muted ink — `--mark-1..3` in
+ * **Inline rather than a file**, so the bars are drawn from the palette rather than
+ * baked in: the middle bar is the page's ink, and it should stay the page's ink if that
+ * ever moves. The three bars are the accent, the ink and the muted ink — `--mark-1..3` in
  * `globals.css`, aliases onto the palette rather than three more colours, so the mark
  * cannot drift away from the page it sits on.
  *

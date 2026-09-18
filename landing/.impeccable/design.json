@@ -4,19 +4,19 @@
   "title": "Design System: Awardley landing",
   "extensions": {
     "colorMeta": {
-      "accent": { "role": "primary", "displayName": "Indigo", "canonical": "light-dark(#4f46e5, #818cf8)", "tonalRamp": ["oklch(20% 0.12 275)", "oklch(30% 0.16 275)", "oklch(40% 0.19 275)", "oklch(51% 0.22 275)", "oklch(62% 0.18 275)", "oklch(73% 0.13 275)", "oklch(85% 0.07 275)", "oklch(95% 0.02 275)"] },
-      "accent-wash": { "role": "primary", "displayName": "Indigo Wash", "canonical": "light-dark(rgb(79 70 229 / 0.1), rgb(129 140 248 / 0.14))" },
-      "accent-edge": { "role": "primary", "displayName": "Indigo Edge", "canonical": "light-dark(rgb(79 70 229 / 0.4), rgb(129 140 248 / 0.45))" },
-      "glow": { "role": "primary", "displayName": "Indigo Glow", "canonical": "light-dark(rgb(79 70 229 / 0.12), rgb(129 140 248 / 0.26))" },
-      "accent-foreground": { "role": "primary", "displayName": "Ink on Indigo", "canonical": "light-dark(#ffffff, #0a0a0b)" },
-      "background": { "role": "neutral", "displayName": "Paper / Near-black", "canonical": "light-dark(#ffffff, #0a0a0b)", "tonalRamp": ["#0a0a0b", "#121214", "#2b2b31", "#5f6368", "#767676", "#9a9ba1", "#e6e6e9", "#fafafa"] },
-      "card": { "role": "neutral", "displayName": "Alternate", "canonical": "light-dark(#fafafa, #121214)" },
-      "foreground": { "role": "neutral", "displayName": "Ink", "canonical": "light-dark(#0a0a0a, #ededef)" },
-      "muted-foreground": { "role": "neutral", "displayName": "Muted Ink", "canonical": "light-dark(#5f6368, #9a9ba1)" },
-      "border": { "role": "neutral", "displayName": "Hairline", "canonical": "light-dark(rgb(10 10 10 / 0.08), rgb(255 255 255 / 0.09))" },
-      "input": { "role": "neutral", "displayName": "Control Edge", "canonical": "light-dark(#767676, rgb(255 255 255 / 0.42))" },
-      "device-edge": { "role": "neutral", "displayName": "Device Edge", "canonical": "light-dark(#e6e6e9, #2b2b31)" },
-      "danger": { "role": "neutral", "displayName": "Danger", "canonical": "light-dark(#b91c1c, #f87171)" }
+      "accent": { "role": "primary", "displayName": "Indigo", "canonical": "#4f46e5", "tonalRamp": ["oklch(20% 0.12 275)", "oklch(30% 0.16 275)", "oklch(40% 0.19 275)", "oklch(51% 0.22 275)", "oklch(62% 0.18 275)", "oklch(73% 0.13 275)", "oklch(85% 0.07 275)", "oklch(95% 0.02 275)"] },
+      "accent-wash": { "role": "primary", "displayName": "Indigo Wash", "canonical": "rgb(79 70 229 / 0.1)" },
+      "accent-edge": { "role": "primary", "displayName": "Indigo Edge", "canonical": "rgb(79 70 229 / 0.4)" },
+      "glow": { "role": "primary", "displayName": "Indigo Glow", "canonical": "rgb(79 70 229 / 0.12)" },
+      "accent-foreground": { "role": "primary", "displayName": "Ink on Indigo", "canonical": "#ffffff" },
+      "background": { "role": "neutral", "displayName": "Paper", "canonical": "#ffffff", "tonalRamp": ["#0a0a0b", "#121214", "#2b2b31", "#5f6368", "#767676", "#9a9ba1", "#e6e6e9", "#fafafa"] },
+      "card": { "role": "neutral", "displayName": "Alternate", "canonical": "#fafafa" },
+      "foreground": { "role": "neutral", "displayName": "Ink", "canonical": "#0a0a0a" },
+      "muted-foreground": { "role": "neutral", "displayName": "Muted Ink", "canonical": "#5f6368" },
+      "border": { "role": "neutral", "displayName": "Hairline", "canonical": "rgb(10 10 10 / 0.08)" },
+      "input": { "role": "neutral", "displayName": "Control Edge", "canonical": "#767676" },
+      "device-edge": { "role": "neutral", "displayName": "Device Edge", "canonical": "#e6e6e9" },
+      "danger": { "role": "neutral", "displayName": "Danger", "canonical": "#b91c1c" }
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "The hero headline only; 36px at 390, 64px at 1440. Han: tracking 0, leading 1.25." },
@@ -40,7 +40,13 @@
       { "name": "hover-opacity", "value": "opacity 200ms (150ms in the bar), to 0.9", "purpose": "Filled button hover." },
       { "name": "hover-color", "value": "color / background-color 200ms", "purpose": "Ghost button, nav and footer links, underline decoration." },
       { "name": "smooth-scroll", "value": "scroll-behavior: smooth under prefers-reduced-motion: no-preference only", "purpose": "In-page jumps to #how and #waiting-list." },
-      { "name": "reduced-motion", "value": "animation-duration 0.01ms, animation-delay 0ms, transition-duration 0.01ms, !important, on *", "purpose": "Collapses everything under prefers-reduced-motion: reduce." }
+      { "name": "ease-rise", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Every event: entrances, quote arrivals, a cell becoming the answer. Events rise." },
+      { "name": "ease-drift", "value": "cubic-bezier(0.45, 0, 0.55, 1)", "purpose": "The two ambient loops only — the capture's pan and the glow's breath. Continuous motion drifts." },
+      { "name": "quotes-cycle", "value": "4 moves, one every 4000ms, 16s a cycle, starting 2220ms after mount", "purpose": "The living Quotes sheet: a supplier re-quotes, the row's lowest recounts, the Bid follows. quote-arrive / quote-choose / tick-draw with no stagger; components/quotes-sheet.tsx." },
+      { "name": "capture-pan", "value": "translateY(0 -> -2rem), 16s ease-drift infinite alternate, 10% held at each end", "purpose": "The phone capture panning inside its fixed-height frame, as if somebody were idly scrolling it." },
+      { "name": "glow-drift", "value": "translateX(-2% -> 2%) with opacity 0.8 -> 1, 18s ease-drift infinite alternate", "purpose": "The light behind the product panel breathing; barely perceptible under a stare." },
+      { "name": "stage-still", "value": "animation-play-state: paused on .capture-pan and .glow-drift", "purpose": "components/ambient-stage.tsx marks the panel still when it is off screen or the tab is hidden; the sheet's cycle clears its timer on the same two conditions." },
+      { "name": "reduced-motion", "value": "animation-duration 0.01ms, animation-delay 0ms, transition-duration 0.01ms, !important, on *; animation: none on the two loops", "purpose": "Collapses every finite gesture onto its end state and removes the loops outright; the sheet's clock never starts." }
     ],
     "breakpoints": [
       { "name": "sm", "value": "640px" },
@@ -48,113 +54,53 @@
       { "name": "lg", "value": "1024px" }
     ],
     "theme": {
-      "mechanism": "color-scheme: light dark on :root; every colour a light-dark() pair; no theme class, no toggle, no dark: variants.",
-      "preview": "document.documentElement.dataset.theme = \"light\" | \"dark\" sets color-scheme for the Lightning CSS polyfill; nothing in the site sets it.",
-      "browserSurfaces": {
-        "selection": "background accent-wash, color foreground",
-        "accentColor": "accent",
-        "textUnderlineOffset": "0.2em",
-        "focusVisible": "outline 2px solid var(--ring); outline-offset 2px"
-      }
+      "mechanism": "The site is light only: color-scheme: light on :root and every colour stated once as a plain value; no theme class, no toggle, no dark: variants.",
+      "preview": "Nothing to preview: there is one reading, and no theme attribute or class the site or a reviewer can set.",
+      "browserSurfaces": { "selection": "background accent-wash, color foreground", "accentColor": "accent", "textUnderlineOffset": "0.2em", "focusVisible": "outline 2px solid var(--ring); outline-offset 2px" }
     },
     "constraints": [
       "No CJK webfont may be fetched; Han is the device stack.",
       ":lang(zh-Hans) overrides (tracking 0, open leading, no uppercase) must survive any redesign.",
       "ADR-0035: no price, no signup link, only https://app.awardley.com/login, waiting list only, nothing stored before confirm.",
       "The 390px layout suite must pass in both locales; every rendered component is sync.",
-      "Both themes are judged; the site follows the device."
+      "The site is light only; there is no dark reading and no theme switch."
     ]
   },
   "components": [
-    {
-      "name": "Primary Button",
-      "kind": "button",
-      "refersTo": "button-primary",
-      "description": "The accent spent once: the hero's call to action and the form's submit.",
-      "html": "<a class=\"ds-btn-primary\" href=\"#\">Join the waiting list</a>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px; border-radius: var(--radius-lg, 0.5rem); background: var(--accent); color: var(--accent-foreground); font: 500 16px/1.6 var(--font-sans); text-decoration: none; transition: opacity 200ms; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.7; }"
-    },
-    {
-      "name": "Ghost Button",
-      "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "The findable door that must not compete: Sign in beside the primary.",
-      "html": "<a class=\"ds-btn-ghost\" href=\"#\">Sign in</a>",
-      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px; border-radius: var(--radius-lg, 0.5rem); border: 1px solid var(--border); background: transparent; color: var(--foreground); font: 500 16px/1.6 var(--font-sans); text-decoration: none; transition: background-color 200ms; } .ds-btn-ghost:hover { background: var(--card); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
-    },
-    {
-      "name": "Bar Button",
-      "kind": "button",
-      "refersTo": "button-bar",
-      "description": "The sticky bar's 36px copy of the primary; hidden on the home page while the hero's primary is on screen.",
-      "html": "<a class=\"ds-btn-bar\" href=\"#\">Join the waiting list</a>",
-      "css": ".ds-btn-bar { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; white-space: nowrap; border-radius: var(--radius-lg, 0.5rem); background: var(--accent); color: var(--accent-foreground); font: 500 14px/1.6 var(--font-sans); text-decoration: none; transition: opacity 150ms; } .ds-btn-bar:hover { opacity: 0.9; } .ds-btn-bar:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
-    },
-    {
-      "name": "Email Field",
-      "kind": "input",
-      "refersTo": "input-email",
-      "description": "The one text field on the site, edged with the control edge rather than the hairline.",
-      "html": "<input class=\"ds-input-email\" type=\"email\" placeholder=\"you@company.com\">",
-      "css": ".ds-input-email { height: 44px; min-width: 0; padding: 0 14px; border-radius: var(--radius-lg, 0.5rem); border: 1px solid var(--input); background: var(--background); color: var(--foreground); font: 400 16px/1.6 var(--font-sans); outline: none; } .ds-input-email::placeholder { color: var(--muted-foreground); } .ds-input-email:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }"
-    },
-    {
-      "name": "Site Bar",
-      "kind": "nav",
-      "refersTo": "nav-link",
-      "description": "Sticky glass bar: wordmark left, two quiet links and the bar button right. No menu.",
-      "html": "<header class=\"ds-bar\"><span class=\"ds-wordmark\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"3.6\" rx=\"1.8\" fill=\"var(--accent)\"/><rect x=\"2\" y=\"10.2\" width=\"14.3\" height=\"3.6\" rx=\"1.8\" fill=\"var(--foreground)\"/><rect x=\"2\" y=\"15.4\" width=\"11.4\" height=\"3.6\" rx=\"1.8\" fill=\"var(--muted-foreground)\"/></svg>Awardley</span><nav class=\"ds-bar-links\"><a class=\"ds-nav-link\" href=\"#\">How it works</a><a class=\"ds-nav-link\" href=\"#\">Sign in</a><a class=\"ds-btn-bar\" href=\"#\">Join the waiting list</a></nav></header>",
-      "css": ".ds-bar { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; height: 64px; padding: 0 32px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--background) 80%, transparent); backdrop-filter: blur(8px); } .ds-wordmark { display: inline-flex; align-items: center; gap: 10px; font: 600 1.0625rem/1.6 var(--font-sans); letter-spacing: -0.015em; color: var(--foreground); } .ds-bar-links { display: flex; align-items: center; gap: 8px; } .ds-nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: var(--radius-lg, 0.5rem); color: var(--muted-foreground); font: 500 14px/1.6 var(--font-sans); text-decoration: none; transition: color 200ms; } .ds-nav-link:hover { color: var(--foreground); } .ds-nav-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; } .ds-btn-bar { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: var(--radius-lg, 0.5rem); background: var(--accent); color: var(--accent-foreground); font: 500 14px/1.6 var(--font-sans); text-decoration: none; transition: opacity 150ms; } .ds-btn-bar:hover { opacity: 0.9; }"
-    },
-    {
-      "name": "Product Panel",
-      "kind": "card",
-      "refersTo": "panel-product",
-      "description": "The 16px container on the alternate ground with the glow behind it; the only container that holds other things.",
-      "html": "<div class=\"ds-panel-wrap\"><div class=\"ds-panel-glow\"></div><div class=\"ds-panel\"><p class=\"ds-panel-caption\">Example data</p><div class=\"ds-panel-inset\">Inset sheet</div></div></div>",
-      "css": ".ds-panel-wrap { position: relative; padding-top: 40px; } .ds-panel-glow { position: absolute; top: -112px; left: 0; right: 0; height: 320px; border-radius: 50%; background: radial-gradient(closest-side, var(--glow), transparent); filter: blur(24px); pointer-events: none; } .ds-panel { position: relative; height: 200px; overflow: hidden; border-radius: var(--radius-2xl, 1rem); border: 1px solid var(--border); background: var(--card); padding: 32px; } .ds-panel-caption { position: absolute; top: 16px; right: 16px; margin: 0; font: 400 0.875rem/1.6 var(--font-sans); color: var(--muted-foreground); } .ds-panel-inset { border-radius: var(--radius-xl, 0.75rem); border: 1px solid var(--border); background: var(--background); padding: 16px; color: var(--foreground); font: 400 14px/1.6 var(--font-sans); }"
-    },
-    {
-      "name": "Quotes Sheet",
-      "kind": "custom",
-      "refersTo": "panel-inset",
-      "description": "The HTML comparison table: muted labels, hairline rows, tabular amounts, one selected cell on the wash with a tick.",
-      "html": "<table class=\"ds-sheet\"><thead><tr><th>Item</th><th class=\"ds-num\">Supplier A</th><th class=\"ds-num\">Supplier B</th></tr></thead><tbody><tr><th scope=\"row\">Nitrile gloves, M — 20,000</th><td class=\"ds-num ds-muted\">1,840.00</td><td class=\"ds-num ds-selected\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12.5 4.5 4.5L19 7\"/></svg>1,795.00</td></tr><tr><th scope=\"row\">Surgical masks type IIR — 50,000</th><td class=\"ds-num ds-selected\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12.5 4.5 4.5L19 7\"/></svg>4,250.00</td><td class=\"ds-num ds-muted\">4,480.00</td></tr></tbody><tfoot><tr><th scope=\"row\">Bid</th><td class=\"ds-num\" colspan=\"2\">USD 6,045.00</td></tr></tfoot></table>",
-      "css": ".ds-sheet { width: 100%; border-collapse: collapse; text-align: left; font-variant-numeric: tabular-nums; font-family: var(--font-sans); color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius-xl, 0.75rem); overflow: hidden; background: var(--background); } .ds-sheet thead { background: var(--card); } .ds-sheet thead th { padding: 10px 12px; border-bottom: 1px solid var(--border); font: 500 0.75rem/1.6 var(--font-sans); color: var(--muted-foreground); } .ds-sheet thead th:first-child, .ds-sheet tbody th, .ds-sheet tfoot th { padding-left: 16px; } .ds-sheet tbody tr + tr { border-top: 1px solid var(--border); } .ds-sheet tbody th { padding: 10px 16px; font: 400 14px/1.6 var(--font-sans); } .ds-sheet td { padding: 10px 12px; font: 400 14px/1.6 var(--font-sans); } .ds-num { text-align: right; } .ds-muted { color: var(--muted-foreground); } .ds-selected { background: var(--accent-wash); font-weight: 500; } .ds-selected svg { color: var(--accent); vertical-align: -2px; margin-right: 6px; } .ds-sheet tfoot tr { border-top: 1px solid var(--border); } .ds-sheet tfoot th, .ds-sheet tfoot td { padding: 12px 12px; font-weight: 600; font-size: 14px; }"
-    },
-    {
-      "name": "Success Notice",
-      "kind": "card",
-      "refersTo": "notice",
-      "description": "The reply that replaces the form: a 12px card on the alternate ground.",
-      "html": "<p class=\"ds-notice\" role=\"status\">Check your inbox. We have sent you a link to confirm — it is good for 48 hours.</p>",
-      "css": ".ds-notice { margin: 0; padding: 12px 16px; border-radius: var(--radius-xl, 0.75rem); border: 1px solid var(--border); background: var(--card); color: var(--foreground); font: 400 16px/1.6 var(--font-sans); text-wrap: pretty; }"
-    }
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "The accent spent once: the hero's call to action and the form's submit.", "html": "<a class=\"ds-btn-primary\" href=\"#\">Join the waiting list</a>", "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px; border-radius: var(--radius-lg, 0.5rem); background: var(--accent); color: var(--accent-foreground); font: 500 16px/1.6 var(--font-sans); text-decoration: none; transition: opacity 200ms; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.7; }" },
+    { "name": "Ghost Button", "kind": "button", "refersTo": "button-ghost", "description": "The findable door that must not compete: Sign in beside the primary.", "html": "<a class=\"ds-btn-ghost\" href=\"#\">Sign in</a>", "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px; border-radius: var(--radius-lg, 0.5rem); border: 1px solid var(--border); background: transparent; color: var(--foreground); font: 500 16px/1.6 var(--font-sans); text-decoration: none; transition: background-color 200ms; } .ds-btn-ghost:hover { background: var(--card); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }" },
+    { "name": "Bar Button", "kind": "button", "refersTo": "button-bar", "description": "The sticky bar's 36px copy of the primary; hidden on the home page while the hero's primary is on screen.", "html": "<a class=\"ds-btn-bar\" href=\"#\">Join the waiting list</a>", "css": ".ds-btn-bar { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; white-space: nowrap; border-radius: var(--radius-lg, 0.5rem); background: var(--accent); color: var(--accent-foreground); font: 500 14px/1.6 var(--font-sans); text-decoration: none; transition: opacity 150ms; } .ds-btn-bar:hover { opacity: 0.9; } .ds-btn-bar:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }" },
+    { "name": "Email Field", "kind": "input", "refersTo": "input-email", "description": "The one text field on the site, edged with the control edge rather than the hairline.", "html": "<input class=\"ds-input-email\" type=\"email\" placeholder=\"you@company.com\">", "css": ".ds-input-email { height: 44px; min-width: 0; padding: 0 14px; border-radius: var(--radius-lg, 0.5rem); border: 1px solid var(--input); background: var(--background); color: var(--foreground); font: 400 16px/1.6 var(--font-sans); outline: none; } .ds-input-email::placeholder { color: var(--muted-foreground); } .ds-input-email:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }" },
+    { "name": "Site Bar", "kind": "nav", "refersTo": "nav-link", "description": "Sticky glass bar: wordmark left, two quiet links and the bar button right. No menu.", "html": "<header class=\"ds-bar\"><span class=\"ds-wordmark\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"3.6\" rx=\"1.8\" fill=\"var(--accent)\"/><rect x=\"2\" y=\"10.2\" width=\"14.3\" height=\"3.6\" rx=\"1.8\" fill=\"var(--foreground)\"/><rect x=\"2\" y=\"15.4\" width=\"11.4\" height=\"3.6\" rx=\"1.8\" fill=\"var(--muted-foreground)\"/></svg>Awardley</span><nav class=\"ds-bar-links\"><a class=\"ds-nav-link\" href=\"#\">How it works</a><a class=\"ds-nav-link\" href=\"#\">Sign in</a><a class=\"ds-btn-bar\" href=\"#\">Join the waiting list</a></nav></header>", "css": ".ds-bar { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; height: 64px; padding: 0 32px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--background) 80%, transparent); backdrop-filter: blur(8px); } .ds-wordmark { display: inline-flex; align-items: center; gap: 10px; font: 600 1.0625rem/1.6 var(--font-sans); letter-spacing: -0.015em; color: var(--foreground); } .ds-bar-links { display: flex; align-items: center; gap: 8px; } .ds-nav-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: var(--radius-lg, 0.5rem); color: var(--muted-foreground); font: 500 14px/1.6 var(--font-sans); text-decoration: none; transition: color 200ms; } .ds-nav-link:hover { color: var(--foreground); } .ds-nav-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; } .ds-btn-bar { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: var(--radius-lg, 0.5rem); background: var(--accent); color: var(--accent-foreground); font: 500 14px/1.6 var(--font-sans); text-decoration: none; transition: opacity 150ms; } .ds-btn-bar:hover { opacity: 0.9; }" },
+    { "name": "Product Panel", "kind": "card", "refersTo": "panel-product", "description": "The 16px container on the alternate ground with the glow behind it; the only container that holds other things.", "html": "<div class=\"ds-panel-wrap\"><div class=\"ds-panel-glow\"></div><div class=\"ds-panel\"><p class=\"ds-panel-caption\">Example data</p><div class=\"ds-panel-inset\">Inset sheet</div></div></div>", "css": ".ds-panel-wrap { position: relative; padding-top: 40px; } .ds-panel-glow { position: absolute; top: -112px; left: 0; right: 0; height: 320px; border-radius: 50%; background: radial-gradient(closest-side, var(--glow), transparent); filter: blur(24px); pointer-events: none; } .ds-panel { position: relative; height: 200px; overflow: hidden; border-radius: var(--radius-2xl, 1rem); border: 1px solid var(--border); background: var(--card); padding: 32px; } .ds-panel-caption { position: absolute; top: 16px; right: 16px; margin: 0; font: 400 0.875rem/1.6 var(--font-sans); color: var(--muted-foreground); } .ds-panel-inset { border-radius: var(--radius-xl, 0.75rem); border: 1px solid var(--border); background: var(--background); padding: 16px; color: var(--foreground); font: 400 14px/1.6 var(--font-sans); }" },
+    { "name": "Quotes Sheet", "kind": "custom", "refersTo": "panel-inset", "description": "The HTML comparison table: muted labels, hairline rows, tabular amounts, one selected cell on the wash with a tick.", "html": "<table class=\"ds-sheet\"><thead><tr><th>Item</th><th class=\"ds-num\">Supplier A</th><th class=\"ds-num\">Supplier B</th></tr></thead><tbody><tr><th scope=\"row\">Nitrile gloves, M — 20,000</th><td class=\"ds-num ds-muted\">1,840.00</td><td class=\"ds-num ds-selected\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12.5 4.5 4.5L19 7\"/></svg>1,795.00</td></tr><tr><th scope=\"row\">Surgical masks type IIR — 50,000</th><td class=\"ds-num ds-selected\"><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12.5 4.5 4.5L19 7\"/></svg>4,250.00</td><td class=\"ds-num ds-muted\">4,480.00</td></tr></tbody><tfoot><tr><th scope=\"row\">Bid</th><td class=\"ds-num\" colspan=\"2\">USD 6,045.00</td></tr></tfoot></table>", "css": ".ds-sheet { width: 100%; border-collapse: collapse; text-align: left; font-variant-numeric: tabular-nums; font-family: var(--font-sans); color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius-xl, 0.75rem); overflow: hidden; background: var(--background); } .ds-sheet thead { background: var(--card); } .ds-sheet thead th { padding: 10px 12px; border-bottom: 1px solid var(--border); font: 500 0.75rem/1.6 var(--font-sans); color: var(--muted-foreground); } .ds-sheet thead th:first-child, .ds-sheet tbody th, .ds-sheet tfoot th { padding-left: 16px; } .ds-sheet tbody tr + tr { border-top: 1px solid var(--border); } .ds-sheet tbody th { padding: 10px 16px; font: 400 14px/1.6 var(--font-sans); } .ds-sheet td { padding: 10px 12px; font: 400 14px/1.6 var(--font-sans); } .ds-num { text-align: right; } .ds-muted { color: var(--muted-foreground); } .ds-selected { background: var(--accent-wash); font-weight: 500; } .ds-selected svg { color: var(--accent); vertical-align: -2px; margin-right: 6px; } .ds-sheet tfoot tr { border-top: 1px solid var(--border); } .ds-sheet tfoot th, .ds-sheet tfoot td { padding: 12px 12px; font-weight: 600; font-size: 14px; }" },
+    { "name": "Success Notice", "kind": "card", "refersTo": "notice", "description": "The reply that replaces the form: a 12px card on the alternate ground.", "html": "<p class=\"ds-notice\" role=\"status\">Check your inbox. We have sent you a link to confirm — it is good for 48 hours.</p>", "css": ".ds-notice { margin: 0; padding: 12px 16px; border-radius: var(--radius-xl, 0.75rem); border: 1px solid var(--border); background: var(--card); color: var(--foreground); font: 400 16px/1.6 var(--font-sans); text-wrap: pretty; }" }
   ],
   "narrative": {
     "northStar": "The Category Standard, Played Straight",
-    "overview": "The landing at awardley.com is a conventional product site at full craft, with Linear and Stripe as the bar. It is a separate world from the app (which keeps Fira and warm paper under ADR-0019); it shares only the name and the three-bar mark. The page is one ground and one accent: every section is told apart by a hairline rather than by a change of colour, so the only saturated thing above the fold is the primary button, and the indigo appears exactly three more times (the glow behind the product panel, the selected Quotes in the example sheet, the focus ring). Proof is shown as real UI, a phone capture cropped by its frame beside an HTML Quotes sheet labelled \"Example data\", never as logos, counts or testimonials.\n\nDensity is generous and quiet: a max-w-6xl measure, 40px landmarks (72px on desktop), four type tiers and no eyebrow. Both themes are one declaration, every colour a light-dark() pair read through color-scheme: light dark, and the site follows the device with no toggle; a reviewer flips it with document.documentElement.dataset.theme. Both scripts are first-class: Inter is fetched for Latin only, Han is drawn by the device, and :lang(zh-Hans) trades tracking for leading at every tier.\n\nConfirmed anti-references: the app's Fira + warm-paper brochure (4238188) and the slate-and-navy Trust page with three icon cards in Plus Jakarta Sans (041851c). Neither is to be quoted.",
+    "overview": "The landing at awardley.com is a conventional product site at full craft, with Linear and Stripe as the bar. It is a separate world from the app (which keeps Fira and warm paper under ADR-0019); it shares only the name and the three-bar mark. The page is one ground and one accent: every section is told apart by a hairline rather than by a change of colour, so the only saturated thing above the fold is the primary button, and the indigo appears exactly three more times (the glow behind the product panel, the selected Quotes in the example sheet, the focus ring). Proof is shown as real UI, a phone capture cropped by its frame beside an HTML Quotes sheet labelled \"Example data\", never as logos, counts or testimonials.\n\nDensity is generous and quiet: a max-w-6xl measure, 40px landmarks (72px on desktop), four type tiers and no eyebrow. The site is light only: every colour is stated once, as a plain value on :root, and color-scheme: light keeps the browser's own canvas and controls light on a dark device. There is no dark reading, no toggle and no theme attribute on <html>. Both scripts are first-class: Inter is fetched for Latin only, Han is drawn by the device, and :lang(zh-Hans) trades tracking for leading at every tier.\n\nConfirmed anti-references: the app's Fira + warm-paper brochure (4238188) and the slate-and-navy Trust page with three icon cards in Plus Jakarta Sans (041851c). Neither is to be quoted.",
     "keyCharacteristics": [
       "Monochrome ground, one indigo accent, no second ground or coloured band anywhere.",
       "Sections divided by 8% hairlines; controls edged by a separate, darker input token.",
       "Inter (variable, opsz) with tight negative tracking on Latin display; zero tracking and open leading under :lang(zh-Hans).",
       "Four type tiers (display, heading, section, quiet), all headings at 600, none heavier.",
-      "One authored entrance (rise, 420ms, 60ms stagger) in the hero; nothing else animates in; reduced-motion collapses everything.",
+      "Two easings and two kinds of motion — events rise (--ease-rise), continuous motion drifts (--ease-drift); one entrance and one focal sequence, then three ambient loops inside the product panel, paused off screen and gone under reduced motion.",
       "Corner says what a thing is: 8px operated, 12px replies, 16px containers."
     ],
     "rules": [
       { "name": "The One Ground Rule", "body": "There is one page ground and one alternate a step off it. No section, header or call to action changes the ground colour; sections are separated by hairlines.", "section": "colors" },
       { "name": "The Once-Spent Accent Rule", "body": "Indigo is spent on the primary button and appears again only as the panel glow, the selected-quote wash and tick, and the focus ring. It is never a stripe, band, eyebrow or decorative rule.", "section": "colors" },
-      { "name": "The Two Edges Rule", "body": "border (8%) is for rules and frames and may sit below 3:1; anything the reader operates is edged with input, which clears 3:1 in both readings.", "section": "colors" },
-      { "name": "The One Declaration Rule", "body": "Every colour is a light-dark() pair on :root. No dark: variants, no second token block, no toggle; color-scheme: light dark is the switch and data-theme on <html> is the reviewer's override.", "section": "colors" },
+      { "name": "The Two Edges Rule", "body": "border (8%) is for rules and frames and may sit below 3:1; anything the reader operates is edged with input, which clears 3:1.", "section": "colors" },
+      { "name": "The One Declaration Rule", "body": "The site is light only, and every colour is stated exactly once on :root. No dark reading, no dark: variants, no second token block, no toggle and no theme attribute on <html>; color-scheme: light tells the browser the same thing about its own canvas and controls.", "section": "colors" },
       { "name": "The No Eyebrow Rule", "body": "Four tiers and nothing over a heading. A kicker above a headline is a heading that did not trust itself.", "section": "typography" },
       { "name": "The Han Leading Rule", "body": "Under :lang(zh-Hans) every tier sets letter-spacing: 0 and opens leading (1.25 display, 1.45 heading and section, 1.7 quiet). There is no uppercase anywhere on the site, so nothing needs suppressing.", "section": "typography" },
       { "name": "The Tabular Rule", "body": "Any table of amounts is tabular-nums, one currency, grouped by three and two-placed, written out rather than left to toLocaleString.", "section": "typography" },
       { "name": "The Six Hundred Rule", "body": "Headings and the wordmark are 600; 700 does not appear. The display line is bigger than the wordmark, not heavier.", "section": "typography" },
-      { "name": "The Hairline Depth Rule", "body": "Layers are declared by a hairline and a one-step ground change. Shadows do not mark elevation; the single shadow on the site is a photographic device drop, not a UI elevation.", "section": "elevation" }
+      { "name": "The Hairline Depth Rule", "body": "Layers are declared by a hairline and a one-step ground change. Shadows do not mark elevation; the single shadow on the site is a photographic device drop, not a UI elevation.", "section": "elevation" },
+      { "name": "The Two Curves Rule", "body": "Events rise and continuous motion drifts. --ease-rise (a hard ease-out) carries anything that happens once because something happened; --ease-drift (symmetric) is spent only on the ambient loops, which have no start or end to ease out of. There is no third easing.", "section": "motion" }
     ],
     "dos": [
-      "Do state every colour once as a light-dark() pair on :root and read it through color-scheme; preview the other reading with data-theme on <html>.",
+      "Do state every colour once, as a plain value on :root, and declare color-scheme: light alongside them.",
       "Do separate sections and columns with the 8% hairline and keep the page on one ground.",
       "Do edge anything operable with input, the darker control edge, and leave border for rules and frames.",
       "Do keep every control at 44px (the tap floor); the 36px bar button is the one exception and it defers to the 44px primary while that is on screen.",
@@ -166,13 +112,14 @@
     ],
     "donts": [
       "Don't fetch a CJK webfont; Inter is Latin-only and Han is the device's.",
-      "Don't add a theme toggle, a dark: variant, or a second token block.",
+      "Don't add a theme toggle, a dark reading, a dark: variant, a theme attribute on <html>, or a second token block.",
       "Don't introduce a coloured band, stripe, second ground, eyebrow, kicker, numbered step or icon-over-column card.",
       "Don't put a price, a signup link, logos, counts or testimonials on the page (ADR-0035; the only app link is /login, the only ask is the waiting list).",
       "Don't use a weight above 600, uppercase labels, or negative tracking on Han.",
       "Don't add shadows to buttons, inputs or panels; the one shadow is the phone's device drop.",
-      "Don't animate anything outside the hero's single rise sequence, or leave motion running under prefers-reduced-motion: reduce.",
-      "Don't add a second icon; the tick is the whole icon vocabulary, inline and currentColor."
+      "Don't animate anything outside the hero's entrance, the sheet's sequence and the product panel's ambient loops, and don't leave motion running under prefers-reduced-motion: reduce.",
+      "Don't add a second icon; the tick is the whole icon vocabulary, inline and currentColor.",
+      "Don't loop anything but ambient motion inside the product panel, and never loop anything the reader has to read: a loop is allowed only if it is slow, quiet, paused off screen and in a hidden tab, and removed outright under prefers-reduced-motion: reduce."
     ]
   }
 }

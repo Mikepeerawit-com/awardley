@@ -1,24 +1,23 @@
 @import "tailwindcss";
 
 /**
- * The site's palette and voice, and the one place either theme is stated.
+ * The site's palette and voice, and the one place a colour is stated.
  *
- * **Every colour is a `light-dark()` pair on `:root`, and there is no dark variant.**
- * The app has three theme states because a reader can pin one in Preferences and the
- * server writes that class before the first byte (ADR-0024). Nothing here can be pinned:
- * no account, no Preferences, no toggle. What the site needs is the app's *System*
- * reading and a way for a reviewer to see the other one — and `light-dark()` gives both
- * from a single declaration, because setting `document.documentElement.style.colorScheme`
- * in devtools flips the whole page with no class to add and no media query to emulate.
- * A `@custom-variant dark` and a second token block would have been two places to state
- * a colour and one of them would eventually be wrong.
+ * **The site is light only, and every colour is a plain value on `:root`.** The app has
+ * three theme states because a reader can pin one in Preferences and the server writes
+ * that class before the first byte (ADR-0024). Nothing here can be pinned: no account,
+ * no Preferences, no toggle — and a page that is judged in one reading is better spent
+ * being finished in that one than hedged across two. `color-scheme: light` says so to
+ * the browser, so the canvas it paints before this stylesheet arrives and the form
+ * controls it draws are light even when the device is dark. A second token block would
+ * have been two places to state a colour and one of them would eventually be wrong.
  *
  * **Monochrome ground, one indigo accent, and no second ground anywhere.** The navy
  * brand surface this replaces was a band the page changed colour for; a page whose
  * sections are told apart by hairlines rather than by grounds does not need one, and the
  * accent is worth more spent once on the button than spread over a stripe.
  *
- * Contrast is held to 4.5:1 for text in both readings and 3:1 for anything you can
+ * Contrast is held to 4.5:1 for text and 3:1 for anything you can
  * operate — which is why `--input` is its own token a full step darker than `--border`.
  * The hairline is deliberately below 3:1 and deliberately not a control edge: SC 1.4.11
  * is about things carrying information, and a hairline dark enough to pass it draws a
@@ -97,39 +96,48 @@
 
 :root {
   /*
-   * `color-scheme` is what makes the canvas the browser paints *before this stylesheet
-   * arrives* the right ground, keeps a form control from being the one light thing on a
-   * dark screen — and is the switch every `light-dark()` below reads.
+   * The site is light, and `color-scheme` is how the browser is told before it reads
+   * anything else here: the canvas it paints *before this stylesheet arrives* is paper,
+   * and the controls it draws itself are light too, on a device set to dark.
    */
-  color-scheme: light dark;
+  color-scheme: light;
 
-  --background: light-dark(#ffffff, #0a0a0b);
-  --card: light-dark(#fafafa, #121214);
-  --foreground: light-dark(#0a0a0a, #ededef);
-  --muted-foreground: light-dark(#5f6368, #9a9ba1);
+  --background: #ffffff;
+  --card: #fafafa;
+  --foreground: #0a0a0a;
+  --muted-foreground: #5f6368;
 
   /* The hairline, and — separately — the edge of anything you can operate. */
-  --border: light-dark(rgb(10 10 10 / 0.08), rgb(255 255 255 / 0.09));
-  --input: light-dark(#767676, rgb(255 255 255 / 0.42));
+  --border: rgb(10 10 10 / 0.08);
+  --input: #767676;
 
-  --accent: light-dark(#4f46e5, #818cf8);
-  --accent-foreground: light-dark(#ffffff, #0a0a0b);
-  --accent-wash: light-dark(rgb(79 70 229 / 0.1), rgb(129 140 248 / 0.14));
-  --accent-edge: light-dark(rgb(79 70 229 / 0.4), rgb(129 140 248 / 0.45));
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+  --accent-wash: rgb(79 70 229 / 0.1);
+  --accent-edge: rgb(79 70 229 / 0.4);
   --ring: var(--accent);
 
-  --danger: light-dark(#b91c1c, #f87171);
+  --danger: #b91c1c;
 
-  --device-edge: light-dark(#e6e6e9, #2b2b31);
+  --device-edge: #e6e6e9;
 
   /*
    * The light behind the product panel, and its own token rather than `--accent-wash`
    * because the two are asked opposite questions. A wash sits *under text* and has to
-   * stay quiet enough to read through; this one is spread over 20rem and blurred, and at
-   * the wash's alpha it disappears entirely on the near-black ground — which is exactly
-   * where a light source is supposed to be visible.
+   * stay quiet enough to read through; this one is spread over 20rem and blurred, so it
+   * carries a little more alpha to still read as a light source at that size.
    */
-  --glow: light-dark(rgb(79 70 229 / 0.12), rgb(129 140 248 / 0.26));
+  --glow: rgb(79 70 229 / 0.12);
+
+  /*
+   * The light that travels the panel's top hairline, and the one place the accent is
+   * carried near full strength. The glow's 0.12 is spread over 20rem and blurred; the
+   * same value drawn one pixel tall is not faint, it is absent — measured on the page at
+   * 0.4 the line could not be found at all. A pixel has no area to be loud with, so the
+   * alpha buys back what the height gives away. It is still not a stripe: a segment of a
+   * hairline, lit for as long as it takes to pass.
+   */
+  --edge-light: rgb(79 70 229 / 0.7);
 
   --radius: 0.5rem;
 
@@ -144,34 +152,24 @@
   --ease-rise: cubic-bezier(0.16, 1, 0.3, 1);
 
   /*
-   * The three bars of the mark. They are tokens rather than literals in the SVG because
-   * the light theme has to invert the middle one: a near-white bar on white paper is an
-   * invisible bar.
+   * The second curve, and the last: **events rise, continuous motion drifts.** An
+   * ease-out is a curve for something that has just happened — it arrives fast and
+   * settles — and a loop eased that way lurches at every turn, because its start and its
+   * end are the same moment. This one is symmetric, so an ambient gesture leaves and
+   * returns at the same speed and has no edge to notice. It is spent on exactly two
+   * things, the capture's pan and the glow's breath; anything the reader is meant to read
+   * as a change — a quote arriving, a cell becoming the answer — keeps `--ease-rise`.
+   */
+  --ease-drift: cubic-bezier(0.45, 0, 0.55, 1);
+
+  /*
+   * The three bars of the mark. They are tokens rather than literals in the SVG so the
+   * mark stays tied to the palette: change the ink or the accent here and the bars
+   * follow, instead of three hex values drifting out of the page they sit on.
    */
   --mark-1: var(--accent);
   --mark-2: var(--foreground);
   --mark-3: var(--muted-foreground);
-}
-
-/**
- * The preview switch, and the reason it is an attribute rather than devtools.
- *
- * Next builds this file through Lightning CSS, whose targets still predate native
- * `light-dark()`, so every pair above ships as its polyfill — which follows
- * `prefers-color-scheme` and cannot see an inline `style.colorScheme` set by hand. These
- * two rules are what give the polyfill a switch it *can* see: a reviewer runs
- *
- *     document.documentElement.dataset.theme = "light"   // or "dark"
- *
- * and the whole page flips, with no toggle shipped to a reader and no second palette.
- * Nothing in the site sets this attribute; it exists for the person checking the work.
- */
-:root[data-theme="light"] {
-  color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
 }
 
 @layer base {
@@ -354,9 +352,11 @@
    *
    * The panel arrives at 300ms and has finished by 720ms; from there the sheet takes until
    * about 2.2s to tell the product's story in the order it actually happens — **quotes
-   * arrive, one is chosen per Item, the Bid is derived** — and then stops for good. It is
-   * the only thing on the site that is a sequence rather than an entrance, and it earns
-   * that by being the thing the page is about.
+   * arrive, one is chosen per Item, the Bid is derived** — and then hands the sheet over to
+   * its living cycle, which goes on telling that story a quote at a time with the stagger
+   * taken out (`components/quotes-sheet.tsx`). It is the only thing on the site that is a
+   * sequence rather than an entrance, and it earns that by being the thing the page is
+   * about. What is timed below is the assemble alone.
    *
    * The clock, once, in one place: the three supplier columns land at 520/640/760ms and
    * each takes 360ms, so the last amount is down at 1120ms; the four chosen cells and their
@@ -451,9 +451,10 @@
    * 1 offset by 1 hides it exactly and an offset of 0 shows all of it. The alternative is
    * measuring `getTotalLength()` in JavaScript, which is a script to draw a tick.
    *
-   * The visually-hidden *Selected* beside it is untouched and is present the whole time: a
-   * screen reader is told which Quote was chosen at the first word it reads, not a second
-   * and a half into an animation it cannot see.
+   * Nothing here is what tells a screen reader which Quote was chosen. The cell is a button
+   * carrying `aria-pressed`, true from the first render, so the state is announced with the
+   * control at the first word it reads rather than a second and a half into an animation it
+   * cannot see — and the tick is free to be what it looks like, a drawing.
    */
   @keyframes tick-draw {
     from {
@@ -481,6 +482,236 @@
   .bid-arrive {
     animation: quote-arrive 360ms var(--ease-rise) both;
     animation-delay: 1860ms;
+  }
+
+  /*
+   * The same sequence's vocabulary, without the clock — the sheet's **living** state.
+   *
+   * Once the assemble has finished at 2220ms the sheet keeps working: a supplier re-quotes,
+   * the row recounts, and the Bid follows (`components/quotes-sheet.tsx` holds the script
+   * and the timer). Those are events, not ambience, so they keep `--ease-rise` and the
+   * three keyframes the assemble already wrote. What they drop is the stagger: a cell that
+   * arrives twenty seconds in is not the third supplier's column landing, it is one number
+   * changing, and a `--col` delay would leave it blank for most of a second first.
+   *
+   * A cell is re-run by being remounted under a new React key rather than by having a class
+   * toggled, because restarting a finished CSS animation on a live node is a trick; a new
+   * node simply plays it. The one thing that *is* toggled is the choosing, since the cell
+   * that loses the tick has not otherwise changed: it takes `quote-choose` in `reverse`,
+   * which is the same 300ms crossing walked backwards rather than a second keyframe.
+   */
+  .quote-refresh {
+    animation: quote-arrive 360ms var(--ease-rise) both;
+  }
+
+  .quote-choose-live {
+    animation: quote-choose 300ms var(--ease-rise) both;
+  }
+
+  .quote-unchoose {
+    animation: quote-choose 300ms var(--ease-rise) reverse both;
+  }
+
+  /* The shorthand is one list, so a cell doing both states them together, as the assemble does. */
+  .quote-refresh.quote-choose-live {
+    animation:
+      quote-arrive 360ms var(--ease-rise) both,
+      quote-choose 300ms var(--ease-rise) both;
+  }
+
+  .quote-refresh.quote-unchoose {
+    animation:
+      quote-arrive 360ms var(--ease-rise) both,
+      quote-choose 300ms var(--ease-rise) reverse both;
+  }
+
+  .tick-draw-live {
+    stroke-dasharray: 1;
+    animation: tick-draw 320ms var(--ease-rise) both;
+  }
+
+  /*
+   * The two ambient gestures: the page moving while the reader is not.
+   *
+   * Everything above is an event — it happens once, because something happened. These two
+   * are the opposite, and are the only loops on the site: a capture that pans as if
+   * somebody were idly scrolling it, and a light that breathes behind the panel. They are
+   * slow enough (16s and 18s) that neither is a thing you watch; they are there so that a
+   * still page is not a dead one, which is the whole of what Stripe's and Apple's panels
+   * are doing.
+   *
+   * Both are stopped rather than merely slowed when nobody is looking: `components/ambient-stage.tsx`
+   * marks the panel `stage-still` when it leaves the viewport or the tab is hidden, and the
+   * reduced-motion block below removes them outright. A loop is the one kind of motion that
+   * cannot be allowed to run unwatched, because it never ends by itself.
+   */
+  @keyframes capture-pan {
+    0%,
+    10% {
+      transform: none;
+    }
+
+    90%,
+    100% {
+      transform: translateY(calc(-1 * var(--pan-distance)));
+    }
+  }
+
+  /*
+   * 16s a pass on `alternate`, so the travel takes 12.8s each way and the capture rests for
+   * 3.2s at each end — the pause is in the keyframes rather than in a delay, because a delay
+   * only ever holds the first pass. The distance is deliberately short: this is a thumb
+   * resting on a screen, not a tour of the app.
+   */
+  .capture-pan {
+    --pan-distance: 2rem;
+    animation: capture-pan 16s var(--ease-drift) infinite alternate;
+    will-change: transform;
+  }
+
+  /*
+   * Under the 390px the page is drawn for, the capture is narrow enough that the
+   * screenshot barely overtops its frame, and a pan would scroll past the end of the image
+   * and show bare bezel. It holds still instead: the distance is what is dropped, not the
+   * animation, so there is one rule to read rather than a second breakpoint's worth.
+   */
+  @media (max-width: 23.5rem) {
+    .capture-pan {
+      --pan-distance: 0px;
+    }
+  }
+
+  @keyframes glow-drift {
+    from {
+      opacity: 0.8;
+      transform: translateX(-2%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(2%);
+    }
+  }
+
+  /*
+   * 18s, and 4% of travel across a light that is already 20rem wide and blurred — under a
+   * stare it is barely there, which is the point. A glow that pulsed visibly would be the
+   * second saturated thing above the fold, and the accent is spent.
+   */
+  .glow-drift {
+    animation: glow-drift 18s var(--ease-drift) infinite alternate;
+  }
+
+  /*
+   * The two things the panel's beat draws that are *not* on the sheet.
+   *
+   * Both are events rather than ambience — they happen because a quote landed — so both
+   * take `--ease-rise` and neither loops: they are mounted on the beat by
+   * `components/panel-glow.tsx` and `components/phone-notice.tsx`, play once, and are over
+   * well inside the four seconds before the next one. There is no third easing and no
+   * fourth loop; the panel learns no new gesture, it just has two more places to make the
+   * one it has.
+   */
+
+  /*
+   * The light lifting when something lands. It is drawn on the *inner* of the glow's two
+   * elements, so the 18s breath on the outer one is never restarted; the two opacities and
+   * the two transforms simply compose. The resting 0.92 is what makes a lift possible at
+   * all — opacity has no headroom above 1, so the glow sits a hair under full and the beat
+   * is it returning there. Nobody watching the panel will be able to say what moved, which
+   * is the correct amount for a light behind a page.
+   */
+  @keyframes glow-beat {
+    from {
+      opacity: 0.92;
+      transform: scale(1);
+    }
+
+    30% {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+
+    to {
+      opacity: 0.92;
+      transform: scale(1);
+    }
+  }
+
+  .glow-beat {
+    animation: glow-beat 1400ms var(--ease-rise) both;
+  }
+
+  /*
+   * The Reminder arriving on the phone. It comes down from off the top of the screen the
+   * way a phone's own banner does, holds for two thirds of the beat — long enough to read
+   * eight words at that size — and then goes by fading rather than by sliding back up: a
+   * notification that leaves the way it came in reads as a mistake being undone, and this
+   * one is not undone, it is simply no longer new. Held in the keyframes rather than in a
+   * delay, because the element is mounted on the beat and a delay would only ever be a
+   * banner sitting invisibly on the screen waiting for its turn.
+   */
+  @keyframes notice-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(-150%);
+    }
+
+    12% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    78% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(0);
+    }
+  }
+
+  .notice-arrive {
+    animation: notice-arrive 3400ms var(--ease-rise) both;
+  }
+
+  /*
+   * The light travelling the panel's top edge.
+   *
+   * The third ambient loop, and it is the page's own hairline being lit rather than a new
+   * thing to look at: the panel is told apart from the page by one 8% rule, and this is a
+   * segment of that rule brightening as it passes and leaving it exactly as it was. It
+   * takes twenty seconds to cross, which is slower than either of the other two loops on
+   * purpose — the capture pans because somebody is reading it and the glow breathes behind
+   * it, while this one is the panel simply being made of something.
+   *
+   * `alternate` rather than a wrap, for the same reason as the other two: a segment that
+   * runs off the right edge and reappears on the left has a seam in it, and there is no
+   * moment in a drift that is allowed to be an event. Travel is stated in percentages of
+   * the segment's own width so the gesture is the same at every panel width.
+   */
+  @keyframes edge-travel {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(230%);
+    }
+  }
+
+  .edge-light {
+    animation: edge-travel 20s var(--ease-drift) infinite alternate;
+  }
+
+  .stage-still .capture-pan,
+  .stage-still .edge-light,
+  .stage-still .glow-drift,
+  .stage-still .glow-beat,
+  .stage-still .notice-arrive {
+    animation-play-state: paused;
   }
 
   /*
@@ -515,6 +746,22 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /*
+   * The two loops are removed rather than collapsed. Squashing a finite gesture to an
+   * instant lands it on its end state, which is where it was going anyway; doing that to a
+   * loop would land the capture panned forty pixels off its top and the glow parked at one
+   * end of its travel, which is not a still page, it is a page stopped mid-gesture.
+   * `animation: none` leaves both exactly where the stylesheet put them. The panel's beat
+   * is not a stylesheet's business: `components/ambient-stage.tsx` reads the same query and
+   * never starts its clock, so the turn stays 0 — which is also why `glow-beat` and
+   * `notice-arrive` need no rule here. Nothing ever mounts an element carrying them.
+   */
+  .capture-pan,
+  .edge-light,
+  .glow-drift {
+    animation: none !important;
+  }
 }
 
 /*
@@ -528,15 +775,25 @@
   .reveal-out,
   .quote-cell,
   .quote-cell-chosen,
+  .quote-refresh,
+  .quote-choose-live,
+  .quote-unchoose,
   .tick-draw,
-  .bid-arrive {
+  .tick-draw-live,
+  .bid-arrive,
+  .capture-pan,
+  .edge-light,
+  .glow-drift,
+  .glow-beat,
+  .notice-arrive {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
     stroke-dashoffset: 0 !important;
   }
 
-  .quote-cell-chosen {
+  .quote-cell-chosen,
+  .quote-choose-live {
     background-color: var(--accent-wash) !important;
     color: var(--foreground) !important;
     font-weight: 500 !important;

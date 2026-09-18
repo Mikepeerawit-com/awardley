@@ -1,20 +1,20 @@
 ---
 name: Awardley landing
-description: A monochrome product site with one indigo accent, equally finished in light and dark, benchmarked against Linear and Stripe.
+description: A monochrome product site with one indigo accent, light only, benchmarked against Linear and Stripe.
 colors:
-  background: "light-dark(#ffffff, #0a0a0b)"
-  card: "light-dark(#fafafa, #121214)"
-  foreground: "light-dark(#0a0a0a, #ededef)"
-  muted-foreground: "light-dark(#5f6368, #9a9ba1)"
-  border: "light-dark(rgb(10 10 10 / 0.08), rgb(255 255 255 / 0.09))"
-  input: "light-dark(#767676, rgb(255 255 255 / 0.42))"
-  accent: "light-dark(#4f46e5, #818cf8)"
-  accent-foreground: "light-dark(#ffffff, #0a0a0b)"
-  accent-wash: "light-dark(rgb(79 70 229 / 0.1), rgb(129 140 248 / 0.14))"
-  accent-edge: "light-dark(rgb(79 70 229 / 0.4), rgb(129 140 248 / 0.45))"
-  glow: "light-dark(rgb(79 70 229 / 0.12), rgb(129 140 248 / 0.26))"
-  danger: "light-dark(#b91c1c, #f87171)"
-  device-edge: "light-dark(#e6e6e9, #2b2b31)"
+  background: "#ffffff"
+  card: "#fafafa"
+  foreground: "#0a0a0a"
+  muted-foreground: "#5f6368"
+  border: "rgb(10 10 10 / 0.08)"
+  input: "#767676"
+  accent: "#4f46e5"
+  accent-foreground: "#ffffff"
+  accent-wash: "rgb(79 70 229 / 0.1)"
+  accent-edge: "rgb(79 70 229 / 0.4)"
+  glow: "rgb(79 70 229 / 0.12)"
+  danger: "#b91c1c"
+  device-edge: "#e6e6e9"
 typography:
   display:
     fontFamily: "Inter, PingFang SC, Hiragino Sans GB, Source Han Sans SC, Noto Sans SC, Microsoft YaHei, system-ui, sans-serif"
@@ -125,9 +125,9 @@ components:
 
 **Creative North Star: "The Category Standard, Played Straight"**
 
-The landing at `awardley.com` is a conventional product site at full craft, with Linear and Stripe as the bar. It is a separate world from the app (which keeps Fira and warm paper under ADR-0019); it shares only the name and the three-bar mark. The page is one ground and one accent: every section is told apart by a hairline rather than by a change of colour, so the only saturated thing above the fold is the primary button, and the indigo appears exactly three more times (the glow behind the product panel, the selected Quotes in the example sheet, the focus ring). Proof is shown as real UI, a phone capture cropped by its frame beside an HTML Quotes sheet labelled "Example data", never as logos, counts or testimonials.
+The landing at `awardley.com` is a conventional product site at full craft, with Linear and Stripe as the bar. It is a separate world from the app (which keeps Fira and warm paper under ADR-0019); it shares only the name and the three-bar mark. The page is one ground and one accent: every section is told apart by a hairline rather than by a change of colour, so the only saturated thing above the fold is the primary button, and the indigo appears only as light or as an answer (the glow behind the product panel and again behind the questions above the ask, the light crossing the panel's top hairline, the selected Quotes in the example sheet, the focus ring). Proof is shown as real UI, a phone capture cropped by its frame beside an HTML Quotes sheet labelled "Example data", never as logos, counts or testimonials.
 
-Density is generous and quiet: a `max-w-6xl` measure, 40px landmarks (72px on desktop), four type tiers and no eyebrow. Both themes are one declaration, every colour a `light-dark()` pair read through `color-scheme: light dark`, and the site follows the device with no toggle; a reviewer flips it with `document.documentElement.dataset.theme`. Both scripts are first-class: Inter is fetched for Latin only, Han is drawn by the device, and `:lang(zh-Hans)` trades tracking for leading at every tier.
+Density is generous and quiet: a `max-w-6xl` measure, 40px landmarks (72px on desktop), four type tiers and no eyebrow. The site is light only: every colour is stated once, as a plain value on `:root`, and `color-scheme: light` keeps the browser's own canvas and controls light on a dark device. There is no dark reading, no toggle and no theme attribute on `<html>`. Both scripts are first-class: Inter is fetched for Latin only, Han is drawn by the device, and `:lang(zh-Hans)` trades tracking for leading at every tier.
 
 Confirmed anti-references: the app's Fira + warm-paper brochure (`4238188`) and the slate-and-navy Trust page with three icon cards in Plus Jakarta Sans (`041851c`). Neither is to be quoted.
 
@@ -136,25 +136,25 @@ Confirmed anti-references: the app's Fira + warm-paper brochure (`4238188`) and 
 - Sections divided by 8% hairlines; controls edged by a separate, darker `input` token.
 - Inter (variable, `opsz`) with tight negative tracking on Latin display; zero tracking and open leading under `:lang(zh-Hans)`.
 - Four type tiers (display, heading, section, quiet), all headings at 600, none heavier.
-- One easing (`--ease-rise`) and one entrance (`rise`, 420ms, 60ms stagger) in the hero; one focal sequence, the Quotes sheet assembling, over by 2.2s; two sections borrow the entrance once each on scroll; the ask never animates; reduced-motion collapses everything.
+- Two easings and two kinds of motion: events rise (`--ease-rise`), continuous motion drifts (`--ease-drift`). One entrance (`rise`, 420ms, 60ms stagger) in the hero, one focal sequence over by 2.2s, and then the panel keeps moving: three ambient loops (the capture pans, the glow breathes, a light crosses the top hairline in twenty seconds) and one sixteen-second beat the rest read off — the sheet takes a new quote, the light lifts, and once a cycle a Reminder lands on the phone as an email. The page's one other loop is the same glow drifting behind the questions above the ask. All of it paused off screen and gone under reduced motion.
 - Corner says what a thing is: 8px operated, 12px replies, 16px containers.
 
 ## Colors
 
-A near-achromatic palette whose two readings are stated once, as `light-dark()` pairs, with indigo as the single chromatic voice.
+A near-achromatic palette, each colour stated once on `:root`, with indigo as the single chromatic voice.
 
 ### Primary
-- **Indigo** (`accent`): the primary button fill, the tick on a selected Quote, the top bar of the mark, `accent-color` for native controls, and the focus ring (`ring` aliases it). Deep on paper, lifted on the near-black reading so it still clears 4.5:1 as button ink's ground.
+- **Indigo** (`accent`): the primary button fill, the tick on a selected Quote, the top bar of the mark, `accent-color` for native controls, and the focus ring (`ring` aliases it). Deep on paper, and clears 4.5:1 as button ink's ground.
 - **Indigo Wash** (`accent-wash`): the selected cell in the Quotes sheet and `::selection`. Sits under text, so it stays quiet enough to read through.
-- **Indigo Edge** (`accent-edge`): reserved edge tint at 40–45% alpha; defined for controls that need a coloured border, not used on the home page today.
-- **Indigo Glow** (`glow`): the blurred radial light above and behind the product panel. Its own token because it is spread over 20rem and blurred; at the wash's alpha it vanishes on the dark ground.
+- **Indigo Edge** (`accent-edge`): reserved edge tint at 40% alpha; defined for controls that need a coloured border, not used on the home page today.
+- **Indigo Glow** (`glow`): the blurred radial light above and behind the product panel. Its own token because it is spread over 20rem and blurred, and is asked the opposite question of a wash that sits under text.
 - **Indigo Ink** (`accent`, aliased as `signal-ink`): inline links on the privacy and confirm pages.
 
 ### Neutral
-- **Paper / Near-black** (`background`): the one page ground, and the inset frame of the Quotes sheet inside the panel.
+- **Paper** (`background`): the one page ground, and the inset frame of the Quotes sheet inside the panel.
 - **Alternate** (`card`): the product panel, the ghost button's hover, the sheet's header row, and the success notice. One step off the ground, never a band.
 - **Ink** (`foreground`): body and heading text, the middle bar of the mark.
-- **Muted Ink** (`muted-foreground`): sub lines, column body copy, nav links at rest, the fact row, table headers, non-selected amounts; clears 4.5:1 in both readings. Also the bottom bar of the mark.
+- **Muted Ink** (`muted-foreground`): sub lines, column body copy, nav links at rest, the fact row, table headers, non-selected amounts; clears 4.5:1. Also the bottom bar of the mark.
 - **Hairline** (`border`): section rules, column rules, the panel frame, the sheet's row rules, the bar's bottom edge. Deliberately below 3:1 and never a control edge.
 - **Control Edge** (`input`): the email field's border, a full step darker than the hairline so an operable edge clears 3:1.
 - **Device Edge** (`device-edge`): the 6px bezel of the phone frame; the one colour that is neither ink nor hairline.
@@ -163,8 +163,8 @@ A near-achromatic palette whose two readings are stated once, as `light-dark()` 
 ### Named Rules
 **The One Ground Rule.** There is one page ground and one alternate a step off it. No section, header or call to action changes the ground colour; sections are separated by hairlines.
 **The Once-Spent Accent Rule.** Indigo is spent on the primary button and appears again only as the panel glow, the selected-quote wash and tick, and the focus ring. It is never a stripe, band, eyebrow or decorative rule.
-**The Two Edges Rule.** `border` (8%) is for rules and frames and may sit below 3:1; anything the reader operates is edged with `input`, which clears 3:1 in both readings.
-**The One Declaration Rule.** Every colour is a `light-dark()` pair on `:root`. No `dark:` variants, no second token block, no toggle; `color-scheme: light dark` is the switch and `data-theme` on `<html>` is the reviewer's override.
+**The Two Edges Rule.** `border` (8%) is for rules and frames and may sit below 3:1; anything the reader operates is edged with `input`, which clears 3:1.
+**The One Declaration Rule.** The site is light only, and every colour is stated exactly once on `:root`. No dark reading, no `dark:` variants, no second token block, no toggle and no theme attribute on `<html>`; `color-scheme: light` tells the browser the same thing about its own canvas and controls.
 
 ## Typography
 
@@ -195,11 +195,11 @@ A single centred measure: `max-w-6xl` (72rem) with `px-5` gutters on a phone and
 
 Vertical rhythm is the four-step scale named for what it separates: `label` (8px) between a heading and its paragraph, `field` (14px) between controls in a row, `group` (24px) between blocks in a stack, `landmark` (40px) as section padding, rising to 4.5rem on `lg`. Sections are `border-t` hairlines with no ground change; the bar is `h-16` sticky at `z-50`, translucent (`bg-background/80 backdrop-blur`), and anchors use `scroll-mt-20` to clear it.
 
-Responsive: the how-it-works columns are a single stack becoming `md:grid-cols-3` at `gap-8`; who-it-is-for becomes `lg:grid-cols-2`; the product panel is `h-[26rem]` on a phone (the Quotes sheet hidden, the phone capture centred) and `h-[32rem]` with a `5fr / 7fr` split at `lg`. The fact row stacks on a phone and runs inline with a middle dot from `sm`. Nav links are `hidden md:inline-flex`; on a phone the bar is the wordmark and the one control. Body text steps from 16px to 17px at 48rem. Both calls to action are above the fold at every width; the bar's own copy of the primary is hidden while the hero's is on screen.
+Responsive: the how-it-works columns are a single stack becoming `md:grid-cols-3` at `gap-8`; the problem rows are a stack becoming `md:grid-cols-[26ch_1fr]` definition rows at `gap-8`; who-it-is-for becomes `lg:grid-cols-2`; the questions become `md:grid-cols-2`; the product panel is `h-[26rem]` on a phone (the Quotes sheet hidden, the phone capture centred) and `h-[32rem]` with a `5fr / 7fr` split at `lg`. The fact row stacks on a phone and runs inline with a middle dot from `sm`. Nav links are `hidden md:inline-flex`; on a phone the bar is the wordmark and the one control. Body text steps from 16px to 17px at 48rem. Both calls to action are above the fold at every width; the bar's own copy of the primary is hidden while the hero's is on screen.
 
 ## Elevation & Depth
 
-Flat by default, with depth carried by tone and hairline rather than by shadow. The panel is `card` on `background` inside a hairline; the sheet is `background` on `card` inside a hairline; the bar is glass over the page. Exactly one shadow exists on the site, under the phone frame inside the product panel (`0 28px 60px -24px rgb(0 0 0 / 0.45)`), and one light, the `glow` radial above and behind the panel with a `-top-28` offset so it reads as a source rather than a halo. Buttons and inputs have no shadow at any state; hover is an opacity or ground shift.
+Flat by default, with depth carried by tone and hairline rather than by shadow. The panel is `card` on `background` inside a hairline; the sheet is `background` on `card` inside a hairline; the bar is glass over the page. Exactly one shadow exists on the site, under the phone frame inside the product panel (`0 28px 60px -24px rgb(0 0 0 / 0.45)`). The `glow` radial is used twice and is the same light both times: above and behind the product panel with a `-top-28` offset so it reads as a source rather than a halo, and again low behind the questions above the ask, where the page had gone dark for the half a reader is in when they decide. A third use of it would be a pattern rather than a light. The panel's top hairline additionally carries `--edge-light`, the one place the accent is drawn near full strength, because a pixel has no area to be quiet with. Buttons and inputs have no shadow at any state; hover is an opacity or ground shift.
 
 ### Shadow Vocabulary
 - **Device drop** (`box-shadow: 0 28px 60px -24px rgb(0 0 0 / 0.45)`): the phone capture's frame only, so the device sits into the panel instead of on it.
@@ -209,7 +209,7 @@ Flat by default, with depth carried by tone and hairline rather than by shadow. 
 
 ## Shapes
 
-One radius token (`--radius: 0.5rem`) and three derived steps, each meaning a kind of thing: 8px (`lg`) is something you operate (buttons, the email field, nav link focus rects, the wordmark link); 12px (`xl`) is a reply or an inset (the Quotes sheet frame inside the panel, the success notice); 16px (`2xl`) is a container that holds other things (the product panel). Borders are 1px hairlines everywhere except the email field (`input`) and the phone bezel (6px `device-edge`). The phone frame is a one-off 2rem radius clipped by `overflow-hidden`, cropped by the panel's bottom edge on purpose. The mark is three left-aligned bars of descending width (≈7:5:4) with fully rounded ends on a 24-unit square; the one glyph (the tick) is a 24-unit stroke at 1.75 with round caps and joins, `currentColor`, no fill.
+One radius token (`--radius: 0.5rem`) and three derived steps, each meaning a kind of thing: 8px (`lg`) is something you operate (buttons, the email field, nav link focus rects, the wordmark link); 12px (`xl`) is a reply or an inset (the Quotes sheet frame inside the panel, the success notice); 16px (`2xl`) is a container that holds other things (the product panel). Borders are 1px hairlines everywhere except the email field (`input`) and the phone bezel (6px `device-edge`). The phone frame is a one-off 2rem radius clipped by `overflow-hidden`, a fixed height at each width (26/30/31rem) so the capture always overtops it, and cropped by the panel's bottom edge on purpose. The mark is three left-aligned bars of descending width (≈7:5:4) with fully rounded ends on a 24-unit square; the one glyph (the tick) is a 24-unit stroke at 1.75 with round caps and joins, `currentColor`, no fill.
 
 ## Components
 
@@ -233,46 +233,64 @@ Confident, filled, and without ornament: the accent is the button and the button
 
 ### Cards / Containers
 - **Product panel:** 16px radius, hairline, `card` ground, fixed height with `overflow-hidden`; a quiet "Example data" caption pinned top-right; the `glow` radial behind it.
-- **Inset sheet:** 12px radius, hairline, `background` ground, holding the Quotes table.
-- **Not used:** feature cards. How-it-works columns and who-it-is-for rows are `border-t` hairlines with `gap-label` stacks, not boxed.
+- **Inset sheet:** 12px radius, hairline, `background` ground, `overflow-hidden`. Used around the Quotes table inside the product panel, around each of the three how-it-works specimens (`components/specimens.tsx`) at `md:h-52` so the three line up across the row — below `md` they are stacked and there is no row to line up with, so there is no height either — and, without that height at any width, around the bilingual specimen, which is in a column of its own. The height belongs to the row, not to the frame. Inside one, a `card` strip with a 12px/500 muted line is the sheet's header grammar.
+- **Specimens** (the how-it-works row): three framed pieces of the real record — an Item with its quantity and specification, a ruled-out quote beside the selected one on `accent-wash` with the tick, and the Reminder email — carrying one worked example, the same Item and suppliers as the Quotes sheet above. **The ruled-out quote is the cheapest in the row**, never the dearer one: the sheet above decides by counting, so a reason is only worth printing where the amounts alone reach the other answer. The specimen therefore strikes out an amount the sheet itself ticks during its loop and disagrees with it about that one cell — that disagreement is the specimen's whole subject, not a slip in the example data. HTML, not images; no interactivity and no motion. The frame goes around the specimen, never around the column. One height (13rem) across the three from `md` up, and **each specimen names the block that absorbs the slack** — a plate with a band of empty ground under its last row reads as a screen that failed to load the rest. Growing the last child is not that rule: it shows only where that child has a ground of its own, so the Quote fills its wash, the Item splits the slack evenly across its three blocks and centres them, and the Reminder puts it between its two mail paragraphs rather than under them. **Stretch something the reader can see stretch.** The column is spaced by name rather than by one gap: `group` under the specimen, `label` between the heading and its line, because the plate is evidence and the two lines are one block.
+- **Traces** (the problem section): three framed scraps of the record a reader already has, one under each definition row's sentence at `max-w-sm` — two versions of one amount, a count of Items quoted against the bid's deadline, an award with the who and the why gone. Same 12px frame and hairline as a specimen, but on `card` rather than `background`: one shade greyer, so the page reads grey-and-unfinished here and white-and-ticked under the next heading. All ink is muted, values included; the absence marker is an em dash (`—`), the same glyph in both locales. **Never the accent, the wash or the tick.** No fixed height — they sit one per row rather than across a grid — and their figures are deliberately not the Quotes sheet's worked example, because a trace is the reader's last tender and not the one the product is running (`components/traces.tsx`).
+- **Bilingual specimen** (who-it-is-for): one plate under the section heading, not one per row — the section's thesis is one record and several people, so three plates would argue the opposite. **The item name spans both columns** in a 14px/500 strip on the plate's own ground, localised like the rest of the page (`spec.item.name`): it is one record, so it crosses the hairline instead of being printed twice beside it. Under it, two columns split by a vertical hairline at every width: a `card` strip naming the language, then two `Field` pairs whose **labels are translated and whose values are identical, character for character** (`Quantity` / `数量`, both `20,000 pcs`; `Selected quote` / `已选报价`, both `1,795.00`). The columns carry numerals only, because a numeral cannot be misread as untranslated — a Latin item name under a head reading 中文 could be, and was. The labels are hardcoded, because they are not localisable — they *are* the two locales and must render the same in both builds; the name above them is the one localised string on the plate. Real `lang="en"` and `lang="zh-Hans"` attributes, so the `:lang(zh-Hans)` rules fire and Han is drawn from the device stack: the claim is set rather than asserted.
+- **Not used:** feature cards. How-it-works columns, problem rows, who-it-is-for rows and the four questions are all `border-t` hairlines with `gap-label` stacks, not boxed.
+- **Definition rows** (the problem section): label left in a 26ch column, sentence right, `border-t` and `py-5`, stacking to two lines on a phone. The page's third block shape, and the one a list of failures wants — the title is what the reader recognises, the body is the detail they only need if they did.
 
 ### Quotes Sheet (signature)
-An HTML table standing in for the product's comparison screen: header row on `card` with 12px/500 muted labels; body rows 14px, `py-2.5`, separated by hairlines; item names as row headers at 400; amounts right-aligned in `tabular-nums`, muted when not chosen; the selected cell on `accent-wash` at 500 with a 14px accent tick and a visually-hidden "Selected"; a `tfoot` Bid row at 600. One currency, grouped by three, two decimals.
+An HTML table standing in for the product's comparison screen: header row on `card` with 12px/500 muted labels; body rows 14px, `py-2.5`, separated by hairlines; item names as row headers at 400; amounts right-aligned in `tabular-nums`, muted when not chosen; the selected cell on `accent-wash` at 500 with a 14px accent tick; a `tfoot` Bid row at 600. One currency, grouped by three, two decimals.
+
+**The sheet is operable, and it is the page's one interactive surface.** Every amount is a 44px `<button>` carrying the cell's padding and `aria-pressed`, not a `<td>` with a click on it: pick a supplier's price and the wash and the tick cross to it and the Bid recounts, which is the product's whole mechanism, done rather than described. It is what the page says instead of another paragraph — the reader is *shown* the comparison by making one. A non-chosen cell takes a `card` ground and full ink on hover over 150ms, colour only; the chosen cell is already on the wash and takes no hover at all. One short line under the frame (`sheet.hint`) says the sheet is theirs, because a table that does not look like a control has to be offered once.
 
 ### Mark
 Three bars of `--mark-1..3` (accent, ink, muted ink), inline SVG so the middle bar inverts with the theme; always beside the wordmark, never alone, except as `app/icon.svg` with the values written out.
 
 ### Motion
-One easing, `--ease-rise` (`cubic-bezier(0.16, 1, 0.3, 1)`), a hard ease-out with no bounce or overshoot, and every gesture on the site is written `both` from an already-visible default.
+Two easings and nothing else: **events rise, continuous motion drifts.** `--ease-rise` (`cubic-bezier(0.16, 1, 0.3, 1)`) is a hard ease-out with no bounce or overshoot, and carries everything that happens once because something happened — entrances, arrivals, a cell becoming the answer. `--ease-drift` (`cubic-bezier(0.45, 0, 0.55, 1)`) is symmetric, and is spent only on the two ambient loops, which have no start or end to ease out of. Every finite gesture is written `both` from an already-visible default.
+
+**The beat yields to the reader, permanently.** The panel's clock stops for good on the first pick — not for a few seconds, and it never restarts. A script that keeps re-quoting under the reader's hands is the page arguing with them, and a cell that changes by itself while they read a total they just made is the one thing that would make the sheet look invented. The CSS ambience — the pan, the glow's breath, the edge light — keeps running: it is texture, not the story, and it is not what the reader took over.
 
 - **Entrance** (`rise`): opacity 0→1 with a 12px lift, 420ms. Five hero children stagger by `animation-delay` at 60ms steps (headline 60, sub 120, buttons 180, facts 240, panel 300), so the page assembles top-down and ends on the product.
 - **Focal sequence**, the Quotes sheet assembling, once per load, in the order the work happens: the amounts arrive by supplier column (`quote-arrive`, 360ms, 4px lift, `--col` × 120ms from 520ms); the four chosen cells take the wash, full ink, weight 500 and a self-drawing tick (`quote-choose` 300ms and `tick-draw` 320ms via `pathLength="1"`, `--row` × 80ms from 1240ms, 120ms after the last column has landed); the Bid arrives last at 1860ms, 60ms after the last tick. Over by about 2.2s. Row and column headers are present from the start; only data moves. The chosen cell is styled as an unselected one by class and animated into its end state, so under reduced motion it lands there instantly.
 - **Reveal**: the How-it-works and Who-it-is-for blocks borrow `rise` once, the first time they are scrolled to (`components/reveal.tsx`: `IntersectionObserver`, `threshold: 0`, hides only a block that is off screen after hydration, disconnects after the first entrance, never created under reduced motion). The closed-beta heading and the form never animate: the ask is simply there.
+- **The panel's beat** (`components/ambient-stage.tsx`): one clock for everything inside the panel that happens rather than drifts. The first beat waits out the assemble as well as its step (2220 + 4000ms); after that it is one every 4s, four to a cycle, scheduled from the last rather than on an interval so a pause is a cleared timeout and a resume is a fresh four seconds. Three things read it, and none of them keeps a timer: given one each they would drift apart over a few minutes and the panel would tell three stories at slightly wrong times.
+- **The living sheet** (`components/quotes-sheet.tsx`): a pure function of that beat, on a fixed four-move script, ending where it began so the cycle has no seam. A move is one supplier re-quoting one Item (`quote-arrive`, replayed by remounting the cell under a new key); if the new amount is the row's lowest the wash and the tick cross to it (`quote-choose`, `tick-draw`, and `quote-choose` in `reverse` on the cell that loses them), and the Bid arrives again with the new total. The stagger is dropped — a number changing twenty seconds in is not a column landing — but the easing is `--ease-rise`, because these are events.
+- **The light on the beat** (`components/panel-glow.tsx`): the glow is two elements, because the two kinds of motion must not interrupt each other. The outer drifts for 18s and is never remounted; the inner carries the gradient, is remounted on each beat, and plays `glow-beat` once — 1400ms, `--ease-rise`, a scale of 1.03 and a return from a resting 0.92 opacity to full. It sits a hair under full precisely so that a lift is possible at all. Nobody can say what moved, which is the right amount for a light behind a page.
+- **The Reminder on the phone** (`components/phone-notice.tsx`): on one beat of the four, a mail banner comes down over the capture (`notice-arrive`, 3400ms, `--ease-rise`, held two thirds of the way and then fading rather than sliding back). It is the *phone's* notification, not an in-app toast the product does not have, and its line is the app's own `email.reminder.milestone.internal_quote` string cut to banner length — so the hero's third fact, *Reminders by email*, is shown rather than claimed. Mounted on the beat and unmounted after it, `aria-hidden` because it is drawn over a capture that already has an `alt` and a screen reader announcing an unopenable deadline email would be the page's one lie said out loud. Not the first beat of the cycle: the sheet and the light are already using that one.
+- **Ambient loops**: the capture pans 2rem up and back inside its frame over 16s on `alternate`, with 10% of each pass held at either end, as if somebody were idly scrolling it; the glow behind the panel drifts 4% sideways and breathes between 0.8 and 1 opacity over 18s; and a lit segment 45% of the panel's width crosses its top hairline and back over 20s (`edge-travel`), clipped by a 1px-tall strip so nothing of it exists off the edge. All CSS only, all `--ease-drift`, all `alternate` — a segment that wrapped would have a seam in it, and a seam in a drift is an event. The capture's frame is a fixed height at each width (26/30/31rem) so that the screenshot always overtops it and there is something to pan through.
+- **The one loop outside the panel**: the same `glow` radial, the same 18s `glow-drift`, low behind the questions above the ask. It is wrapped in an `AmbientStage` with `clock={false}` — the observer and the tab's visibility, and deliberately no second beat, because two clocks counting different turns is the drift the panel's one clock exists to prevent. The ask itself still animates nothing at all.
+- **Off switches**: the stage marks the panel `stage-still` whenever it is off screen (`IntersectionObserver`, `threshold: 0`) or the tab is hidden, which pauses every animation inside it mid-stroke, and the same flag stops the beat — one switch, because there is one clock. Under `prefers-reduced-motion: reduce` the loops are `animation: none` rather than collapsed (a squashed loop parks mid-gesture) and the beat never starts, so the turn stays 0: the sheet sits at its assembled state, the glow never lifts, and the banner is never mounted at all.
 - **Feedback**: the bar's call to action fades and lifts 1px over 200ms instead of snapping, and is `aria-hidden` with `tabIndex -1` while faded; the form's success notice enters with `rise`. Other state transitions are 150–200ms on opacity or colour only.
 - **Off switches**: `scroll-behavior: smooth` only under `prefers-reduced-motion: no-preference`; under `reduce`, every animation and transition collapses to 0.01ms with zero delay and one iteration, so each lands on its end state. `@media print` resets every motion class to its end state so nothing is mid-gesture on paper.
 
 ### Browser surfaces
-`::selection` is `accent-wash` with full ink; `accent-color` is `accent`; `text-underline-offset` is 0.2em; `:focus-visible` is 2px solid `ring` at 2px offset everywhere; `color-scheme: light dark` paints the pre-stylesheet canvas and native controls in the right reading.
+`::selection` is `accent-wash` with full ink; `accent-color` is `accent`; `text-underline-offset` is 0.2em; `:focus-visible` is 2px solid `ring` at 2px offset everywhere; `color-scheme: light` paints the pre-stylesheet canvas and native controls light, whatever the device is set to.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** state every colour once as a `light-dark()` pair on `:root` and read it through `color-scheme`; preview the other reading with `data-theme` on `<html>`.
+- **Do** state every colour once, as a plain value on `:root`, and declare `color-scheme: light` alongside them.
 - **Do** separate sections and columns with the 8% hairline and keep the page on one ground.
 - **Do** edge anything operable with `input`, the darker control edge, and leave `border` for rules and frames.
 - **Do** keep every control at 44px (the tap floor); the 36px bar button is the one exception and it defers to the 44px primary while that is on screen.
 - **Do** set headings at 600 and let size, tracking and leading carry hierarchy; cap section headings at 36px.
 - **Do** keep `:lang(zh-Hans)` at zero tracking with open leading at every tier, and draw Han from the device stack.
 - **Do** use `tabular-nums`, one currency and hand-formatted grouping in any table of amounts.
-- **Do** label example data on its face, and show the product as real UI (the phone capture, an HTML sheet).
+- **Do** label example data on its face, and show the product as real UI (the phone capture, an HTML sheet, the three how-it-works specimens, the bilingual plate) — one marker per row of examples, not one per specimen.
+- **Do** let the problem section show the failure rather than the fix: its evidence is the reader's own artefacts, greyer and unfinished, never a piece of the product doing its job.
 - **Do** name spacing by what it separates: `label` 8, `field` 14, `group` 24, `landmark` 40 (72 on desktop).
 
 ### Don't:
 - **Don't** fetch a CJK webfont; Inter is Latin-only and Han is the device's.
-- **Don't** add a theme toggle, a `dark:` variant, or a second token block.
+- **Don't** add a theme toggle, a dark reading, a `dark:` variant, a theme attribute on `<html>`, or a second token block.
 - **Don't** introduce a coloured band, stripe, second ground, eyebrow, kicker, numbered step or icon-over-column card.
 - **Don't** put a price, a signup link, logos, counts or testimonials on the page (ADR-0035; the only app link is `/login`, the only ask is the waiting list).
 - **Don't** use a weight above 600, uppercase labels, or negative tracking on Han.
 - **Don't** add shadows to buttons, inputs or panels; the one shadow is the phone's device drop.
-- **Don't** add a second easing, a loop, a scroll-linked effect, or an entrance on the closed-beta section or the form; don't animate a size, margin or position in the flow; don't leave motion running under `prefers-reduced-motion: reduce`.
+- **Don't** add a third easing, a scroll-linked effect, or an entrance on the closed-beta section or the form; don't animate a size, margin or position in the flow; don't leave motion running under `prefers-reduced-motion: reduce`.
+- **Don't** loop anything but ambient motion inside the product panel, and never loop anything the reader has to read. A loop is allowed only if it is slow, quiet, paused when it is off screen or the tab is hidden, and removed outright under `prefers-reduced-motion: reduce`; everything else on the page happens once.
+- **Don't** put the accent, the `accent-wash` or the tick on a trace: the problem section shows what happens *without* the product, and the accent is the product working.
 - **Don't** add a second icon; the tick is the whole icon vocabulary, inline and `currentColor`.

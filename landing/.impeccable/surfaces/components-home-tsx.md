@@ -7,7 +7,7 @@ related_targets: ["components/site-header.tsx","components/footer.tsx","componen
 
 # Surface brief: awardley.com home (`components/home.tsx`)
 
-Scope: the marketing home page, both locales (`en`, `zh-Hans`), both themes (device-driven). Visitor mode: **Persuade**.
+Scope: the marketing home page, both locales (`en`, `zh-Hans`), light only. Visitor mode: **Persuade**.
 
 Audience and job: a trading-company owner or manager who has heard the name and wants to know what Awardley is and whether to ask for an invite; secondarily a colleague who followed a Reminder link, and investors. Action: join the waiting list. Proof: the real phone capture (`public/screenshot-tender.png`) and an HTML-rendered example of the Quotes sheet, labelled example data. Constraints: ADR-0035 (no price, no signup, only `/login`, waiting list only, nothing stored before confirm); no CJK webfont; 390px layout suite; sync components.
 
@@ -19,7 +19,7 @@ Unresolved: none. Reseeding the app screenshot waits on the Supabase CLI.
 
 THESIS: One record per tender, shown as the working UI it is, on a page that could sit beside Linear and Stripe. Refuses the two prior arrangements on this project: the warm-paper brochure and the slate-and-navy Trust page with three icon cards. No cards, no eyebrows, no numbered steps, no coloured bands.
 
-OWN-WORLD: Monochrome ground, one indigo accent. Light: white ground, `#fafafa` alternate, near-black ink, muted grey text that clears 4.5:1, hairline borders at ~8% ink. Dark: near-black ground (`~#0a0a0b`), panels one step lighter, borders white at 8%, ink `#ededef`. Inter (Latin, variable, `opsz`) with tight display tracking (-0.02 to -0.03em) beside the device Han stack; `:lang(zh-Hans)` keeps zero tracking, open leading, no uppercase. Controls: 8px radius, 44px height (the tap floor, PRODUCT.md accessibility), filled indigo primary, ghost secondary with hairline. Type scale: display 56–64px desktop / 36px phone, section headings 32–36px, body 16–17px, small 14px. Tabular numerals in any table.
+OWN-WORLD: Monochrome ground, one indigo accent. Light only: white ground, `#fafafa` alternate, near-black ink, muted grey text that clears 4.5:1, hairline borders at ~8% ink. Inter (Latin, variable, `opsz`) with tight display tracking (-0.02 to -0.03em) beside the device Han stack; `:lang(zh-Hans)` keeps zero tracking, open leading, no uppercase. Controls: 8px radius, 44px height (the tap floor, PRODUCT.md accessibility), filled indigo primary, ghost secondary with hairline. Type scale: display 56–64px desktop / 36px phone, section headings 32–36px, body 16–17px, small 14px. Tabular numerals in any table.
 
 STORY: The visitor reads the headline and knows it is a tender record; sees the real phone screen and an example Quotes sheet and believes it exists and works; reads three plain columns on how it works and three rows on who it is for; and leaves an email at the foot. Someone with an Invite finds Sign in in the header without it competing.
 

@@ -16,9 +16,8 @@ import { useFormStatus } from "react-dom";
  * waiting on it for a while.
  *
  * It asks for `bg-accent` and nothing about the surface under it. There is one ground on
- * this site and one accent, and both are `light-dark()` pairs in `globals.css`, so the
- * same string draws deep indigo on paper and a lighter indigo on the near-black reading
- * without this component knowing which it is on.
+ * this site and one accent, both stated once in `globals.css`, so the same string draws
+ * the same deep indigo on paper wherever this button is used.
  *
  * `className` is prefixed rather than appended, so a caller that needs one layout
  * utility of its own — the waiting-list row needs `shrink-0`, because its button sits

@@ -38,16 +38,16 @@ The mechanism a neighbouring product cannot truthfully copy: **the Tender, its I
 - Bilingual `en` + `zh-Hans` via `next-intl`; copy lives in `messages/*.json`. Domain terms are fixed by `../CONTEXT.md` (Tender, Item, Quote, Bid, Assignee, Reminder; zh 招标 / 产品项 / 报价 …).
 - **No CJK webfont may be fetched.** The Han stack is declared in `app/globals.css` and drawn by the device. `:lang(zh-Hans)` typography rules (no tracking, open leading, no uppercase) must survive any redesign.
 - The 390px layout suite (`test/home.layout.test.tsx`) must pass in both locales: no sideways scroll, `main .mx-auto` has a max-width, exactly one `role=textbox`, the `input[name="website"]` honeypot present and `aria-hidden`. All components it renders must be sync.
-- Both themes are judged: the site follows the device (`color-scheme: light dark`, `light-dark()` tokens), there is no theme switch.
+- **The site is light only** (decided 18 September 2026): `color-scheme: light` on `:root`, every colour stated once as a plain value, no dark reading and no theme switch. The app keeps its own three theme states (ADR-0024).
 - Stack: Next.js 16 App Router, Tailwind v4, React 19. No new runtime dependencies without a reason.
 
 ## Brand Commitments
 
 - Name **Awardley**; the mark in `components/mark.tsx`.
 - The landing is **free to look different from the app** (confirmed 17 September 2026): same name and mark, its own faces and palette. ADR-0019 governs the app only.
-- Owner's stated bar: **"modern and professional"**, judged in both light and dark. Two prior passes were rejected (commits `4238188`, `041851c`): the first kept the app's Fira + warm paper; the second was a Swiss/Trust-and-Authority slate-and-navy page in Plus Jakarta Sans. Both are anti-references.
+- Owner's stated bar: **"modern and professional"**, judged in light. Two prior passes were rejected (commits `4238188`, `041851c`): the first kept the app's Fira + warm paper; the second was a Swiss/Trust-and-Authority slate-and-navy page in Plus Jakarta Sans. Both are anti-references.
 - Voice: plain, specific, no hype. Says what it is; never invents proof.
-- **Standing preference (17 September 2026): the category standard, played straight.** Impeccable's dealt visual worlds (a sailing board, a bid tabulation sheet, a custody line) were declined as over the top. The landing is a conventional product site at full craft, and its bar is **Linear and Stripe**: restrained, precise type, product shown as real UI, equally finished in light and dark. No irony, no smuggled quirk.
+- **Standing preference (17 September 2026): the category standard, played straight.** Impeccable's dealt visual worlds (a sailing board, a bid tabulation sheet, a custody line) were declined as over the top. The landing is a conventional product site at full craft, and its bar is **Linear and Stripe**: restrained, precise type, product shown as real UI, finished to that standard in its one light reading. No irony, no smuggled quirk.
 
 ## Evidence on Hand
 
@@ -65,4 +65,4 @@ The mechanism a neighbouring product cannot truthfully copy: **the Tender, its I
 
 ## Accessibility & Inclusion
 
-Text pairs ≥ 4.5:1 in both themes; control edges ≥ 3:1. `prefers-reduced-motion` collapses all motion. Colour never carries the only copy of a meaning.
+Text pairs ≥ 4.5:1; control edges ≥ 3:1. `prefers-reduced-motion` collapses all motion. Colour never carries the only copy of a meaning.

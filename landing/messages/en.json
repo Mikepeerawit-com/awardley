@@ -25,7 +25,8 @@
     "supplierA": "Supplier A",
     "supplierB": "Supplier B",
     "supplierC": "Supplier C",
-    "selected": "Selected",
+    "choose": "Choose {supplier} for {item}",
+    "hint": "Pick a supplier’s price — the Bid follows.",
     "bid": "Bid",
     "currency": "USD",
     "rows": {
@@ -35,27 +36,85 @@
       "thermometer": "Infrared thermometer — 400"
     }
   },
+  "notice": {
+    "app": "Mail",
+    "when": "now",
+    "from": "Awardley",
+    "line": "Internal quote deadline: 2 days left"
+  },
+  "problem": {
+    "title": "The tender is in six places, and the deadline is in someone's head",
+    "points": {
+      "stale": {
+        "title": "The bid goes out on a price that has moved",
+        "body": "A supplier revised on Tuesday; the sheet in the bid was saved on Monday."
+      },
+      "missed": {
+        "title": "The supplier nobody chased",
+        "body": "One Item still has no quote against it on the morning the bid is due."
+      },
+      "lost": {
+        "title": "Nothing left to look back at",
+        "body": "Six months on, no record of who quoted what, or why that supplier won."
+      }
+    }
+  },
+  "trace": {
+    "stale": {
+      "inBid": "In the bid \u00b7 Monday",
+      "revised": "Supplier revised \u00b7 Tuesday"
+    },
+    "missed": {
+      "quoted": "Items quoted",
+      "quotedValue": "3 of 4",
+      "due": "Bid due",
+      "dueValue": "Tomorrow, 09:00"
+    },
+    "lost": {
+      "awarded": "Awarded",
+      "awardedValue": "Six months ago",
+      "who": "Who quoted",
+      "why": "Why they won"
+    }
+  },
   "how": {
-    "title": "From the client's request to the bid you send",
-    "intro": "Three things, in the order they happen."
+    "title": "From the client's request to the bid you send"
   },
   "beats": {
     "tender": {
       "title": "A Tender, and every Item under it",
-      "body": "Record the Tender once. Every Item the client asked for sits under it with its own quantity, specification and reference images — so nothing is priced from a paragraph in somebody's inbox."
+      "body": "Every Item the client asked for, recorded with its own quantity and specification."
     },
     "quotes": {
       "title": "Quotes compared on one sheet",
-      "body": "Every supplier's price for every Item, on one sheet, in one currency. Rule out what does not fit, select what does, and the Bid is built from the Quotes you chose rather than from memory."
+      "body": "Rule out what does not fit, select what does, and the Bid follows."
     },
     "assignees": {
       "title": "Assignees, and Reminders by email",
-      "body": "Assign an Item to whoever is chasing it. Reminders arrive by email, to the one person they are about, in the language that person reads — no group chat required."
+      "body": "One Reminder, to the one person it is about, in the language they read."
+    }
+  },
+  "spec": {
+    "item": {
+      "name": "Nitrile gloves, M",
+      "quantity": "Quantity",
+      "specification": "Specification",
+      "specificationValue": "Powder-free, violet, EN 455"
+    },
+    "ruleOut": {
+      "ruledOut": "Ruled out",
+      "reason": "Lead time 8 weeks",
+      "selected": "Selected"
+    },
+    "reminder": {
+      "from": "From Awardley",
+      "line": "Surgical consumables",
+      "deadline": "Internal quote deadline: 2 days left",
+      "items": "Items awaiting your quote:"
     }
   },
   "who": {
     "title": "Built for the people who actually chase the quotes",
-    "body": "A tender is never one person's job. Awardley gives each of them the part they need, without a group chat.",
     "points": {
       "owner": {
         "title": "The owner",
@@ -68,6 +127,27 @@
       "team": {
         "title": "The whole team",
         "body": "On a desk or a phone, in English or 中文, looking at the same record."
+      }
+    }
+  },
+  "faq": {
+    "title": "Before you leave an email",
+    "items": {
+      "suppliers": {
+        "q": "Do our suppliers need an account?",
+        "a": "No — you record what they quoted; they send it however they already do."
+      },
+      "spreadsheet": {
+        "q": "What happens to the spreadsheet we use now?",
+        "a": "The Quotes sheet replaces it, with the arithmetic taken out of your hands."
+      },
+      "language": {
+        "q": "Can half the team work in 中文?",
+        "a": "Yes — English or 中文, chosen per person, over one shared record."
+      },
+      "data": {
+        "q": "Where does our data live?",
+        "a": "In one database behind the login; this page collects only an email address."
       }
     }
   },

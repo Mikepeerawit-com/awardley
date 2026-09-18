@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { usePanelBeat } from "@/components/ambient-stage";
 import { CheckIcon } from "@/components/icons";
@@ -50,6 +50,30 @@ const SCRIPT = [
   { row: 0, column: 2, amount: 1910 },
   { row: 1, column: 1, amount: 4480 },
 ] as const;
+
+/** Three suppliers across, which is the width the arrow keys stop at. */
+const COLUMNS = ROWS[0].quotes.length;
+
+/**
+ * Where each key that moves the tab stop moves it to, from the cell that has it.
+ *
+ * The grid pattern, and nothing invented for this sheet: left/right along the suppliers,
+ * up/down along the Items, `Home`/`End` to the ends of the row. Nothing wraps — a reader
+ * holding an arrow against the edge stays on the cell they can see rather than being
+ * thrown to the far side of the row, which is what `clamp` below is for.
+ */
+const STEPS: Record<string, (row: number, column: number) => [number, number]> = {
+  ArrowRight: (row, column) => [row, column + 1],
+  ArrowLeft: (row, column) => [row, column - 1],
+  ArrowDown: (row, column) => [row + 1, column],
+  ArrowUp: (row, column) => [row - 1, column],
+  Home: (row) => [row, 0],
+  End: (row) => [row, COLUMNS - 1],
+};
+
+function clamp(index: number, count: number): number {
+  return Math.min(Math.max(index, 0), count - 1);
+}
 
 /** The amounts after `turn` moves, and the turn each cell last changed on. */
 function sheetAfter(turn: number) {
@@ -132,9 +156,23 @@ function changedAt(row: number, column: number, turn: number): number {
  * visible text is a bare number and three columns of bare numbers are indistinguishable by
  * name, so each carries an `aria-label` naming the supplier and the Item it belongs to.
  *
+ * **And it is one stop on the way to the form, not twelve.** Twelve operable cells sitting
+ * between the hero and the page's only real ask — on a sheet the page itself labels
+ * *Example data*, whose buttons change nothing outside it — is a tax charged to exactly the
+ * readers least able to afford it. So the sheet takes the grid pattern: a roving
+ * `tabindex`, one cell at `0` and the other eleven at `-1`, and the arrow keys inside. Tab
+ * reaches the sheet once and leaves it once; the cells stay real buttons with their
+ * `aria-pressed` and their labels, because the answer to twelve tab stops is not making the
+ * sheet less operable.
+ *
  * **Taking a pick takes the sheet.** The first click calls `take` on the stage and the beat
  * stops for good — the reasoning is in `components/ambient-stage.tsx`, and it is why a pick
- * never has to be reconciled with a script move arriving underneath it.
+ * never has to be reconciled with a script move arriving underneath it. An arrow key takes
+ * it for the same reason and one further one: a cell is replayed by being remounted, and a
+ * script move landing on the cell a keyboard reader is standing on would take the focus
+ * with it. Which is why arrowing takes the sheet but merely *focusing* it does not — the
+ * tab stop rests on the top-left cell, which the script never touches, so a reader tabbing
+ * past the sheet on their way down the page does not silently kill the loop.
  */
 export function QuotesSheet() {
   const t = useTranslations("sheet");
@@ -165,11 +203,52 @@ export function QuotesSheet() {
   // sheet's first arrival — see the footer.
   const touched = picks.some((pick) => pick !== null);
 
+  /**
+   * The cell holding the sheet's one tab stop, as `[row, column]`. It follows the focus
+   * rather than being driven by it, so a click, a pick and an arrow key all leave the stop
+   * where the reader last was, and shift-tabbing back into the sheet returns them there.
+   */
+  const [active, setActive] = useState<[number, number]>([0, 0]);
+
+  /**
+   * The sheet itself, which is how an arrow key finds the cell it is moving to. A ref on
+   * the table rather than on the twelve cells: a cell is a *new node* every time its number
+   * changes, so a map of the twelve would need keeping in step with the remounts, while the
+   * table is mounted once and already knows where its own buttons are.
+   */
+  const sheet = useRef<HTMLTableElement>(null);
+
+  const move = (event: React.KeyboardEvent<HTMLButtonElement>, row: number, column: number) => {
+    const step = STEPS[event.key];
+
+    if (step === undefined) return;
+
+    // Before anything else: an arrow inside the sheet is the reader working it, and the
+    // page must not also scroll under them while they do. Before the clamp, too, and for
+    // the same reason `choose` takes the sheet on a pick that changes nothing: an arrow
+    // held against the outer column is still a reader working this themselves.
+    event.preventDefault();
+    take();
+
+    const [toRow, toColumn] = step(row, column);
+
+    sheet.current
+      ?.querySelector<HTMLButtonElement>(
+        `[data-row="${clamp(toRow, ROWS.length)}"][data-column="${clamp(toColumn, COLUMNS)}"]`,
+      )
+      ?.focus();
+  };
+
   const choose = (position: number, index: number, current: number) => {
     // Always, even on the cell that is already the answer: the reader has still taken the
     // sheet over, and finding out that it was already the lowest is a legitimate thing to
     // click for. What that click must not do is replay an animation to say nothing changed.
     take();
+
+    // As well as through `onFocus`, which Safari does not fire for a click on a `<button>`:
+    // the reader who picks with the mouse and then reaches for Tab should find the stop
+    // where they last worked, on every browser.
+    setActive([position, index]);
 
     if (index === current) return;
 
@@ -179,7 +258,7 @@ export function QuotesSheet() {
   };
 
   return (
-    <table className="w-full border-collapse text-left tabular-nums">
+    <table ref={sheet} className="w-full border-collapse text-left tabular-nums">
       <caption className="sr-only">{t("caption")}</caption>
 
       <thead className="bg-card">
@@ -271,6 +350,18 @@ export function QuotesSheet() {
                       whose whole point is that its columns line up. The chosen cell is left
                       out of it — it is already on the wash, and lightening the answer when
                       the pointer crosses it would read as it being about to stop being one.
+                      The two properties are named rather than taken as `transition-colors`,
+                      which sweeps up `outline-color` as well and would fade the focus ring
+                      up over the same 150ms — a ring that arrives late on a reader who has
+                      already moved.
+
+                      The focus ring is the site's own — solid accent, 2px — turned *inwards*.
+                      The sheet sits in an `overflow-hidden` frame and the button fills its
+                      cell edge to edge, so the base rule's outward 2px would be drawn over
+                      the neighbouring amount and clipped off entirely down the outer column:
+                      a ring the reader loses on exactly the cells at the edge. Inside the
+                      button it lands on the cell's own ground, which at full strength clears
+                      3:1 against the `accent-wash` as readily as against the page.
                     */}
                     <button
                       type="button"
@@ -282,7 +373,19 @@ export function QuotesSheet() {
                         item: t(`rows.${row.key}`),
                       })}
                       onClick={() => choose(position, index, chosen)}
-                      className={`flex min-h-11 w-full cursor-pointer items-center justify-end gap-1.5 px-3 py-2.5 text-right transition-colors duration-150 ${
+                      onKeyDown={(event) => move(event, position, index)}
+                      onFocus={() =>
+                        setActive((current) =>
+                          current[0] === position && current[1] === index
+                            ? current
+                            : [position, index],
+                        )
+                      }
+                      // The sheet's one tab stop, and the eleven cells reached by arrow.
+                      tabIndex={position === active[0] && index === active[1] ? 0 : -1}
+                      data-row={position}
+                      data-column={index}
+                      className={`flex min-h-11 w-full cursor-pointer items-center justify-end gap-1.5 px-3 py-2.5 text-right transition-[color,background-color] duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 ${
                         isChosen ? "" : "hover:bg-card hover:text-foreground"
                       }`}
                     >

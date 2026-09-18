@@ -10,11 +10,17 @@ import { phone } from "./test/phone.mts";
  * **`.test.ts` — node.** The token: signed, verified, expired, tampered with. It is pure
  * Web Crypto over two strings, so it needs no browser and no server.
  *
- * **`.layout.test.tsx` — a real browser.** ADR-0009's failure bar, that nothing scrolls
- * sideways at 390×844. jsdom has no layout engine and reports every `scrollWidth` as
- * `0`, so an assertion about overflow passes there on a page overflowing by a mile.
- * Headless Chromium instead, which is why this project alone needs
- * `npx playwright install chromium`.
+ * **`.layout.test.tsx` and `.keyboard.test.tsx` — a real browser.** ADR-0009's failure
+ * bar, that nothing scrolls sideways at 390×844, and the keyboard contract of the one
+ * operable surface the page has. jsdom answers neither honestly: it has no layout engine
+ * and reports every `scrollWidth` as `0`, so an assertion about overflow passes there on
+ * a page overflowing by a mile, and it has no `:focus-visible` and no clipping, so a
+ * focus ring measured there is a ring nobody has seen. Headless Chromium instead, which
+ * is why this project alone needs `npx playwright install chromium`.
+ *
+ * Two extensions rather than one because the question is different, not the runtime: a
+ * suite named for layout that pressed arrow keys would be filed where nobody looks for
+ * it.
  *
  * The harness in `test/` is a deliberate minimal copy of the app's `src/test/layout.ts`
  * rather than an import across the two projects: `landing/` is its own package with its
@@ -46,7 +52,7 @@ export default defineConfig({
         resolve: { tsconfigPaths: true },
         test: {
           name: "layout",
-          include: ["**/*.layout.test.tsx"],
+          include: ["**/*.layout.test.tsx", "**/*.keyboard.test.tsx"],
           exclude: ["node_modules/**", ".next/**"],
           setupFiles: ["./vitest.setup.layout.ts"],
           browser: {

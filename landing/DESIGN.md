@@ -245,13 +245,15 @@ An HTML table standing in for the product's comparison screen: header row on `ca
 
 **The sheet is operable, and it is the page's one interactive surface.** Every amount is a 44px `<button>` carrying the cell's padding and `aria-pressed`, not a `<td>` with a click on it: pick a supplier's price and the wash and the tick cross to it and the Bid recounts, which is the product's whole mechanism, done rather than described. It is what the page says instead of another paragraph — the reader is *shown* the comparison by making one. A non-chosen cell takes a `card` ground and full ink on hover over 150ms, colour only; the chosen cell is already on the wash and takes no hover at all. One short line under the frame (`sheet.hint`) says the sheet is theirs, because a table that does not look like a control has to be offered once.
 
+**One tab stop, not one per cell.** Twelve operable cells between the hero and the page's only real ask is a tax charged to the readers least able to afford it — so the sheet takes the grid pattern: a roving `tabindex` (the focused cell `0`, the other eleven `-1`), the arrow keys and `Home`/`End` inside, no wrapping at the edges. Tab reaches the sheet once and leaves it once, and the cells keep their `aria-pressed` and their labels: the answer to twelve tab stops is never making the demo less operable. The focus ring is the site's own, turned inwards — the sheet's frame clips, and a ring drawn outside the cell is lost down the outer column.
+
 ### Mark
 Three bars of `--mark-1..3` (accent, ink, muted ink), inline SVG so the middle bar inverts with the theme; always beside the wordmark, never alone, except as `app/icon.svg` with the values written out.
 
 ### Motion
 Two easings and nothing else: **events rise, continuous motion drifts.** `--ease-rise` (`cubic-bezier(0.16, 1, 0.3, 1)`) is a hard ease-out with no bounce or overshoot, and carries everything that happens once because something happened — entrances, arrivals, a cell becoming the answer. `--ease-drift` (`cubic-bezier(0.45, 0, 0.55, 1)`) is symmetric, and is spent only on the two ambient loops, which have no start or end to ease out of. Every finite gesture is written `both` from an already-visible default.
 
-**The beat yields to the reader, permanently.** The panel's clock stops for good on the first pick — not for a few seconds, and it never restarts. A script that keeps re-quoting under the reader's hands is the page arguing with them, and a cell that changes by itself while they read a total they just made is the one thing that would make the sheet look invented. The CSS ambience — the pan, the glow's breath, the edge light — keeps running: it is texture, not the story, and it is not what the reader took over.
+**The beat yields to the reader, permanently.** The panel's clock stops for good on the first pick — or the first arrow key inside the sheet, which is the same reader taking the same surface over, and which also keeps a script move from remounting the cell their focus is standing on — not for a few seconds, and it never restarts. A script that keeps re-quoting under the reader's hands is the page arguing with them, and a cell that changes by itself while they read a total they just made is the one thing that would make the sheet look invented. The CSS ambience — the pan, the glow's breath, the edge light — keeps running: it is texture, not the story, and it is not what the reader took over.
 
 - **Entrance** (`rise`): opacity 0→1 with a 12px lift, 420ms. Five hero children stagger by `animation-delay` at 60ms steps (headline 60, sub 120, buttons 180, facts 240, panel 300), so the page assembles top-down and ends on the product.
 - **Focal sequence**, the Quotes sheet assembling, once per load, in the order the work happens: the amounts arrive by supplier column (`quote-arrive`, 360ms, 4px lift, `--col` × 120ms from 520ms); the four chosen cells take the wash, full ink, weight 500 and a self-drawing tick (`quote-choose` 300ms and `tick-draw` 320ms via `pathLength="1"`, `--row` × 80ms from 1240ms, 120ms after the last column has landed); the Bid arrives last at 1860ms, 60ms after the last tick. Over by about 2.2s. Row and column headers are present from the start; only data moves. The chosen cell is styled as an unselected one by class and animated into its end state, so under reduced motion it lands there instantly.
@@ -267,7 +269,7 @@ Two easings and nothing else: **events rise, continuous motion drifts.** `--ease
 - **Off switches**: `scroll-behavior: smooth` only under `prefers-reduced-motion: no-preference`; under `reduce`, every animation and transition collapses to 0.01ms with zero delay and one iteration, so each lands on its end state. `@media print` resets every motion class to its end state so nothing is mid-gesture on paper.
 
 ### Browser surfaces
-`::selection` is `accent-wash` with full ink; `accent-color` is `accent`; `text-underline-offset` is 0.2em; `:focus-visible` is 2px solid `ring` at 2px offset everywhere; `color-scheme: light` paints the pre-stylesheet canvas and native controls light, whatever the device is set to.
+`::selection` is `accent-wash` with full ink; `accent-color` is `accent`; `text-underline-offset` is 0.2em; `:focus-visible` is 2px solid `ring` at 2px offset everywhere, turned inwards only where a control fills a clipping frame edge to edge (the Quotes sheet's cells); `color-scheme: light` paints the pre-stylesheet canvas and native controls light, whatever the device is set to.
 
 ## Do's and Don'ts
 
@@ -281,6 +283,7 @@ Two easings and nothing else: **events rise, continuous motion drifts.** `--ease
 - **Do** use `tabular-nums`, one currency and hand-formatted grouping in any table of amounts.
 - **Do** label example data on its face, and show the product as real UI (the phone capture, an HTML sheet, the three how-it-works specimens, the bilingual plate) — one marker per row of examples, not one per specimen.
 - **Do** let the problem section show the failure rather than the fix: its evidence is the reader's own artefacts, greyer and unfinished, never a piece of the product doing its job.
+- **Do** give an operable demo one tab stop and the arrow keys inside it, not one tab stop per cell.
 - **Do** name spacing by what it separates: `label` 8, `field` 14, `group` 24, `landmark` 40 (72 on desktop).
 
 ### Don't:

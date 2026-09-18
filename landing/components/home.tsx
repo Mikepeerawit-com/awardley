@@ -247,7 +247,7 @@ function ProductPanel({ alt }: { alt: string }) {
             <div className="relative h-[26rem] w-[min(70%,280px)] translate-y-12 overflow-hidden rounded-[2rem] border-[6px] border-device-edge shadow-[0_28px_60px_-24px_rgb(0_0_0/0.45)] md:h-[30rem] md:w-[min(100%,280px)] md:translate-y-16 lg:h-[31rem] lg:translate-y-14">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/screenshot-tender.png"
+                src="/screenshot-tender.webp"
                 alt={alt}
                 width={390}
                 height={767}
@@ -536,8 +536,8 @@ function WhoItIsFor() {
             makes above its specimen. `sm` keeps the two language columns at a width each of
             them can be read at, inside a measure set for a 36px heading.
           */}
-          <div className="mt-group max-w-sm">
-            <p className="type-quiet mb-label text-right">{tSheet("example")}</p>
+          <div className="mt-group flex max-w-sm flex-col gap-label">
+            <p className="type-quiet text-right">{tSheet("example")}</p>
 
             <BilingualSpecimen />
           </div>

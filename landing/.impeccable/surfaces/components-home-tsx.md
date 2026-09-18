@@ -9,7 +9,7 @@ related_targets: ["components/site-header.tsx","components/footer.tsx","componen
 
 Scope: the marketing home page, both locales (`en`, `zh-Hans`), light only. Visitor mode: **Persuade**.
 
-Audience and job: a trading-company owner or manager who has heard the name and wants to know what Awardley is and whether to ask for an invite; secondarily a colleague who followed a Reminder link, and investors. Action: join the waiting list. Proof: the real phone capture (`public/screenshot-tender.png`) and an HTML-rendered example of the Quotes sheet, labelled example data. Constraints: ADR-0035 (no price, no signup, only `/login`, waiting list only, nothing stored before confirm); no CJK webfont; 390px layout suite; sync components.
+Audience and job: a trading-company owner or manager who has heard the name and wants to know what Awardley is and whether to ask for an invite; secondarily a colleague who followed a Reminder link, and investors. Action: join the waiting list. Proof: the real phone capture (`public/screenshot-tender.webp`) and an HTML-rendered example of the Quotes sheet, labelled example data. Constraints: ADR-0035 (no price, no signup, only `/login`, waiting list only, nothing stored before confirm); no CJK webfont; 390px layout suite; sync components.
 
 Chosen direction: the category standard, played straight (Impeccable's standing exit), benchmarked against Linear and Stripe. Memorable moment: the product panel under the headline, a real phone screen beside a live-looking Quotes sheet, rising once as the page opens.
 

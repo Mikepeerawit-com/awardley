@@ -1,4 +1,4 @@
--- Data behind landing/public/screenshot-tender.png (#183). Fictional client, suppliers and
+-- Data behind landing/public/screenshot-tender.webp (#183). Fictional client, suppliers and
 -- person. Apply to a fresh local database after creating the Org Admin at /setup, then
 -- capture the Tender at 390x844, 3x, light, en. There is no seed.sql in this repo.
 

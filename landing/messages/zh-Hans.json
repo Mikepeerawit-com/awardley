@@ -11,11 +11,6 @@
     "sub": "客户要什么、供应商报了多少、我们投了什么标、有没有中标。一个给贸易公司用的工作台，中文、English 都能用。",
     "cta": "加入候补名单",
     "secondary": "登录",
-    "facts": {
-      "bilingual": "中文和 English",
-      "reminders": "提醒发到邮箱",
-      "device": "任何设备都能用"
-    },
     "screenshotAlt": "在手机上看到的 Awardley 招标页面，显示该招标的产品项及其报价。"
   },
   "sheet": {
@@ -26,7 +21,6 @@
     "supplierB": "供应商乙",
     "supplierC": "供应商丙",
     "choose": "为“{item}”选定{supplier}",
-    "hint": "点选某家供应商的报价，投标金额随之变化。",
     "bid": "投标",
     "currency": "USD",
     "rows": {

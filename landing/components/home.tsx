@@ -24,8 +24,8 @@ import { WaitingListForm } from "@/components/waiting-list-form";
  * **Trust before persuasion.** The page has no logos, no customer count and no
  * testimonial, because there are no customers yet and inventing the furniture of proof
  * is the one thing a closed beta cannot afford to be caught doing. What fills that slot
- * instead is true and checkable: three facts under the hero, a real capture of the app
- * on a phone, and an example Quotes sheet that says on its face that it is an example.
+ * instead is true and checkable: a real capture of the app on a phone, and an example
+ * Quotes sheet that says on its face that it is an example.
  *
  * **No pricing anywhere**, which is a decision rather than an omission — the beta is
  * invite-only, and a price on a page nobody can buy from invites an argument about a
@@ -89,7 +89,6 @@ export function HomeContent() {
  */
 function Hero() {
   const t = useTranslations("hero");
-  const facts = ["bilingual", "reminders", "device"] as const;
 
   return (
     <section className="mx-auto w-full max-w-6xl px-5 pt-landmark md:px-8 lg:pt-[4.5rem]">
@@ -126,27 +125,6 @@ function Hero() {
             {t("secondary")}
           </a>
         </div>
-
-        {/*
-          The proof slot, and everything in it is checkable today. A Trust & Authority
-          page puts logos or numbers here; we have neither, and three true facts about
-          what the product is beat three borrowed ones about who else uses it. Set as one
-          quiet line rather than as a ticked list, because a tick implies a comparison
-          against something that does not have the thing.
-        */}
-        <ul className="rise rise-4 flex flex-col items-center justify-center gap-y-1 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-3">
-          {facts.map((fact, index) => (
-            <li key={fact} className="flex items-center gap-3 whitespace-nowrap">
-              {index > 0 ? (
-                <span aria-hidden="true" className="hidden text-muted-foreground/45 sm:inline">
-                  ·
-                </span>
-              ) : null}
-
-              {t(`facts.${fact}`)}
-            </li>
-          ))}
-        </ul>
       </div>
 
       <ProductPanel alt={t("screenshotAlt")} />
@@ -197,7 +175,7 @@ function ProductPanel({ alt }: { alt: string }) {
   const t = useTranslations("sheet");
 
   return (
-    <AmbientStage className="rise rise-5 relative mt-landmark lg:mt-[3.5rem]">
+    <AmbientStage className="rise rise-4 relative mt-landmark lg:mt-[3.5rem]">
       <PanelGlow />
 
       <div className="relative h-[26rem] overflow-hidden rounded-2xl border border-border bg-card md:h-[30rem] lg:h-[32rem]">
@@ -275,16 +253,6 @@ function ProductPanel({ alt }: { alt: string }) {
             <div className="overflow-hidden rounded-xl border border-border bg-background">
               <QuotesSheet />
             </div>
-
-            {/*
-              One line, because a sheet that can be worked has to say so once — a reader who
-              never learns the amounts are clickable is reading a picture. It sits under the
-              frame rather than over it, where a caption for a thing goes, and it is quiet
-              type: it is an instruction about the demonstration, not part of the argument.
-              It lives inside the `md:` column with the sheet, so it is absent on the phone
-              layout along with the thing it describes.
-            */}
-            <p className="type-quiet mt-3">{t("hint")}</p>
           </div>
         </div>
       </div>

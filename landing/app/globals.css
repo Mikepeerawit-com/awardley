@@ -338,13 +338,9 @@
     animation-delay: 180ms;
   }
 
+  /* The product panel, last, so the page assembles top-down and ends on the thing it is about. */
   .rise-4 {
     animation-delay: 240ms;
-  }
-
-  /* The product panel, last, so the page assembles top-down and ends on the thing it is about. */
-  .rise-5 {
-    animation-delay: 300ms;
   }
 
   /*

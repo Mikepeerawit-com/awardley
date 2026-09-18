@@ -24,7 +24,7 @@
       "section": { "displayName": "Section", "purpose": "Column titles and privacy subheads. Han: tracking 0, leading 1.45." },
       "lede": { "displayName": "Lede", "purpose": "The one sub line under the headline, 18px to 20px at md, muted ink." },
       "body": { "displayName": "Body", "purpose": "Paragraphs; 16px, 17px from 48rem; muted ink after a heading." },
-      "quiet": { "displayName": "Quiet", "purpose": "Captions, copyright, nav and footer links (500), fact row, privacy note. Han: leading 1.7." },
+      "quiet": { "displayName": "Quiet", "purpose": "Captions, copyright, nav and footer links (500), privacy note. Han: leading 1.7." },
       "label": { "displayName": "Label", "purpose": "Table column headers, sentence case, never uppercase." }
     },
     "fonts": [
@@ -36,7 +36,7 @@
     ],
     "motion": [
       { "name": "rise", "value": "opacity 0->1, translateY(12px)->none, 420ms cubic-bezier(0.16, 1, 0.3, 1) both", "purpose": "The hero's single entrance." },
-      { "name": "rise-stagger", "value": "animation-delay 60ms, 120ms, 180ms, 240ms, 300ms", "purpose": "Headline, sub, buttons, facts, product panel; the page assembles top-down and ends on the product." },
+      { "name": "rise-stagger", "value": "animation-delay 60ms, 120ms, 180ms, 240ms", "purpose": "Headline, sub, buttons, product panel; the page assembles top-down and ends on the product." },
       { "name": "hover-opacity", "value": "opacity 200ms (150ms in the bar), to 0.9", "purpose": "Filled button hover." },
       { "name": "hover-color", "value": "color / background-color 200ms", "purpose": "Ghost button, nav and footer links, underline decoration." },
       { "name": "smooth-scroll", "value": "scroll-behavior: smooth under prefers-reduced-motion: no-preference only", "purpose": "In-page jumps to #how and #waiting-list." },

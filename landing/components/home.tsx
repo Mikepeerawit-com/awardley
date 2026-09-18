@@ -24,8 +24,8 @@ import { WaitingListForm } from "@/components/waiting-list-form";
  * **Trust before persuasion.** The page has no logos, no customer count and no
  * testimonial, because there are no customers yet and inventing the furniture of proof
  * is the one thing a closed beta cannot afford to be caught doing. What fills that slot
- * instead is true and checkable: three facts under the hero, a real capture of the app
- * on a phone, and an example Quotes sheet that says on its face that it is an example.
+ * instead is true and checkable: a real capture of the app on a phone, and an example
+ * Quotes sheet that says on its face that it is an example.
  *
  * **No pricing anywhere**, which is a decision rather than an omission — the beta is
  * invite-only, and a price on a page nobody can buy from invites an argument about a
@@ -89,7 +89,6 @@ export function HomeContent() {
  */
 function Hero() {
   const t = useTranslations("hero");
-  const facts = ["bilingual", "reminders", "device"] as const;
 
   return (
     <section className="mx-auto w-full max-w-6xl px-5 pt-landmark md:px-8 lg:pt-[4.5rem]">
@@ -126,27 +125,6 @@ function Hero() {
             {t("secondary")}
           </a>
         </div>
-
-        {/*
-          The proof slot, and everything in it is checkable today. A Trust & Authority
-          page puts logos or numbers here; we have neither, and three true facts about
-          what the product is beat three borrowed ones about who else uses it. Set as one
-          quiet line rather than as a ticked list, because a tick implies a comparison
-          against something that does not have the thing.
-        */}
-        <ul className="rise rise-4 flex flex-col items-center justify-center gap-y-1 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-3">
-          {facts.map((fact, index) => (
-            <li key={fact} className="flex items-center gap-3 whitespace-nowrap">
-              {index > 0 ? (
-                <span aria-hidden="true" className="hidden text-muted-foreground/45 sm:inline">
-                  ·
-                </span>
-              ) : null}
-
-              {t(`facts.${fact}`)}
-            </li>
-          ))}
-        </ul>
       </div>
 
       <ProductPanel alt={t("screenshotAlt")} />
@@ -197,7 +175,7 @@ function ProductPanel({ alt }: { alt: string }) {
   const t = useTranslations("sheet");
 
   return (
-    <AmbientStage className="rise rise-5 relative mt-landmark lg:mt-[3.5rem]">
+    <AmbientStage className="rise rise-4 relative mt-landmark lg:mt-[3.5rem]">
       <PanelGlow />
 
       <div className="relative h-[26rem] overflow-hidden rounded-2xl border border-border bg-card md:h-[30rem] lg:h-[32rem]">
@@ -247,7 +225,7 @@ function ProductPanel({ alt }: { alt: string }) {
             <div className="relative h-[26rem] w-[min(70%,280px)] translate-y-12 overflow-hidden rounded-[2rem] border-[6px] border-device-edge shadow-[0_28px_60px_-24px_rgb(0_0_0/0.45)] md:h-[30rem] md:w-[min(100%,280px)] md:translate-y-16 lg:h-[31rem] lg:translate-y-14">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/screenshot-tender.png"
+                src="/screenshot-tender.webp"
                 alt={alt}
                 width={390}
                 height={767}
@@ -275,16 +253,6 @@ function ProductPanel({ alt }: { alt: string }) {
             <div className="overflow-hidden rounded-xl border border-border bg-background">
               <QuotesSheet />
             </div>
-
-            {/*
-              One line, because a sheet that can be worked has to say so once — a reader who
-              never learns the amounts are clickable is reading a picture. It sits under the
-              frame rather than over it, where a caption for a thing goes, and it is quiet
-              type: it is an instruction about the demonstration, not part of the argument.
-              It lives inside the `md:` column with the sheet, so it is absent on the phone
-              layout along with the thing it describes.
-            */}
-            <p className="type-quiet mt-3">{t("hint")}</p>
           </div>
         </div>
       </div>
@@ -374,25 +342,32 @@ function Problem() {
           {points.map(({ key, Trace }) => (
             <article
               key={key}
-              className="grid gap-1 border-t border-border py-5 md:grid-cols-[minmax(0,26ch)_minmax(0,1fr)] md:gap-8"
+              className="grid gap-x-8 border-t border-border py-5 md:grid-cols-[minmax(0,26ch)_minmax(0,1fr)] lg:grid-cols-[minmax(0,26ch)_minmax(0,1fr)_minmax(0,24rem)]"
             >
               <h3 className="font-semibold text-pretty">{t(`points.${key}.title`)}</h3>
 
-              <div>
-                <p className="text-pretty text-muted-foreground">{t(`points.${key}.body`)}</p>
+              {/*
+                The three cells are siblings rather than a title beside a nested block,
+                because at `lg` the trace becomes a column of its own and a child cannot
+                leave its parent to do that. The row gap is therefore 0 and each cell sets
+                its own top margin: the grid decides the columns, the margins decide the
+                stacked rhythm, and neither is added to the other at any width.
+              */}
+              <p className="mt-1 text-pretty text-muted-foreground md:mt-0">
+                {t(`points.${key}.body`)}
+              </p>
 
-                {/*
-                  `field` rather than `label` between the sentence and the plate, for the
-                  reason the how-it-works column puts `group` under its specimen: at the 8px
-                  that binds a heading to its paragraph the trace read as the paragraph's
-                  own last line, and it is the thing the paragraph is about. `sm` is a
-                  measure a two-column plate can be read at rather than a width — the row's
-                  right-hand cell is over 60ch on a desk, and a trace stretched across it
-                  would be a table.
-                */}
-                <div className="mt-field max-w-sm">
-                  <Trace />
-                </div>
+              {/*
+                Under the sentence up to `md`, beside it from `lg`. Stacked, `field` rather
+                than `label` holds it off the sentence, for the reason the how-it-works
+                column puts `group` under its specimen: at the 8px that binds a heading to
+                its paragraph the trace read as the paragraph's own last line, and it is
+                the thing the paragraph is about. Beside, it needs neither — the column gap
+                is the separation, and the third column is the measure `sm` was standing in
+                for, so the row fills the width the hairline above it already draws.
+              */}
+              <div className="mt-field max-w-sm md:col-start-2 lg:col-start-3 lg:row-start-1 lg:mt-0 lg:max-w-none">
+                <Trace />
               </div>
             </article>
           ))}
@@ -536,8 +511,8 @@ function WhoItIsFor() {
             makes above its specimen. `sm` keeps the two language columns at a width each of
             them can be read at, inside a measure set for a 36px heading.
           */}
-          <div className="mt-group max-w-sm">
-            <p className="type-quiet mb-label text-right">{tSheet("example")}</p>
+          <div className="mt-group flex max-w-sm flex-col gap-label">
+            <p className="type-quiet text-right">{tSheet("example")}</p>
 
             <BilingualSpecimen />
           </div>

@@ -151,7 +151,10 @@ function changedAt(row: number, column: number, turn: number): number {
  * to announce and nothing for it to announce the state of. So the cell's padding moves onto
  * a real `<button>` that fills it — 44px tall, the site's tap floor — and the state it is
  * in is `aria-pressed`, which is what a control that is either the chosen one or not
- * actually is. That also retires the visually-hidden *Selected*: the same fact said twice,
+ * actually is. The floor is a minimum and not a target: from `lg`, where the sheet is a
+ * hero panel read at arm's length rather than a table under a thumb, the rows take 56px
+ * and the header and Bid rows follow. That is also what closes the panel's bottom — a
+ * sheet sitting at its phone-sized minimum left the card half empty under it. That also retires the visually-hidden *Selected*: the same fact said twice,
  * once as text and once as state, is one of them read out at the wrong moment. The button's
  * visible text is a bare number and three columns of bare numbers are indistinguishable by
  * name, so each carries an `aria-label` naming the supplier and the Item it belongs to.
@@ -265,7 +268,7 @@ export function QuotesSheet() {
         <tr>
           <th
             scope="col"
-            className="border-b border-border px-4 py-2.5 text-xs font-medium text-muted-foreground"
+            className="border-b border-border px-4 py-2.5 text-xs font-medium text-muted-foreground lg:py-3.5"
           >
             {t("item")}
           </th>
@@ -274,7 +277,7 @@ export function QuotesSheet() {
             <th
               key={supplier}
               scope="col"
-              className="border-b border-border px-3 py-2.5 text-right text-xs font-medium text-muted-foreground"
+              className="border-b border-border px-3 py-2.5 text-right text-xs font-medium text-muted-foreground lg:py-3.5"
             >
               {supplier}
             </th>
@@ -298,7 +301,7 @@ export function QuotesSheet() {
 
           return (
             <tr key={row.key} className={position === 0 ? undefined : "border-t border-border"}>
-              <th scope="row" className="px-4 py-2.5 text-sm font-normal">
+              <th scope="row" className="px-4 py-2.5 text-sm font-normal lg:py-4">
                 {t(`rows.${row.key}`)}
               </th>
 
@@ -385,7 +388,7 @@ export function QuotesSheet() {
                       tabIndex={position === active[0] && index === active[1] ? 0 : -1}
                       data-row={position}
                       data-column={index}
-                      className={`flex min-h-11 w-full cursor-pointer items-center justify-end gap-1.5 px-3 py-2.5 text-right transition-[color,background-color] duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 ${
+                      className={`flex min-h-11 w-full cursor-pointer items-center justify-end gap-1.5 px-3 py-2.5 text-right transition-[color,background-color] duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2 lg:min-h-14 ${
                         isChosen ? "" : "hover:bg-card hover:text-foreground"
                       }`}
                     >
@@ -407,7 +410,7 @@ export function QuotesSheet() {
 
       <tfoot>
         <tr className="border-t border-border">
-          <th scope="row" className="px-4 py-3 text-sm font-semibold">
+          <th scope="row" className="px-4 py-3 text-sm font-semibold lg:py-4.5">
             {t("bid")}
           </th>
 
@@ -425,7 +428,7 @@ export function QuotesSheet() {
             for a total the sheet is assembling, and almost two seconds of nothing at all
             for one the reader has just changed by hand.
           */}
-          <td colSpan={3} className="px-3 py-3 text-right text-sm font-semibold">
+          <td colSpan={3} className="px-3 py-3 text-right text-sm font-semibold lg:py-4.5">
             <span key={bid} className={turn > 0 || touched ? "quote-refresh" : "bid-arrive"}>
               {t("currency")} {money(bid)}
             </span>

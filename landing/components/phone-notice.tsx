@@ -19,8 +19,8 @@ const ON_BEAT = 2;
  * job — twelve quotes, four answers, a Bid. The phone on the left is what the same tender
  * looks like to the person actually chasing one of those quotes. Every so often the thing
  * that reaches that person reaches them here, and the reader watches the product's second
- * half happen without a word of copy being spent on it: *Reminders by email* is one of the
- * three facts under the headline, and this is that fact, shown.
+ * half happen without a word of copy being spent on it. *Reminders by email* is a claim the
+ * page used to make under the headline and no longer does, because this is it, shown.
  *
  * **It is the phone's notification, not the app's.** Awardley has no in-app toast and this
  * page does not get to invent one — the whole argument of the panel is that what is on it

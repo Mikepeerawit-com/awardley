@@ -51,7 +51,7 @@ The mechanism a neighbouring product cannot truthfully copy: **the Tender, its I
 
 ## Evidence on Hand
 
-- `public/screenshot-tender.png` — one real capture of a Tender on a phone (390×767 CSS px after the 17 Sep 2026 recrop, from a 390×844 capture), English, fictional medical seed data. The **only** product image; reseeding is currently blocked.
+- `public/screenshot-tender.webp` — one real capture of a Tender on a phone (390×767 CSS px after the 17 Sep 2026 recrop, from a 390×844 capture; 1170×2302 natural, WebP q82), English, fictional medical seed data. The **only** product image; reseeding is currently blocked.
 - Real copy in `messages/en.json` and `messages/zh-Hans.json`.
 - **Absent, and not to be fabricated:** customers, logos, testimonials, counts, benchmarks, prices.
 

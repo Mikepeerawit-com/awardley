@@ -11,9 +11,9 @@ import { getOrgSettings } from "@/lib/org/org";
 
 /**
  * Where the org says how much is added to the market exchange rate when a supplier's
- * foreign price is turned into Baht — the FX Buffer, which until this screen could only
- * be changed with SQL against production. The third screen in Settings' **Organisation**
- * group.
+ * foreign price is turned into the organisation's Reporting Currency — the FX Buffer,
+ * which until this screen could only be changed with SQL against production. The third
+ * screen in Settings' **Organisation** group.
  *
  * Hidden from non-admins with `notFound()` rather than a redirect, for the reason the
  * other two do it: a page that says "you are not allowed here" also says that here
@@ -30,12 +30,16 @@ export default async function CurrencyConversionPage() {
   if (!user?.isOrgAdmin) notFound();
 
   const t = await getTranslations("currencyConversion");
-  const { fxBufferPct } = await getOrgSettings(store);
+  const { fxBufferPct, reportingCurrency } = await getOrgSettings(store);
 
   return (
     <>
       <ScreenHeader heading={t("title")}>
-        <p className="type-quiet">{t("description")}</p>
+        {/* The organisation's own Reporting Currency, not a Tender's: this screen sets
+            what the *next* Quote freezes against, and the currency it is converted into
+            is the one the next Tender will open in (ADR-0036). A Tender already open
+            keeps whatever it was stamped with, and nothing on this page changes it. */}
+        <p className="type-quiet">{t("description", { currency: reportingCurrency })}</p>
       </ScreenHeader>
 
       <Measure>

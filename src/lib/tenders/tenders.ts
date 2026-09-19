@@ -73,6 +73,18 @@ export type TenderSummary = TenderFields & {
   reference: string;
   submittedAt: string | null;
   ownerName: string;
+  /**
+   * The Reporting Currency this Tender opened in — the organisation's answer at the
+   * moment it was created, stamped by the database and never changed afterwards
+   * (ADR-0036).
+   *
+   * On the summary rather than on the detail read alone, because it is the unit every
+   * figure under this Tender is counted in: a screen that draws money without it draws
+   * digits in whichever currency it happens to assume, which is the bug #176 exists to
+   * remove. It rides along on the select the two reads already make, so nothing asks a
+   * second question to find out what a Tender is priced in.
+   */
+  reportingCurrency: string;
 };
 
 /**
@@ -127,7 +139,8 @@ export type Tender = TenderSummary & {
 
 const tenderColumns =
   "id, reference, client_name, title, date_received, internal_quote_deadline, " +
-  "client_submission_deadline, expected_decision_date, submitted_at, notes, owner_user_id";
+  "client_submission_deadline, expected_decision_date, submitted_at, notes, " +
+  "owner_user_id, reporting_currency";
 
 const itemColumns = "id, product_name, description, quantity, unit, outcome, outcome_at";
 
@@ -163,6 +176,7 @@ type TenderDbRow = {
   submitted_at: string | null;
   notes: string | null;
   owner_user_id: string;
+  reporting_currency: string;
   owner: OwnerEmbed;
   items: TenderItemDbRow[];
 };
@@ -697,6 +711,7 @@ function tenderSummary(row: Omit<TenderDbRow, "items">): TenderSummary {
     submittedAt: row.submitted_at,
     notes: row.notes,
     ownerUserId: row.owner_user_id,
+    reportingCurrency: row.reporting_currency,
     // An Owner with no name means the embed came back empty, which RLS cannot produce
     // for a Tender the caller can already see.
     ownerName: row.owner?.name ?? "",

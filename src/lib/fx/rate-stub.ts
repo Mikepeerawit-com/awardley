@@ -17,7 +17,18 @@ export type RateStub = FxBoundary & {
 };
 
 /**
- * A Frankfurter that answers with one rate.
+ * A Frankfurter that prices one pair at `rate`.
+ *
+ * Since #176 the boundary asks for the day's **euro table** rather than a pair, so this
+ * has to name both legs of the pair it is standing in for: it holds `quoted` at one euro
+ * and puts `reporting` at `rate`, which divides back to exactly `rate` however the code
+ * under test gets there. A caller who only cares that a rate exists keeps saying
+ * `respondingRates(1)` and never meets either name.
+ *
+ * **Only the legs under test are in the table**, and that is not tidiness. `freezeRate`
+ * caches every row it is given, so a stub that invented the other twenty-seven currencies
+ * would leave them in `fx_rates` — which has no org, is shared by every suite, and is
+ * exactly where the next suite looks for its fallback.
  *
  * `asOf` defaults to the date that was asked for; pass a different one to stand in for
  * the business-day rule, where a Saturday's request comes back dated Friday.
@@ -25,6 +36,8 @@ export type RateStub = FxBoundary & {
 export function respondingRates(
   rate: number,
   asOf?: string,
+  quoted = "CNY",
+  reporting = "THB",
 ): RateStub {
   const asked: string[] = [];
 
@@ -35,10 +48,10 @@ export function respondingRates(
 
     return Response.json({
       amount: 1,
-      base: url.searchParams.get("base"),
+      base: "EUR",
       // The path is `/v1/{date}`, which is what "the day that was asked for" means here.
       date: asOf ?? url.pathname.split("/").pop(),
-      rates: { THB: rate },
+      rates: { [quoted]: 1, [reporting]: rate },
     });
   };
 
@@ -48,9 +61,10 @@ export function respondingRates(
 /**
  * A Frankfurter serving the euro table the daily fetch asks for.
  *
- * Rates are **per euro**, the way ECB publishes and the way `/latest` answers, so a test
- * states what it means and the division back to THB stays the code's problem. THB has to
- * be among them or there is nothing to convert *to*.
+ * Rates are **per euro**, the way ECB publishes and the way `/latest` answers, which since
+ * #176 is also the way they are stored — so a test states what it means and nothing is
+ * divided on the way in. The euro's own leg is deliberately absent, because a base does not
+ * appear among the rates it is the base of and the code has to write it in.
  */
 export function respondingLatestRates(
   perEur: Record<string, number>,

@@ -371,7 +371,7 @@
     "deletePrompt": "Delete the quote from {supplier}?",
     "sourcedBy": "Sourced by {name}",
     "perUnit": "per {unit}",
-    "quotedInThb": "Quoted in THB — not converted.",
+    "quotedInReporting": "Quoted in {currency} — not converted.",
     "approx": "≈ {amount}",
     "atRate": "at {rate}, {date}",
     "staleRate": "Rate is stale",
@@ -420,7 +420,7 @@
       "invalid_date": "Check the quoted date — it is not a real day.",
       "unsupported_currency": "No published rate exists for that currency, so the price could not be converted. Ask the supplier to quote in one of the currencies offered.",
       "alternative_unnamed": "An alternative needs the name of the product the supplier actually priced.",
-      "no_rate": "No exchange rate could be reached for that currency, and none has ever been stored. Try again in a moment, or enter the price in THB.",
+      "no_rate": "No exchange rate could be reached for that currency, and none has ever been stored. Try again in a moment, or enter the price in {currency}.",
       "failed": "That could not be saved. Try again."
     }
   },
@@ -449,15 +449,15 @@
     "needsDecision": "Needs a decision ↓",
     "provisional": "Provisional",
     "pricing": {
-      "landedCost": "Cost to us / unit for {item}, in THB",
-      "selling": "Selling / unit for {item}, in THB",
+      "landedCost": "Cost to us / unit for {item}, in {currency}",
+      "selling": "Selling / unit for {item}, in {currency}",
       "hint": "Add shipping, duty and handling. Saving confirms the cost.",
       "save": "Save",
       "saving": "Saving…",
       "error": {
         "forbidden": "You are not signed in.",
         "not_found": "That item is no longer on this tender.",
-        "invalid_amount": "Enter an amount in THB, or leave it empty.",
+        "invalid_amount": "Enter an amount in {currency}, or leave it empty.",
         "failed": "Could not save the figure. Try again."
       }
     },
@@ -472,7 +472,7 @@
     "selecting": "Selecting…",
     "selected": "✓ Selected",
     "deselecting": "Deselecting…",
-    "derivedNote": "THB figures are derived for comparison only, at the rate frozen onto each quote when it was entered. Suppliers are paid in the currency they quoted.",
+    "derivedNote": "{currency} figures are derived for comparison only, at the rate frozen onto each quote when it was entered. Suppliers are paid in the currency they quoted.",
     "quote": {
       "rank": "Rank",
       "supplier": "Supplier",
@@ -621,7 +621,7 @@
   },
   "currencyConversion": {
     "title": "Converting foreign prices",
-    "description": "A supplier quoting in yuan or dollars is converted to Baht at the market rate plus a little, because a bank charges more than the market rate. This sets how much is added.",
+    "description": "A supplier quoting in another currency is converted to {currency} at the market rate plus a little, because a bank charges more than the market rate. This sets how much is added.",
     "current": "Foreign prices are being converted at the market rate plus {percent}%.",
     "label": "Added to the market rate (%)",
     "help": "Higher makes foreign prices look slightly dearer than the market says, which is the safe direction to be wrong in. Lower makes every bid look cheaper than it will really be.",

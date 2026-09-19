@@ -63,9 +63,18 @@ import type { SheetItem } from "@/lib/comparison/sheet";
 export function ItemPricing({
   tenderId,
   item,
+  reportingCurrency,
 }: {
   tenderId: string;
   item: SheetItem;
+  /**
+   * The Tender's Reporting Currency, handed down rather than looked up: both figures in
+   * this row are hand-entered and never converted, so what denominates them is the Tender
+   * they sit under and nothing on the Item itself (ADR-0036). It names the currency in
+   * each field's accessible name, in the refusal when the digits do not parse, and in the
+   * Margin drawn from the two.
+   */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("comparison");
   const [landedCost, setLandedCost] = useState(fieldValue(item.landedCostPerUnit));
@@ -122,7 +131,11 @@ export function ItemPricing({
           action={setLandedCostAction}
           name="landedCostPerUnit"
           caption={t("label.landedCost")}
-          label={t("pricing.landedCost", { item: item.productName })}
+          currency={reportingCurrency}
+          label={t("pricing.landedCost", {
+            item: item.productName,
+            currency: reportingCurrency,
+          })}
           // What this field is for, and what saving it does. On the field rather than
           // under it, and repeated into the accessible name the way the quote table
           // carries its frozen rate: the caption above it has one line and no room.
@@ -138,7 +151,11 @@ export function ItemPricing({
           action={setSellingPriceAction}
           name="sellingPricePerUnit"
           caption={t("label.selling")}
-          label={t("pricing.selling", { item: item.productName })}
+          currency={reportingCurrency}
+          label={t("pricing.selling", {
+            item: item.productName,
+            currency: reportingCurrency,
+          })}
           value={sellingPrice}
           storedValue={fieldValue(item.sellingPricePerUnit)}
           onValueChange={setSellingPrice}
@@ -152,11 +169,13 @@ export function ItemPricing({
         <MarginFigure
           label={t("label.marginPerUnit")}
           value={margin?.perUnit ?? null}
+          currency={reportingCurrency}
           provisional={margin?.provisional ?? false}
         />
         <MarginFigure
           label={t("label.marginOnLine")}
           value={margin?.onLine ?? null}
+          currency={reportingCurrency}
           provisional={margin?.provisional ?? false}
         />
       </dl>
@@ -178,6 +197,7 @@ function PriceField({
   caption,
   label,
   hint,
+  currency,
   value,
   storedValue,
   onValueChange,
@@ -195,6 +215,13 @@ function PriceField({
   label: string;
   /** Said on hover and to a screen reader, never given a line of the row's width. */
   hint?: string;
+  /**
+   * The Tender's Reporting Currency, for the refusal below. "Enter an amount in THB" was
+   * true only while there was one currency in the schema; a person typing into a Tender
+   * opened in SGD has to be told the unit the field is actually counted in, or the one
+   * sentence that could have corrected them names the wrong money.
+   */
+  currency: string;
   value: string;
   /** What the row was rendered with — what "changed" is measured against. */
   storedValue: string;
@@ -251,7 +278,7 @@ function PriceField({
 
       {state.error === undefined ? null : (
         <p role="alert" className="text-destructive text-xs">
-          {t(`error.${state.error}`)}
+          {t(`error.${state.error}`, { currency })}
         </p>
       )}
     </form>
@@ -262,17 +289,20 @@ function PriceField({
 function MarginFigure({
   label,
   value,
+  currency,
   provisional,
 }: {
   label: string;
   value: number | null;
+  /** The Tender's Reporting Currency — a Margin is a difference of two figures in it. */
+  currency: string;
   provisional: boolean;
 }) {
   return (
     <div className="flex min-w-0 items-baseline gap-1.5">
       <dt className="field-label">{label}</dt>
       <dd>
-        <Margin value={value} provisional={provisional} />
+        <Margin value={value} currency={currency} provisional={provisional} />
       </dd>
     </div>
   );
@@ -291,7 +321,15 @@ function MarginFigure({
  * would dress up a figure that is not yet a figure — the one dishonest thing this screen
  * could do while somebody works out what to bid.
  */
-function Margin({ value, provisional }: { value: number | null; provisional: boolean }) {
+function Margin({
+  value,
+  currency,
+  provisional,
+}: {
+  value: number | null;
+  currency: string;
+  provisional: boolean;
+}) {
   const t = useTranslations("comparison");
 
   if (value === null) return <span className="text-muted-foreground">{emDash}</span>;
@@ -306,7 +344,7 @@ function Margin({ value, provisional }: { value: number | null; provisional: boo
   // way it went, in the convention of the language the screen is being rendered in
   // (ADR-0023). The hue inverts between `en` and `zh-Hans`; the triangle and the sign do
   // not, and they are what a reader in greyscale or in sunlight is left with.
-  return <ChangeFigure amount={value} />;
+  return <ChangeFigure amount={value} currency={currency} />;
 }
 
 const initialState: PricingState = {};

@@ -92,11 +92,22 @@ export function QuoteForm({
   tenderId,
   tenderItemId,
   defaults,
+  reportingCurrency,
 }: {
   tenderId: string;
   tenderItemId: string;
   /** A blank form with the Item's unit and today's date already in it. */
   defaults: SubmittedQuote;
+  /**
+   * The Tender's Reporting Currency (ADR-0036), which this form needs twice over: it
+   * leads the picker below, and it is the currency `no_rate` tells somebody to fall back
+   * to when no rate for theirs can be reached.
+   *
+   * Handed down rather than imported, because `currencyOptions` is a function now and not
+   * the constant array it was — the order is a question about one organisation, and the
+   * only caller that can answer it is one holding a Tender.
+   */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("quotes");
   // The same sentences `ImageProblemNotice` renders, without its box: here they are one
@@ -222,7 +233,7 @@ export function QuoteForm({
         <input type="hidden" name="tenderId" value={tenderId} />
         <input type="hidden" name="tenderItemId" value={tenderItemId} />
 
-        <QuoteProblemNotice error={state.error} />
+        <QuoteProblemNotice error={state.error} reportingCurrency={reportingCurrency} />
 
         <QuoteFieldInputs
           fields={fields}
@@ -236,7 +247,7 @@ export function QuoteForm({
                 defaultValue={fields.currency}
                 className="h-11"
               >
-                {currencyOptions.map((currency) => (
+                {currencyOptions(reportingCurrency).map((currency) => (
                   <option key={currency} value={currency}>
                     {currency}
                   </option>

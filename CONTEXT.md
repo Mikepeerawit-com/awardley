@@ -295,8 +295,18 @@ on every screen in a currency they do not trade in. Quotes are always stored in 
 currency the supplier quoted; conversion is for display only and is always marked as
 derived — which is a claim about provenance and not about prominence, so which of the two
 figures a given screen leads with is that screen's decision to make.
-_Not built yet_: THB is written into the conversion, the Working Sheet and the quote form
-rather than held on the organisation the way the FX Buffer is.
+
+An Org Admin sets it, and **a Tender is stamped with it when it opens**. Changing the
+setting changes what the next Tender opens in and nothing about one that already exists —
+a total that stayed put while its label moved would break the **Frozen Rate**'s guarantee
+as surely as one that moved, and re-deriving the old rows is refused by ADR-0018 in as
+many words (ADR-0036). Every figure under one Tender is therefore in one currency, which
+is what lets a Working Sheet rank a column at all; money is never summed across two of
+them, and a figure spanning Tenders is broken out per currency rather than added up.
+_Not built yet_: an Org Admin cannot set it. The currency is held on the organisation and
+stamped onto each Tender as written above, and every screen reads it — but the only way to
+change it is SQL, because the Settings picker is #178's. A new organisation gets THB by
+the column's default, which is the guess this entry exists to refuse.
 _Avoid_: base currency, home currency, display currency
 
 **FX Buffer**:
@@ -323,8 +333,8 @@ The pair of exchange rates a Quote stores at the moment it is entered — ECB mi
 and the buffered rate actually applied — together with the day ECB published them. Never
 re-fetched by a clock, a cron or a backfill, so a ranking somebody saw is reproducible
 from the row a year later and no dashboard total moves because a currency did. Both are
-kept so the buffer stays visible and cannot be applied twice. A THB Quote's are both 1
-and it is not converted at all.
+kept so the buffer stays visible and cannot be applied twice. A Quote already in its
+Tender's **Reporting Currency** stores both as 1 and is not converted at all.
 
 The one thing that re-freezes it is a human correcting the day the Quote *claims*: the
 rate has always belonged to the quoted date rather than to the day somebody typed it in,
@@ -341,8 +351,8 @@ than the gap the comparison is claiming to show.
 _Avoid_: old rate, cached rate, fallback rate
 
 **Landed Cost**:
-What a Tender Item actually costs us — the Selected Quote's price converted to THB,
-plus shipping, duty and handling. Pre-filled from the Quote, then edited, because
+What a Tender Item actually costs us — the Selected Quote's price converted to the
+Tender's **Reporting Currency**, plus shipping, duty and handling. Pre-filled from the Quote, then edited, because
 supplier prices often exclude freight.
 _Label_: en "Cost to us" · zh 到岸成本, which is the ordinary trade term and needs no
 softening.

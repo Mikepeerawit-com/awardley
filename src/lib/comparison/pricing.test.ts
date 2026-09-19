@@ -54,12 +54,14 @@ describe("margin", () => {
 });
 
 /** The Selected Quote, in the shape the sheet holds one. */
-function aQuote(overrides: Partial<{ quotedUnit: string; unitPriceThb: number }> = {}) {
-  return { quotedUnit: "box of 50", unitPriceThb: 620, ...overrides };
+function aQuote(
+  overrides: Partial<{ quotedUnit: string; unitPriceReporting: number }> = {},
+) {
+  return { quotedUnit: "box of 50", unitPriceReporting: 620, ...overrides };
 }
 
 describe("pre-filling the landed cost from the Selected Quote", () => {
-  it("fills it from the Quote's THB price when nobody has confirmed a cost", () => {
+  it("fills it from the Quote's converted price when nobody has confirmed a cost", () => {
     expect(
       prefillLandedCost({ unit: "box of 50", landedCostConfirmedAt: null }, aQuote()),
     ).toEqual({ landedCostPerUnit: 620 });
@@ -72,7 +74,7 @@ describe("pre-filling the landed cost from the Selected Quote", () => {
     expect(
       prefillLandedCost(
         { unit: "box of 50", landedCostConfirmedAt: "2026-08-22T09:00:00Z" },
-        aQuote({ unitPriceThb: 595 }),
+        aQuote({ unitPriceReporting: 595 }),
       ),
     ).toBeNull();
   });

@@ -33,6 +33,7 @@ export function EditQuoteForm({
   quoteId,
   currency,
   defaults,
+  reportingCurrency,
 }: {
   tenderId: string;
   tenderItemId: string;
@@ -41,6 +42,12 @@ export function EditQuoteForm({
   currency: string;
   /** The Quote as it stands, in the shape the inputs seed from. */
   defaults: SubmittedQuote;
+  /**
+   * The Tender's Reporting Currency — a different thing from `currency` above, which is
+   * what this one supplier quoted in. Carried only so the shared refusal notice can name
+   * it; re-freezing a corrected Quote can still fail for want of a rate (ADR-0018).
+   */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("quotes");
   const [state, formAction, isPending] = useActionState(updateQuoteAction, initialState);
@@ -59,7 +66,7 @@ export function EditQuoteForm({
       <input type="hidden" name="tenderItemId" value={tenderItemId} />
       <input type="hidden" name="quoteId" value={quoteId} />
 
-      <QuoteProblemNotice error={state.error} />
+      <QuoteProblemNotice error={state.error} reportingCurrency={reportingCurrency} />
 
       <QuoteFieldInputs
         fields={fields}

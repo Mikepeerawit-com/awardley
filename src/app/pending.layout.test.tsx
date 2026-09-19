@@ -394,6 +394,7 @@ describe.each(locales)(`drawn nowhere in the record, read in %s`, (locale, messa
           createdAt: "2026-08-13T04:00:00Z",
         }}
         others={[]}
+        reportingCurrency="THB"
       />,
     ],
   ] as const)("says what it is doing: %s", async (name, body) => {

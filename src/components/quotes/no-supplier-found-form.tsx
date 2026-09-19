@@ -42,6 +42,7 @@ export function NoSupplierFoundForm({
   tenderItemId,
   mine,
   others,
+  reportingCurrency,
 }: {
   tenderId: string;
   tenderItemId: string;
@@ -49,6 +50,8 @@ export function NoSupplierFoundForm({
   mine: NoSupplierFound | null;
   /** Everybody else's, shown as fact rather than as something to act on. */
   others: NoSupplierFound[];
+  /** Carried only so the shared refusal notice can name it — see `QuoteProblemNotice`. */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("quotes.noSupplier");
 
@@ -72,9 +75,18 @@ export function NoSupplierFoundForm({
       ) : null}
 
       {mine ? (
-        <ClearForm tenderId={tenderId} tenderItemId={tenderItemId} mine={mine} />
+        <ClearForm
+          tenderId={tenderId}
+          tenderItemId={tenderItemId}
+          mine={mine}
+          reportingCurrency={reportingCurrency}
+        />
       ) : (
-        <RecordForm tenderId={tenderId} tenderItemId={tenderItemId} />
+        <RecordForm
+          tenderId={tenderId}
+          tenderItemId={tenderItemId}
+          reportingCurrency={reportingCurrency}
+        />
       )}
     </div>
   );
@@ -83,9 +95,11 @@ export function NoSupplierFoundForm({
 function RecordForm({
   tenderId,
   tenderItemId,
+  reportingCurrency,
 }: {
   tenderId: string;
   tenderItemId: string;
+  reportingCurrency: string;
 }) {
   const t = useTranslations("quotes.noSupplier");
   const [state, formAction, isPending] = useActionState(
@@ -98,7 +112,7 @@ function RecordForm({
       <input type="hidden" name="tenderId" value={tenderId} />
       <input type="hidden" name="tenderItemId" value={tenderItemId} />
 
-      <QuoteProblemNotice error={state.error} />
+      <QuoteProblemNotice error={state.error} reportingCurrency={reportingCurrency} />
 
       <div className="flex flex-col gap-label">
         <Label htmlFor={`nsf-note-${tenderItemId}`}>{t("note")}</Label>
@@ -128,10 +142,12 @@ function ClearForm({
   tenderId,
   tenderItemId,
   mine,
+  reportingCurrency,
 }: {
   tenderId: string;
   tenderItemId: string;
   mine: NoSupplierFound;
+  reportingCurrency: string;
 }) {
   const t = useTranslations("quotes.noSupplier");
   const [state, formAction, isPending] = useActionState(
@@ -146,7 +162,7 @@ function ClearForm({
 
       <p className="text-sm">{mine.note ? t("mineWithNote", { note: mine.note }) : t("mine")}</p>
 
-      <QuoteProblemNotice error={state.error} />
+      <QuoteProblemNotice error={state.error} reportingCurrency={reportingCurrency} />
 
       <div>
         <Button type="submit" variant="ghost" disabled={isPending} className="h-11">

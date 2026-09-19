@@ -101,6 +101,7 @@ export default async function EditQuotePage({
           quoteId={quote.id}
           currency={quote.currency}
           defaults={quoteAsSubmitted(quote)}
+          reportingCurrency={tender.reportingCurrency}
         />
       </Measure>
     </Screen>

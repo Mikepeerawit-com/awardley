@@ -371,7 +371,7 @@
     "deletePrompt": "确定删除来自 {supplier} 的报价吗？",
     "sourcedBy": "由 {name} 询得",
     "perUnit": "每 {unit}",
-    "quotedInThb": "以泰铢报价，无需换算。",
+    "quotedInReporting": "以{currency}报价，无需换算。",
     "approx": "≈ {amount}",
     "atRate": "汇率 {rate}，{date}",
     "staleRate": "汇率非当日",
@@ -420,7 +420,7 @@
       "invalid_date": "请检查报价日期——它不是一个真实的日期。",
       "unsupported_currency": "该币种没有公布的参考汇率，价格无法换算。请供应商改用所提供的币种之一报价。",
       "alternative_unnamed": "替代品必须写明供应商实际报价的产品名称。",
-      "no_rate": "该币种的汇率取不到，且从未存过任何一次。请稍后重试，或改用泰铢录入价格。",
+      "no_rate": "该币种的汇率取不到，且从未存过任何一次。请稍后重试，或改用{currency}录入价格。",
       "failed": "保存失败，请重试。"
     }
   },
@@ -449,15 +449,15 @@
     "needsDecision": "待定 ↓",
     "provisional": "暂估",
     "pricing": {
-      "landedCost": "到岸成本 / 单位 — {item}（泰铢）",
-      "selling": "售价 / 单位 — {item}（泰铢）",
+      "landedCost": "到岸成本 / 单位 — {item}（{currency}）",
+      "selling": "售价 / 单位 — {item}（{currency}）",
       "hint": "请加上运费、关税与手续费。保存即视为确认该成本。",
       "save": "保存",
       "saving": "保存中…",
       "error": {
         "forbidden": "你尚未登录。",
         "not_found": "该产品项已不在本次招标中。",
-        "invalid_amount": "请填写泰铢金额，或留空。",
+        "invalid_amount": "请填写{currency}金额，或留空。",
         "failed": "金额保存失败，请重试。"
       }
     },
@@ -472,7 +472,7 @@
     "selecting": "选定中…",
     "selected": "✓ 已选定",
     "deselecting": "取消选定…",
-    "derivedNote": "泰铢金额仅用于比价，按录入该报价时冻结的汇率换算得出。付给供应商的仍是他们报价的币种。",
+    "derivedNote": "{currency}金额仅用于比价，按录入该报价时冻结的汇率换算得出。付给供应商的仍是他们报价的币种。",
     "quote": {
       "rank": "排名",
       "supplier": "供应商",
@@ -621,7 +621,7 @@
   },
   "currencyConversion": {
     "title": "外币报价换算",
-    "description": "供应商用人民币或美元报价时，换算成泰铢用的是市场汇率再往上加一点，因为银行给的汇率比市场差。这里设置的就是加多少。",
+    "description": "供应商用其他币种报价时，换算成{currency}用的是市场汇率再往上加一点，因为银行给的汇率比市场差。这里设置的就是加多少。",
     "current": "目前外币报价按市场汇率上浮 {percent}% 换算。",
     "label": "在市场汇率之上加价（%）",
     "help": "调高会让外币报价显示得比市场价略贵，宁可错在这个方向；调低则会让每一次投标看起来比实际便宜。",

@@ -37,6 +37,7 @@ export function QuoteRowControls({
   quoteId,
   supplierName,
   isSelected,
+  reportingCurrency,
 }: {
   tenderId: string;
   tenderItemId: string;
@@ -45,6 +46,8 @@ export function QuoteRowControls({
   supplierName: string;
   /** Whether this Quote is the Item's Selected Quote, and so costs a decision to delete. */
   isSelected: boolean;
+  /** Carried only so the shared refusal notice can name it — see `QuoteProblemNotice`. */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("quotes");
   const [state, formAction, isPending] = useActionState(deleteQuoteAction, initialState);
@@ -139,7 +142,7 @@ export function QuoteRowControls({
         </p>
       ) : null}
 
-      <QuoteProblemNotice error={state.error} />
+      <QuoteProblemNotice error={state.error} reportingCurrency={reportingCurrency} />
     </div>
   );
 }

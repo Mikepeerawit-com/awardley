@@ -159,6 +159,10 @@ export default async function ItemSourcingPage({
           ownerUserId={tender.ownerUserId}
           selectedQuoteId={selectedQuoteId}
           yourQuotesOnly={yourQuotesOnly}
+          // Off the Tender this Item belongs to, which is already read above — the
+          // currency is the Tender's answer (ADR-0036) and this screen is one Item of
+          // one Tender, so there is nothing here to ask a second question about.
+          reportingCurrency={tender.reportingCurrency}
         />
       </section>
 
@@ -178,7 +182,12 @@ export default async function ItemSourcingPage({
               <QuoteForm
                 tenderId={tender.id}
                 tenderItemId={item.id}
-                defaults={blankQuote({ unit: item.unit, today })}
+                defaults={blankQuote({
+                  unit: item.unit,
+                  today,
+                  reportingCurrency: tender.reportingCurrency,
+                })}
+                reportingCurrency={tender.reportingCurrency}
               />
             </section>
           </Measure>
@@ -190,6 +199,7 @@ export default async function ItemSourcingPage({
                 tenderItemId={item.id}
                 mine={refusals.find((row) => row.userId === user.id) ?? null}
                 others={refusals.filter((row) => row.userId !== user.id)}
+                reportingCurrency={tender.reportingCurrency}
               />
             </section>
           </Measure>

@@ -24,10 +24,6 @@ import {
   type RankedQuote,
 } from "@/lib/comparison/ranking";
 import type { SheetItem } from "@/lib/comparison/sheet";
-// From the currency list rather than from `@/lib/quotes/quotes`, which re-exports it:
-// the sheet is rendered on the server in the app and in a real browser by its layout
-// test, and that module is `server-only`.
-import { reportingCurrency } from "@/lib/fx/currencies";
 import type { ReferenceImage } from "@/lib/images/reference-images";
 import type { QuotePhoto } from "@/lib/images/quote-photos";
 import type { ItemSourcing, Quote } from "@/lib/quotes/quotes";
@@ -36,8 +32,9 @@ import type { ItemSourcing, Quote } from "@/lib/quotes/quotes";
  * The comparison working sheet — the densest screen in v1, at every width there is.
  *
  * The whole Tender on one page: one row per Tender Item and, under the ones still needing
- * a decision, every competing Quote ranked cheapest-first in THB so eight prices can be
- * read down a column of numbers instead of compared by eye.
+ * a decision, every competing Quote ranked cheapest-first in the Tender's Reporting
+ * Currency, so eight prices can be read down a column of numbers instead of compared by
+ * eye.
  *
  * **One responsive design, not two layouts** (ADR-0009). There is a single component tree
  * here and a single set of behaviours, and exactly one breakpoint in it: at 768px the
@@ -81,12 +78,25 @@ export function WorkingSheet({
   items,
   photos,
   referenceImages,
+  reportingCurrency,
 }: {
   tenderId: string;
   items: SheetItem[];
   /** Every Quote's photos on the Tender, keyed by Quote — one query for the whole page. */
   photos: Map<string, QuotePhoto[]>;
   referenceImages: ReferenceImage[];
+  /**
+   * The currency every figure on this sheet is drawn in — the Tender's, stamped when it
+   * opened (ADR-0036) and carried on `ComparisonSheet`.
+   *
+   * Threaded from the page rather than read from a module here, which is what it used to
+   * be. A constant made the whole app baht by construction, so a second organisation
+   * would have read every total on this screen in a currency they do not trade in. It is
+   * one value for the whole sheet by construction and not a property of any row: ranking
+   * happens inside an Item, and two Quotes converted into two different currencies in one
+   * sorted column would be two units drawn as one list.
+   */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("comparison");
   const undecided = itemsNeedingDecision(items);
@@ -123,12 +133,19 @@ export function WorkingSheet({
             derivedOpen={needsDecision(item)}
             openLabel={t("twisty.open", { item: item.productName })}
             foldLabel={t("twisty.fold", { item: item.productName })}
-            summary={<ItemSummary tenderId={tenderId} item={item} />}
+            summary={
+              <ItemSummary
+                tenderId={tenderId}
+                item={item}
+                reportingCurrency={reportingCurrency}
+              />
+            }
             panel={
               <ItemPanel
                 tenderId={tenderId}
                 item={item}
                 photos={photos}
+                reportingCurrency={reportingCurrency}
                 referenceImages={referenceImages.filter(
                   (image) => image.tenderItemId === item.id,
                 )}
@@ -139,9 +156,9 @@ export function WorkingSheet({
       </ul>
 
       {/* The whole Tender's money, under the rows it is made of. */}
-      <TotalsBar items={items} />
+      <TotalsBar items={items} reportingCurrency={reportingCurrency} />
 
-      <p className="type-quiet">{t("derivedNote")}</p>
+      <p className="type-quiet">{t("derivedNote", { currency: reportingCurrency })}</p>
     </div>
   );
 }
@@ -161,13 +178,21 @@ export function WorkingSheet({
  * The live arithmetic belongs in the row being edited (`ItemPricing`) — that is where
  * somebody moving a selling price to find a Margin is actually looking.
  */
-function TotalsBar({ items }: { items: SheetItem[] }) {
+function TotalsBar({
+  items,
+  reportingCurrency,
+}: {
+  items: SheetItem[];
+  reportingCurrency: string;
+}) {
   const t = useTranslations("comparison.totals");
   const tc = useTranslations("comparison");
   const format = useFormatter();
   const totals = sheetTotals(items);
 
-  const thb = (amount: number) =>
+  // Whole units, no minor ones: a bar summing four Items is read for its order of
+  // magnitude, and the satang would be four digits of noise across the widest row here.
+  const total = (amount: number) =>
     format.number(amount, {
       style: "currency",
       currency: reportingCurrency,
@@ -185,11 +210,11 @@ function TotalsBar({ items }: { items: SheetItem[] }) {
             total is what we are asking and the landed cost is what it costs us — and
             colour on a figure here means direction or it means nothing (ADR-0023). */}
         <Total label={t("bidTotal")}>
-          <span className="money text-base font-medium">{thb(totals.bidTotal)}</span>
+          <span className="money text-base font-medium">{total(totals.bidTotal)}</span>
         </Total>
         <Total label={t("landedCost")}>
           <span className="money text-base font-medium">
-            {thb(totals.landedCostTotal)}
+            {total(totals.landedCostTotal)}
           </span>
         </Total>
 
@@ -202,7 +227,11 @@ function TotalsBar({ items }: { items: SheetItem[] }) {
           ) : (
             // The one figure on the bar that is a difference rather than an amount, so
             // the one that carries a glyph, a sign and a hue.
-            <ChangeFigure amount={totals.marginTotal} maximumFractionDigits={0} />
+            <ChangeFigure
+              amount={totals.marginTotal}
+              currency={reportingCurrency}
+              maximumFractionDigits={0}
+            />
           )}
         </Total>
       </dl>
@@ -235,7 +264,15 @@ function Total({ label, children }: { label: string; children: ReactNode }) {
  * and without it they stack in the order somebody reads them — what the Item is, what we
  * have chosen, what we are charging.
  */
-function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) {
+function ItemSummary({
+  tenderId,
+  item,
+  reportingCurrency,
+}: {
+  tenderId: string;
+  item: SheetItem;
+  reportingCurrency: string;
+}) {
   const t = useTranslations("comparison");
   const tq = useTranslations("quotes");
   // The Tender's own sourcing vocabulary, not the sheet's: these three states are facts
@@ -328,7 +365,11 @@ function ItemSummary({ tenderId, item }: { tenderId: string; item: SheetItem }) 
       {/* Pricing is inline in the row, not a step of its own: landed cost pre-filled from
           the Selected Quote and editable over it, selling price beside it, and the Margin
           under both, computing in the browser as the digits are typed. */}
-      <ItemPricing tenderId={tenderId} item={item} />
+      <ItemPricing
+        tenderId={tenderId}
+        item={item}
+        reportingCurrency={reportingCurrency}
+      />
     </>
   );
 }
@@ -368,11 +409,13 @@ function ItemPanel({
   item,
   photos,
   referenceImages,
+  reportingCurrency,
 }: {
   tenderId: string;
   item: SheetItem;
   photos: Map<string, QuotePhoto[]>;
   referenceImages: ReferenceImage[];
+  reportingCurrency: string;
 }) {
   const t = useTranslations("comparison");
   // The field still under consideration, and the offers the Owner has taken out of it.
@@ -420,7 +463,13 @@ function ItemPanel({
       ) : null}
 
       {ranked.length > 0 ? (
-        <QuoteTable tenderId={tenderId} item={item} ranked={ranked} photos={photos} />
+        <QuoteTable
+          tenderId={tenderId}
+          item={item}
+          ranked={ranked}
+          photos={photos}
+          reportingCurrency={reportingCurrency}
+        />
       ) : null}
 
       {ruledOut.length > 0 ? (
@@ -431,6 +480,7 @@ function ItemPanel({
                 tenderId={tenderId}
                 quoteId={quote.id}
                 supplierName={quote.supplierName}
+                reportingCurrency={reportingCurrency}
               />
             </li>
           ))}
@@ -467,11 +517,13 @@ function QuoteTable({
   item,
   ranked,
   photos,
+  reportingCurrency,
 }: {
   tenderId: string;
   item: SheetItem;
   ranked: RankedQuote<Quote>[];
   photos: Map<string, QuotePhoto[]>;
+  reportingCurrency: string;
 }) {
   const t = useTranslations("comparison");
 
@@ -508,6 +560,7 @@ function QuoteTable({
               item={item}
               row={row}
               photos={photos.get(row.quote.id) ?? []}
+              reportingCurrency={reportingCurrency}
             />
           ))}
         </tbody>
@@ -543,11 +596,13 @@ function QuoteRow({
   item,
   row,
   photos,
+  reportingCurrency,
 }: {
   tenderId: string;
   item: SheetItem;
   row: RankedQuote<Quote>;
   photos: QuotePhoto[];
+  reportingCurrency: string;
 }) {
   const t = useTranslations("comparison");
   const tq = useTranslations("quotes");
@@ -629,6 +684,7 @@ function QuoteRow({
           quoteId={quote.id}
           supplierName={quote.supplierName}
           isSelected={isSelected}
+          reportingCurrency={reportingCurrency}
         />
       </Cell>
 
@@ -682,7 +738,8 @@ function QuoteRow({
               have to read as a column of numbers, and `$0.06`, `CN¥0.42` and `THB 2.35`
               at display size are not a column of anything; one currency down the page is.
               A Quote already in the Reporting Currency draws no second line, which is
-              what makes every row in this column a THB figure at one size.
+              what makes every row in this column a figure in that one currency, at one
+              size.
 
               **The `≈` stays at display size with it.** It is the mark that keeps the
               conversion derived, and `CONTEXT.md` constrains provenance rather than
@@ -690,8 +747,9 @@ function QuoteRow({
               that glossary line exists to prevent.
 
               **The unit and the stale chip ride on the leading figure's own line.** The
-              unit qualifies the figure the reader is comparing on — *2.35 of a baht, per
-              piece* — and a stale rate is what makes *that* figure unreliable, so the
+              unit qualifies the figure the reader is comparing on — *2.35 of whatever
+              this Tender reports in, per piece* — and a stale rate is what makes *that*
+              figure unreliable, so the
               warning belongs on the loudest thing on the card rather than tucked under
               it. A wrapping baseline row, so a long unit drops under the price instead of
               widening the column. */}
@@ -704,7 +762,7 @@ function QuoteRow({
                 <>
                   <span className="sr-only">{rateTitle}</span>
                   {tq("approx", {
-                    amount: format.number(quote.unitPriceThb, {
+                    amount: format.number(quote.unitPriceReporting, {
                       style: "currency",
                       currency: reportingCurrency,
                     }),
@@ -752,13 +810,13 @@ function QuoteRow({
         <span className="text-muted-foreground text-xs md:hidden">
           {t("quote.lineTotal")}{" "}
         </span>
-        {row.lineTotalThb === null ? (
+        {row.lineTotalReporting === null ? (
           // The Quote is priced in a unit the Item is not counted in. A total here would
           // be out by whatever the pack size is.
           <span className="text-muted-foreground text-xs">{t("quote.notComparable")}</span>
         ) : (
           <span className="money text-base font-medium md:text-sm lg:text-base">
-            {format.number(row.lineTotalThb, {
+            {format.number(row.lineTotalReporting, {
               style: "currency",
               currency: reportingCurrency,
               maximumFractionDigits: 0,

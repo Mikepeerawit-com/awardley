@@ -113,7 +113,8 @@ function priced(formData: FormData, result: PricingResult): PricingState {
 }
 
 /**
- * A THB amount as somebody typed one, or null for a field they have emptied.
+ * An amount in the Tender's Reporting Currency as somebody typed one, or null for a
+ * field they have emptied.
  *
  * Anything that is not a number arrives as `NaN` and is refused, rather than silently
  * becoming zero — a silently-zero landed cost reports the entire selling price as Margin.

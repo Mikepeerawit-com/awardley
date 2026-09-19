@@ -54,6 +54,7 @@ export function RuleOutQuoteButton({
   quoteId,
   supplierName,
   isSelected,
+  reportingCurrency,
 }: {
   tenderId: string;
   quoteId: string;
@@ -61,6 +62,8 @@ export function RuleOutQuoteButton({
   supplierName: string;
   /** Whether this Quote is the Item's Selected Quote, and so costs a decision to discard. */
   isSelected: boolean;
+  /** Carried only so the shared refusal notice can name it — see `QuoteProblemNotice`. */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("comparison.quote");
   const [state, formAction, isPending] = useActionState(ruleOutQuoteAction, initialState);
@@ -170,7 +173,10 @@ export function RuleOutQuoteButton({
       {/* `clears_selection` is not reported here. It is not a failure to explain but the
           sentence directly above — and the shared wording is the delete screen's, which
           says "deleting it". */}
-      <QuoteProblemNotice error={refused ? undefined : state.error} />
+      <QuoteProblemNotice
+        error={refused ? undefined : state.error}
+        reportingCurrency={reportingCurrency}
+      />
     </div>
   );
 }
@@ -199,10 +205,13 @@ export function ReopenQuoteButton({
   tenderId,
   quoteId,
   supplierName,
+  reportingCurrency,
 }: {
   tenderId: string;
   quoteId: string;
   supplierName: string;
+  /** Carried only so the shared refusal notice can name it — see `QuoteProblemNotice`. */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("comparison.quote");
   const [state, formAction, isPending] = useActionState(reopenQuoteAction, initialState);
@@ -233,7 +242,7 @@ export function ReopenQuoteButton({
         </span>
       </button>
 
-      <QuoteProblemNotice error={state.error} />
+      <QuoteProblemNotice error={state.error} reportingCurrency={reportingCurrency} />
     </form>
   );
 }

@@ -20,7 +20,7 @@ import type { MatchType } from "@/lib/quotes/quotes";
  * The two conversions this module never does are as load-bearing as the ones it does.
  * **Pack sizes are never converted**: "box of 50" against "piece" is refused, not divided
  * by fifty, because the fifty is a guess at what the supplier meant. **Rates are never
- * re-marked to today**: every THB figure comes from the Frozen Rate on the Quote, so a
+ * re-marked to today**: every converted figure comes from the Frozen Rate on the Quote, so a
  * ranking somebody saw is reproducible from the stored data a year later.
  */
 
@@ -42,8 +42,12 @@ export type ComparedQuote = {
   unitPrice: number;
   currency: string;
   quotedUnit: string;
-  /** `unit_price * fx_rate_applied`, computed by the database at the frozen rate. */
-  unitPriceThb: number;
+  /**
+   * `unit_price * fx_rate_applied`, computed by the database at the frozen rate, in the
+   * Reporting Currency the Quote's Tender was stamped with. Every Quote on one Item shares
+   * it by construction (ADR-0036), which is the whole of why a column of them can be sorted.
+   */
+  unitPriceReporting: number;
   fxRateAsOf: string;
   fxRateIsStale: boolean;
   matchType: MatchType;
@@ -53,12 +57,18 @@ export type ComparedQuote = {
 /** One Quote in the order the sheet shows it, with what the row is allowed to claim. */
 export type RankedQuote<Q extends ComparedQuote> = {
   quote: Q;
-  /** 1-based, cheapest-first in THB — and `null` on every row of an unrankable Item. */
+  /**
+   * 1-based, cheapest-first in the Tender's Reporting Currency — and `null` on every row
+   * of an unrankable Item.
+   */
   rank: number | null;
   /** Never true on an unrankable Item. True on both rows when two Quotes are level. */
   isLowest: boolean;
-  /** `null` when this Quote's unit is not the Item's, where a total would be nonsense. */
-  lineTotalThb: number | null;
+  /**
+   * The line in the Tender's Reporting Currency, and `null` when this Quote's unit is not
+   * the Item's, where a total would be nonsense.
+   */
+  lineTotalReporting: number | null;
 };
 
 /**
@@ -98,7 +108,8 @@ export type ItemBanner =
 const tooCloseGap = 0.03;
 
 /**
- * Every Quote on one Item, cheapest-first in THB — or in entry order, unranked, when the
+ * Every Quote on one Item, cheapest-first in the Tender's Reporting Currency — or in entry
+ * order, unranked, when the
  * Item cannot be ranked at all.
  *
  * Entry order is the fallback because it is the one order that claims nothing. Leaving
@@ -109,27 +120,27 @@ export function rankQuotes<Q extends ComparedQuote>(
   quotes: Q[],
 ): RankedQuote<Q>[] {
   const lineTotal = (quote: Q): number | null =>
-    sameUnit(quote.quotedUnit, item.unit) ? quote.unitPriceThb * item.quantity : null;
+    sameUnit(quote.quotedUnit, item.unit) ? quote.unitPriceReporting * item.quantity : null;
 
   if (!isRankable(item, quotes)) {
     return quotes.map((quote) => ({
       quote,
       rank: null,
       isLowest: false,
-      lineTotalThb: lineTotal(quote),
+      lineTotalReporting: lineTotal(quote),
     }));
   }
 
-  const ordered = [...quotes].sort((a, b) => a.unitPriceThb - b.unitPriceThb);
-  const lowest = ordered[0].unitPriceThb;
+  const ordered = [...quotes].sort((a, b) => a.unitPriceReporting - b.unitPriceReporting);
+  const lowest = ordered[0].unitPriceReporting;
 
   return ordered.map((quote, index) => ({
     quote,
     rank: index + 1,
     // Every Quote at the lowest price, not the first of them. Which of two identical
     // prices got the chip would otherwise come down to who typed theirs in first.
-    isLowest: quote.unitPriceThb === lowest,
-    lineTotalThb: lineTotal(quote),
+    isLowest: quote.unitPriceReporting === lowest,
+    lineTotalReporting: lineTotal(quote),
   }));
 }
 
@@ -211,8 +222,8 @@ function tooCloseToCall(
 ): ItemBanner | null {
   if (!isRankable(item, quotes) || quotes.length < 2) return null;
 
-  const [leader, runnerUp] = [...quotes].sort((a, b) => a.unitPriceThb - b.unitPriceThb);
-  const gap = (runnerUp.unitPriceThb - leader.unitPriceThb) / leader.unitPriceThb;
+  const [leader, runnerUp] = [...quotes].sort((a, b) => a.unitPriceReporting - b.unitPriceReporting);
+  const gap = (runnerUp.unitPriceReporting - leader.unitPriceReporting) / leader.unitPriceReporting;
   const stale = [leader, runnerUp].find((quote) => quote.fxRateIsStale);
 
   if (gap >= tooCloseGap || !stale) return null;

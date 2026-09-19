@@ -18,7 +18,7 @@ import { getComparisonSheet, selectQuote, setLandedCost, setSellingPrice } from 
  * The Selected Quote is a **composite** foreign key — `(selected_quote_id, id)` against
  * `quotes(id, tender_item_id)` — so an Item pointing at another Item's Quote is refused
  * by the schema rather than by a check in the app; the test for it is worth having
- * precisely because there is no code to read. And `unit_price_thb` is a generated column,
+ * precisely because there is no code to read. And `unit_price_reporting` is a generated column,
  * so the THB figures the sheet ranks on are the database's arithmetic, not ours.
  *
  * Ranking itself is tested next door in `ranking.test.ts`, where it is arithmetic over
@@ -210,6 +210,16 @@ describe("reading the whole Tender at once", () => {
       suppliers.ace,
       suppliers.beta,
     ]);
+  });
+
+  it("carries the Tender's Reporting Currency, so no renderer has to ask for it", async () => {
+    // One fact about the whole read (ADR-0036), and the sheet is where it belongs: every
+    // Item, Quote and total under this Tender is in it, so a renderer reaching back to the
+    // database for a label would be asking a question this query already answered.
+    const store = await signedInAs(owner.email);
+    const sheet = await getComparisonSheet(tenderId, store);
+
+    expect(sheet.reportingCurrency).toBe("THB");
   });
 
   it("carries the sourcing of an Item nobody has quoted as the third state", async () => {

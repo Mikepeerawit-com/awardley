@@ -2,8 +2,8 @@ import "server-only";
 
 import { currentUser } from "@/lib/auth/session";
 import { isCalendarDate } from "@/lib/calendar-date";
-import { isConvertibleCurrency, reportingCurrency } from "@/lib/fx/currencies";
-import { freezeRate, type FxBoundary } from "@/lib/fx/rates";
+import { isConvertibleCurrency } from "@/lib/fx/currencies";
+import { freezeRate, type FrozenRate, type FxBoundary } from "@/lib/fx/rates";
 import { getOrgSettings } from "@/lib/org/org";
 import {
   createSessionClient,
@@ -146,8 +146,13 @@ export type Quote = {
   unitPrice: number;
   currency: string;
   quotedUnit: string;
-  /** `unit_price * fx_rate_applied`, computed by the database and never by hand. */
-  unitPriceThb: number;
+  /**
+   * `unit_price * fx_rate_applied`, computed by the database and never by hand, in the
+   * Reporting Currency the Quote's **Tender** was stamped with (ADR-0036). The Quote does
+   * not carry that currency — it is the Tender's, reachable by join — so a screen drawing
+   * this figure takes the label from the same place it took the Tender.
+   */
+  unitPriceReporting: number;
   fxRateMid: number;
   fxRateApplied: number;
   fxRateAsOf: string;
@@ -179,7 +184,7 @@ export type ItemSourcing = {
 };
 
 const quoteColumns =
-  "id, tender_item_id, unit_price, currency, quoted_unit, unit_price_thb, " +
+  "id, tender_item_id, unit_price, currency, quoted_unit, unit_price_reporting, " +
   "fx_rate_mid, fx_rate_applied, fx_rate_as_of, fx_rate_is_stale, lead_time_days, " +
   "match_type, alternative_product_name, detail_notes, quoted_at, created_by_user_id, " +
   "ruled_out_by_user_id, ruled_out_at, ruled_out_note";
@@ -189,8 +194,11 @@ const quoteColumns =
  *
  * The rate is frozen into the row as it is written — `fx_rate_mid`, `fx_rate_applied` and
  * `fx_rate_as_of` — so the ranking somebody saw today is reproducible from the row a year
- * from now, and no dashboard total moves because a currency did. A THB Quote stores both
- * rates as 1 and is not converted at all.
+ * from now, and no dashboard total moves because a currency did. It is frozen against the
+ * **Tender's** Reporting Currency (ADR-0036) rather than the org's current setting, so a
+ * Quote entered onto a Tender opened last quarter converts into the currency that Tender's
+ * other Quotes were ranked in. A Quote already in it stores both rates as 1 and is not
+ * converted at all.
  *
  * Nothing about a supplier being quoted twice on the same Item is refused. There is no
  * unique index behind it and there is deliberately no check here either: the divergence
@@ -207,9 +215,9 @@ export async function createQuote(
   if (!caller) return { ok: false, reason: "forbidden" };
 
   const supabase = createSessionClient(store);
-  const standing = await assigneeProblem(input.tenderItemId, caller.id, supabase);
+  const standing = await assigneeStanding(input.tenderItemId, caller.id, supabase);
 
-  if (standing) return { ok: false, reason: standing };
+  if ("reason" in standing) return { ok: false, reason: standing.reason };
 
   const problem = fieldProblem(input, input.currency);
 
@@ -217,13 +225,23 @@ export async function createQuote(
 
   const { fxBufferPct } = await getOrgSettings(store);
   const rate = await freezeRate(
-    { currency: input.currency, on: input.quotedAt, bufferPct: fxBufferPct },
+    {
+      currency: input.currency,
+      // The Tender's stamped currency, read a line above with the Assignee check rather
+      // than taken from `getOrgSettings`: the org setting is only what the *next* Tender
+      // will open in, and an org that changed it must not re-denominate one already under
+      // way. Nothing here writes the column either — a BEFORE INSERT trigger stamps it,
+      // for the reason `assign_tender_reference` is a trigger.
+      reporting: standing.reportingCurrency,
+      on: input.quotedAt,
+      bufferPct: fxBufferPct,
+    },
     supabase,
     boundary,
   );
 
-  // Frankfurter was unreachable *and* this currency has never been quoted before, so
-  // there is no rate to freeze. `fx_rate_mid` is `not null` and every total in the app is
+  // Frankfurter was unreachable *and* nothing stored can price this pair on any one day,
+  // so there is no rate to freeze. `fx_rate_mid` is `not null` and every total in the app is
   // built on it, so the alternative to refusing is a stored price nothing can convert.
   if (rate === null) return { ok: false, reason: "no_rate" };
 
@@ -333,25 +351,33 @@ export async function updateQuote(
 
   if (problem) return { ok: false, reason: problem };
 
-  // The stored currency, never one from the caller: `QuoteCorrection` has no field for it
-  // and this is the only place the value could otherwise come from.
-  const rate =
-    input.quotedAt === standing.quote.quoted_at
-      ? null
-      : await freezeRate(
-          {
-            currency: standing.quote.currency,
-            on: input.quotedAt,
-            bufferPct: (await getOrgSettings(store)).fxBufferPct,
-          },
-          supabase,
-          boundary,
-        );
+  // Null unless `quotedAt` moved, which is the only correction that re-freezes.
+  let rate: FrozenRate | null = null;
 
-  // Refused before anything is written, which is what makes "the row is left as it was"
-  // true of the price as well as of the rate — they moved in the same submit.
-  if (input.quotedAt !== standing.quote.quoted_at && rate === null) {
-    return { ok: false, reason: "no_rate" };
+  if (input.quotedAt !== standing.quote.quoted_at) {
+    // Both ends of the pair come off the stored row, never from the caller:
+    // `QuoteCorrection` has a field for neither the Quote's currency nor the Tender's, and
+    // this is the only place either value could otherwise come from. A Tender whose row did
+    // not come back with the Quote is one RLS is not showing this caller, and `not_found`
+    // is the answer it already gave.
+    if (standing.quote.reportingCurrency === null) {
+      return { ok: false, reason: "not_found" };
+    }
+
+    rate = await freezeRate(
+      {
+        currency: standing.quote.currency,
+        reporting: standing.quote.reportingCurrency,
+        on: input.quotedAt,
+        bufferPct: (await getOrgSettings(store)).fxBufferPct,
+      },
+      supabase,
+      boundary,
+    );
+
+    // Refused before anything is written, which is what makes "the row is left as it was"
+    // true of the price as well as of the rate — they moved in the same submit.
+    if (rate === null) return { ok: false, reason: "no_rate" };
   }
 
   const supplierId = await findOrCreateSupplier(
@@ -607,9 +633,9 @@ export async function recordNoSupplierFound(
   if (!caller) return { ok: false, reason: "forbidden" };
 
   const supabase = createSessionClient(store);
-  const standing = await assigneeProblem(tenderItemId, caller.id, supabase);
+  const standing = await assigneeStanding(tenderItemId, caller.id, supabase);
 
-  if (standing) return { ok: false, reason: standing };
+  if ("reason" in standing) return { ok: false, reason: standing.reason };
 
   const { error } = await supabase.from("no_supplier_found").upsert(
     {
@@ -652,11 +678,11 @@ export async function clearNoSupplierFound(
 /**
  * Every Quote on one Tender Item, oldest first.
  *
- * Deliberately *not* ranked. Cheapest-first in THB is the comparison view's job and it
- * cannot be done here: an Item carrying one Quote in "box of 50" and another in "piece"
- * has no ranking at all, and a list that quietly sorted by `unit_price_thb` would put a
- * number beside two prices that are not comparable. Entry order is the one order that
- * claims nothing.
+ * Deliberately *not* ranked. Cheapest-first in the Tender's Reporting Currency is the
+ * comparison view's job and it cannot be done here: an Item carrying one Quote in "box of
+ * 50" and another in "piece" has no ranking at all, and a list that quietly sorted by
+ * `unit_price_reporting` would put a number beside two prices that are not comparable.
+ * Entry order is the one order that claims nothing.
  *
  * **Ruled-out Quotes are in it.** Every Quote is drawn somewhere — ADR-0030's finding is that
  * the Owner reads all of them — and which of them a ranking is computed over is the caller's
@@ -957,7 +983,7 @@ async function supplierNamed(
 }
 
 /**
- * Is the caller an Assignee on this Item?
+ * Is the caller an Assignee on this Item, and what currency is its Tender priced in?
  *
  * The Item's own Assignees, no longer the Tender's (ADR-0033): holding a different
  * Item on the same Tender does not earn a Quote on this one. Asked as one embedded
@@ -965,32 +991,44 @@ async function supplierNamed(
  * answer as an Item deleted while the form was open, and the embed turns "not on this
  * Item" into an empty array without a second round trip.
  *
+ * The Reporting Currency rides along on that same read rather than costing a round trip of
+ * its own. It is two joins away from the Item and it is needed on exactly the path this
+ * check already guards — a Quote about to be written — so the alternative was a second
+ * query asking the same database the same question about the same row.
+ *
  * `not_assignee` is a different refusal from `forbidden` on purpose. Nothing is wrong
  * with the person — Assignees enrol themselves (ADR-0004) — so the sentence a user reads
  * is one that tells them to put themselves on the Item, not one that says no.
  */
-async function assigneeProblem(
+async function assigneeStanding(
   tenderItemId: string,
   callerId: string,
   supabase: ReturnType<typeof createSessionClient>,
-): Promise<QuoteProblem | null> {
-  if (!tenderItemId) return "not_found";
+): Promise<{ reason: QuoteProblem } | { reportingCurrency: string }> {
+  if (!tenderItemId) return { reason: "not_found" };
 
   const { data } = await supabase
     .from("tender_items")
-    .select("id, assignees:tender_item_assignees(user_id)")
+    .select(
+      "id, assignees:tender_item_assignees(user_id), " +
+        "tender:tenders(reporting_currency)",
+    )
     .eq("id", tenderItemId)
     .maybeSingle()
-    .overrideTypes<
-      { id: string; assignees: { user_id: string }[] },
-      { merge: false }
-    >();
+    .overrideTypes<ItemStandingDbRow, { merge: false }>();
 
-  if (!data) return "not_found";
+  if (!data) return { reason: "not_found" };
 
-  return data.assignees.some((row) => row.user_id === callerId)
-    ? null
-    : "not_assignee";
+  if (!data.assignees.some((row) => row.user_id === callerId)) {
+    return { reason: "not_assignee" };
+  }
+
+  // Every Item is on a Tender and the column is `not null`, so an absent embed is a row
+  // RLS declined to show rather than a Tender without a currency — which is `not_found`,
+  // the same answer an Item the caller cannot see gets one branch up.
+  if (!data.tender) return { reason: "not_found" };
+
+  return { reportingCurrency: data.tender.reporting_currency };
 }
 
 /**
@@ -1031,7 +1069,7 @@ async function correctableQuote(
       "id, currency, quoted_at, created_by_user_id, " +
         "supplier_id, quoted_unit, match_type, alternative_product_name, " +
         "item:tender_items!quotes_tender_item_id_fkey(" +
-        "selected_quote_id, tender:tenders(owner_user_id))",
+        "selected_quote_id, tender:tenders(owner_user_id, reporting_currency))",
     )
     .eq("id", quoteId)
     .maybeSingle()
@@ -1050,6 +1088,11 @@ async function correctableQuote(
   return {
     quote: {
       currency: data.currency,
+      // Null only when the Tender's row did not come back, which RLS cannot produce for a
+      // Quote this caller can already see. Left nullable rather than defaulted, because a
+      // default here would be a second answer to a question the Tender has already
+      // answered — see the refusal in {@link updateQuote}.
+      reportingCurrency: data.item?.tender?.reporting_currency ?? null,
       quoted_at: data.quoted_at,
       supplier_id: data.supplier_id,
       quoted_unit: data.quoted_unit,
@@ -1148,7 +1191,7 @@ function asQuote(row: QuoteDbRow): Quote {
     unitPrice: Number(row.unit_price),
     currency: row.currency,
     quotedUnit: row.quoted_unit,
-    unitPriceThb: Number(row.unit_price_thb),
+    unitPriceReporting: Number(row.unit_price_reporting),
     fxRateMid: Number(row.fx_rate_mid),
     fxRateApplied: Number(row.fx_rate_applied),
     fxRateAsOf: row.fx_rate_as_of,
@@ -1184,7 +1227,7 @@ type QuoteDbRow = {
   unit_price: number;
   currency: string;
   quoted_unit: string;
-  unit_price_thb: number;
+  unit_price_reporting: number;
   fx_rate_mid: number;
   fx_rate_applied: number;
   fx_rate_as_of: string;
@@ -1204,11 +1247,14 @@ type QuoteDbRow = {
 
 /**
  * The Quote a correction is about to overwrite, as the correction needs to know it: the two
- * fields ADR-0018's re-freeze rule turns on, the four that make up the offer's identity
- * under ADR-0032, and whether the Item has this Quote Selected.
+ * fields ADR-0018's re-freeze rule turns on, the Tender's Reporting Currency that a
+ * re-freeze converts into, the four that make up the offer's identity under ADR-0032, and
+ * whether the Item has this Quote Selected.
  */
 type StandingQuote = {
   currency: string;
+  /** The Tender's, stamped when it opened (ADR-0036) — never the org's setting today. */
+  reportingCurrency: string | null;
   quoted_at: string;
   supplier_id: string;
   quoted_unit: string;
@@ -1229,9 +1275,16 @@ type CorrectableQuoteDbRow = {
   alternative_product_name: string | null;
   item: {
     selected_quote_id: string | null;
-    tender: { owner_user_id: string } | null;
+    tender: { owner_user_id: string; reporting_currency: string } | null;
   } | null;
 } | null;
+
+/** What {@link assigneeStanding} reads: who is on the Item, and what its Tender prices in. */
+type ItemStandingDbRow = {
+  id: string;
+  assignees: { user_id: string }[];
+  tender: { reporting_currency: string } | null;
+};
 
 /** What {@link judgeableQuote} reads: whether it is there, and what it costs. */
 type JudgeableQuoteDbRow = {
@@ -1252,6 +1305,3 @@ function blankToNull(value: string | null): string | null {
 
   return trimmed === "" ? null : trimmed;
 }
-
-/** Re-exported so a screen can say "quoted in THB" without reaching into the fx module. */
-export { reportingCurrency };

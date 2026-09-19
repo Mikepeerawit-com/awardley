@@ -59,7 +59,8 @@ const quotedAt = "2026-07-15";
  * test that has nothing to do with this one, and only when both happen to interleave.
  *
  * Everything here is stubbed and never reaches ECB, so the currency is free; what it must
- * be is unshared. The cleanup below deletes by `as_of` rather than by currency for the
+ * be is unshared. Since #176 the stub serves a euro table rather than a pair, so it is
+ * handed this currency by name — it is one leg of what every freeze here divides. The cleanup below deletes by `as_of` rather than by currency for the
  * same reason, pointed the other way: this suite tidies up after itself without reaching
  * into a row anybody else is using.
  */
@@ -143,7 +144,7 @@ async function aQuoteAt(rate: number, store: SessionCookieStore): Promise<string
       quotedAt,
     },
     store,
-    respondingRates(rate),
+    respondingRates(rate, undefined, currency),
   );
 
   if (!result.ok) throw new Error(`could not create a Quote: ${result.reason}`);
@@ -367,7 +368,7 @@ describe("what changing it does to Quotes", () => {
         quotedAt,
       },
       store,
-      respondingRates(9.99),
+      respondingRates(9.99, undefined, currency),
     );
 
     expect(corrected.ok).toBe(true);
@@ -409,7 +410,7 @@ describe("what changing it does to Quotes", () => {
         quotedAt: movedTo,
       },
       store,
-      respondingRates(8),
+      respondingRates(8, undefined, currency),
     );
 
     expect(corrected.ok).toBe(true);

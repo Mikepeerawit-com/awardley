@@ -174,8 +174,9 @@ function YourQuote({ quote, photos }: { quote: Quote; photos: QuotePhoto[] }) {
         {quote.supplierName}
       </span>
       {/* The price *as the supplier gave it* — their currency and their unit, never
-          converted. The THB conversion exists to rank Quotes against each other, which is
-          the Owner's act and is not on this screen at all. */}
+          converted. The conversion into the Tender's Reporting Currency exists to rank
+          Quotes against each other, which is the Owner's act and is not on this screen
+          at all. */}
       <span className="text-muted-foreground text-xs">
         <span className="money text-foreground text-base font-medium">
           {format.number(quote.unitPrice, {

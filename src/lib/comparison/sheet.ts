@@ -18,7 +18,7 @@ import {
  * The comparison working sheet's read, and the one decision it records.
  *
  * The whole Tender on one page: every Item, every competing Quote against it, and every
- * Quote's photos — assembled in a fixed six queries however many Items and Quotes there
+ * Quote's photos — assembled in a fixed seven queries however many Items and Quotes there
  * are, because eight competing Quotes on each of four Items is what ADR-0004's
  * compete-not-divide model makes an ordinary Tender, and a per-Item read would be dozens
  * of round trips to draw one screen.
@@ -37,7 +37,11 @@ export type SheetItem = {
   unit: string;
   /** Null means the Item still needs a decision, which is what opens it expanded. */
   selectedQuoteId: string | null;
-  /** THB, per unit. Pre-filled from the Selected Quote and then edited — see #28. */
+  /**
+   * The Tender's Reporting Currency, per unit. Hand-entered and never converted, so it is
+   * denominated by the Tender it sits under and by nothing on the row itself (ADR-0036).
+   * Pre-filled from the Selected Quote and then edited — see #28.
+   */
   landedCostPerUnit: number | null;
   /** Null means Unconfirmed: nothing has been added for shipping, duty or handling. */
   landedCostConfirmedAt: string | null;
@@ -50,6 +54,22 @@ export type ComparisonSheet = {
   items: SheetItem[];
   /** Every Quote's photos on the whole Tender, keyed by Quote. */
   photos: Map<string, QuotePhoto[]>;
+  /**
+   * The currency every figure on this sheet is in — the Tender's, stamped when it opened
+   * (ADR-0036) and the same for every Item, Quote and total under it.
+   *
+   * Carried on the sheet rather than looked up by whatever draws a number, because it is
+   * one fact about the whole read and a renderer re-querying for it would be asking the
+   * database a question this query already answered.
+   *
+   * `null` only when the Tender itself could not be read — the same case that leaves
+   * `items` empty, and which the screen above has already refused on. It is `null` rather
+   * than `""` because an empty string is a currency code as far as the types are
+   * concerned and `Intl.NumberFormat` only finds out at the throw; `null` makes the one
+   * unreadable case a thing a caller has to answer for, which is the shape
+   * {@link quoteStanding} already uses for the same fact.
+   */
+  reportingCurrency: string | null;
 };
 
 /**
@@ -101,8 +121,16 @@ export async function getComparisonSheet(
     .overrideTypes<SheetItemDbRow[], { merge: false }>();
 
   const itemIds = (data ?? []).map((row) => row.id);
-  // Independent of each other, so they go together rather than one after the other.
-  const [quotes, sourcing] = await Promise.all([
+  // Independent of each other, so they go together rather than one after the other. The
+  // Tender's own row joins them rather than riding on the Item select above: a Tender with
+  // no Items still has a Reporting Currency, and an embed would have handed back nothing
+  // for exactly the Tender whose sheet is about to be drawn empty.
+  const [tender, quotes, sourcing] = await Promise.all([
+    supabase
+      .from("tenders")
+      .select("reporting_currency")
+      .eq("id", tenderId)
+      .maybeSingle(),
     listQuotesByItem(itemIds, store),
     listItemSourcing(tenderId, store),
   ]);
@@ -129,7 +157,7 @@ export async function getComparisonSheet(
     sourcing: sourcing.get(row.id) ?? { quoteCount: 0, noSupplierFound: [] },
   }));
 
-  return { items, photos };
+  return { items, photos, reportingCurrency: tender.data?.reporting_currency ?? null };
 }
 
 /**
@@ -171,7 +199,7 @@ export async function selectQuote(
   if (!item) return { ok: false, reason: "not_found" };
 
   const selection = item.selected_quote_id === quoteId ? null : quoteId;
-  // The frozen THB price of the Quote being selected — never re-marked to today's rate,
+  // The frozen converted price of the Quote being selected — never re-marked to today's rate,
   // so the cost pre-filled here is the one the ranking was drawn from. A Quote on another
   // Item is readable through RLS and is refused below by the composite foreign key, which
   // rolls this pre-fill back with the selection that asked for it.
@@ -289,7 +317,7 @@ async function writePricing(
 }
 
 /**
- * An amount in THB, or the field left empty.
+ * An amount in the Tender's Reporting Currency, or the field left empty.
  *
  * Zero is allowed and is not an oversight: a line bid at nothing is a real way to bid,
  * and the schema says the same with `>= 0`. The ceiling is `numeric(14,4)`'s — a figure
@@ -309,15 +337,15 @@ type PricingPatch = {
   selling_price_per_unit?: number | null;
 };
 
-/** The Selected Quote's frozen THB price and the unit it was given in. */
+/** The Selected Quote's frozen converted price and the unit it was given in. */
 async function readQuoteForPrefill(
   quoteId: string,
   store: SessionCookieStore,
-): Promise<{ quotedUnit: string; unitPriceThb: number } | null> {
+): Promise<{ quotedUnit: string; unitPriceReporting: number } | null> {
   const supabase = createSessionClient(store);
   const { data } = await supabase
     .from("quotes")
-    .select("quoted_unit, unit_price_thb")
+    .select("quoted_unit, unit_price_reporting")
     .eq("id", quoteId)
     .maybeSingle();
 
@@ -326,7 +354,7 @@ async function readQuoteForPrefill(
   return {
     quotedUnit: data.quoted_unit,
     // `numeric` crosses the wire in a type wider than the column holds.
-    unitPriceThb: Number(data.unit_price_thb),
+    unitPriceReporting: Number(data.unit_price_reporting),
   };
 }
 

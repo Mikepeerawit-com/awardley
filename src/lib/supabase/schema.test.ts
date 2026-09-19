@@ -135,14 +135,22 @@ describe("the v1 schema", () => {
     expect(error).toBeNull();
   });
 
-  it("seeds exactly one org, on Bangkok time with the 2% FX buffer", async () => {
+  it("seeds exactly one org, on Bangkok time, 2% FX buffer, reporting in baht", async () => {
+    // The Reporting Currency is read here alongside the other two because it is a
+    // setting of exactly their kind since #176 — an Org Admin's answer rather than a
+    // deploy. Taihue's is THB because the column's default backfilled the row that
+    // already existed, which is the one org that default is for: a *new* customer
+    // inheriting baht because Taihue did is the bug ADR-0036 was written to remove, and
+    // signup (#178) is where that gets asked rather than assumed.
     const { data, error } = await service
       .from("orgs")
-      .select("timezone, fx_buffer_pct")
+      .select("timezone, fx_buffer_pct, reporting_currency")
       .eq("name", "Taihue");
 
     expect(error).toBeNull();
-    expect(data).toEqual([{ timezone: "Asia/Bangkok", fx_buffer_pct: 0.02 }]);
+    expect(data).toEqual([
+      { timezone: "Asia/Bangkok", fx_buffer_pct: 0.02, reporting_currency: "THB" },
+    ]);
   });
 });
 
@@ -204,21 +212,26 @@ describe("tender_item_assignees", () => {
 });
 
 describe("quotes", () => {
-  it("stores the THB unit price as mid-plus-buffer times the quoted price", async () => {
+  it("stores the converted unit price as mid-plus-buffer times the quoted price", async () => {
+    // `unit_price_reporting` since #176, and only the name moved: the expression is the
+    // same `unit_price * fx_rate_applied` it always was, over the same Frozen Rate, so
+    // every row written before the rename is bit-for-bit what it was. What the column
+    // stopped claiming is that the figure is baht — it is the Tender's Reporting
+    // Currency, whatever that Tender opened in (ADR-0036).
     const { data, error } = await service
       .from("quotes")
       .insert(quote({ unit_price: 12.5, fx_rate_applied: 5.1 }))
-      .select("unit_price_thb")
+      .select("unit_price_reporting")
       .single();
 
     expect(error).toBeNull();
-    expect(Number(data?.unit_price_thb)).toBeCloseTo(63.75, 6);
+    expect(Number(data?.unit_price_reporting)).toBeCloseTo(63.75, 6);
   });
 
-  it("refuses to be written a THB price of its own", async () => {
+  it("refuses to be written a converted price of its own", async () => {
     const { error } = await service
       .from("quotes")
-      .insert(quote({ unit_price_thb: 1 }));
+      .insert(quote({ unit_price_reporting: 1 }));
 
     expect(error).not.toBeNull();
   });
@@ -526,8 +539,8 @@ describe("prices", () => {
   });
 
   it("refuses a zero FX rate, which would route around the price floor", async () => {
-    // unit_price_thb is generated from unit_price * fx_rate_applied, so a zero rate
-    // produces a zero THB price on a perfectly valid quoted price.
+    // unit_price_reporting is generated from unit_price * fx_rate_applied, so a zero
+    // rate produces a zero converted price on a perfectly valid quoted price.
     const { error } = await service
       .from("quotes")
       .insert(quote({ fx_rate_applied: 0 }));
@@ -544,7 +557,7 @@ describe("prices", () => {
   it("refuses a zero rate at the source the fetch writes to", async () => {
     const { error } = await service
       .from("fx_rates")
-      .insert({ currency: "XXX", as_of: "2026-08-10", rate_to_thb: 0 });
+      .insert({ currency: "XXX", as_of: "2026-08-10", rate_per_eur: 0 });
 
     expect(error).not.toBeNull();
   });
@@ -799,6 +812,106 @@ describe("reminder_deliveries", () => {
       .insert(delivery({ channel: "line" }));
 
     expect(error).not.toBeNull();
+  });
+});
+
+/**
+ * The currency a Tender opens in, which the database decides and then defends.
+ *
+ * Both halves are the database's rather than the app's, and are asked of it directly for
+ * the reason the assignee block above gives: a guarantee enforced by whichever code path
+ * happened to be reading is not a guarantee. `tenders.reporting_currency` is written by
+ * `stamp_tender_reporting_currency` on insert and pinned by `pin_tender_immutables` on
+ * update, so a caller cannot choose it and cannot change it afterwards.
+ *
+ * ADR-0036 is why it is immutable at all. `unit_price_reporting` is generated over a
+ * Frozen Rate: change the Tender's currency and not one digit under it moves, only the
+ * unit those digits are read in — a total relabelled into a currency it was never
+ * computed in, which breaks the Frozen Rate's promise more quietly than a total that
+ * moved would.
+ *
+ * A second org rather than the file's own, because the assertion needs an organisation
+ * reporting in something other than the default: stamping THB onto a Tender under an org
+ * that reports in THB proves nothing about where the value came from.
+ */
+describe("the Tender's Reporting Currency", () => {
+  const sgd = { orgId: "", tenderIds: [] as string[] };
+
+  beforeAll(async () => {
+    sgd.orgId = await insert("orgs", {
+      name: `Schema ${run} SGD`,
+      reporting_currency: "SGD",
+    });
+  });
+
+  afterAll(async () => {
+    for (const id of sgd.tenderIds) {
+      await service.from("tenders").delete().eq("id", id);
+    }
+
+    await service.from("orgs").delete().eq("id", sgd.orgId);
+  });
+
+  /** A Tender on the SGD org, with whatever the caller wanted to claim about currency. */
+  async function openTender(overrides: Record<string, unknown> = {}) {
+    const { data, error } = await service
+      .from("tenders")
+      .insert({
+        org_id: sgd.orgId,
+        client_name: "Singapore General",
+        title: "Examination gloves",
+        date_received: "2026-08-01",
+        internal_quote_deadline: "2026-08-10",
+        client_submission_deadline: "2026-08-17",
+        owner_user_id: fixture.userId,
+        ...overrides,
+      })
+      .select("id, reporting_currency")
+      .single();
+
+    if (error) throw error;
+
+    sgd.tenderIds.push(data.id as string);
+
+    return data;
+  }
+
+  it("stamps the organisation's currency onto a Tender that asked for nothing", async () => {
+    const tender = await openTender();
+
+    expect(tender.reporting_currency).toBe("SGD");
+  });
+
+  it("overwrites a currency the caller supplied rather than honouring it", async () => {
+    // Stamped, not defaulted — the same shape `assign_tender_reference` uses and for the
+    // same reason. There is exactly one right answer sitting on the org row, so a value
+    // the caller sends is only ever a value the caller can get wrong; honouring it is
+    // how a Tender ends up denominated in something no screen under it expects.
+    const tender = await openTender({ reporting_currency: "USD" });
+
+    expect(tender.reporting_currency).toBe("SGD");
+  });
+
+  it("keeps the currency through an update that tries to change it", async () => {
+    const tender = await openTender();
+
+    const { error } = await service
+      .from("tenders")
+      .update({ reporting_currency: "USD", title: "Retitled" })
+      .eq("id", tender.id);
+
+    // Silent rather than an error, exactly as the pinned reference is: the only way to
+    // reach this is to send a column you had no business sending, and the rest of the
+    // update is honest work that should not be lost with it.
+    expect(error).toBeNull();
+
+    const { data } = await service
+      .from("tenders")
+      .select("reporting_currency, title")
+      .eq("id", tender.id)
+      .single();
+
+    expect(data).toEqual({ reporting_currency: "SGD", title: "Retitled" });
   });
 });
 

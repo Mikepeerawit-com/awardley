@@ -4,10 +4,6 @@ import { QuotePhotoControls } from "@/components/quotes/quote-photos";
 import { QuoteRowControls } from "@/components/quotes/quote-row-controls";
 import { calendarDate, calendarDateFormat } from "@/lib/calendar-date";
 import type { QuotePhoto } from "@/lib/images/quote-photos";
-// `reportingCurrency` from its own module, not the re-export on `@/lib/quotes/quotes`:
-// that module is `server-only`, and a value import from it is what made this component
-// unrenderable in a browser test. The type still comes from there — types are erased.
-import { reportingCurrency } from "@/lib/fx/currencies";
 // The predicate from `@/lib/quotes/quote-form`, not the re-export on
 // `@/lib/quotes/quotes`: that module is `server-only`, and a value import from it is what
 // made this component unrenderable in a browser test.
@@ -19,16 +15,16 @@ import type { Quote } from "@/lib/quotes/quotes";
  * gets entered.
  *
  * Deliberately unranked, and it is worth saying why on the screen that most invites a
- * ranking. Cheapest-first in THB belongs to the comparison working sheet (#27), which
- * knows the two things this list does not: that an Item carrying one Quote in "box of 50"
- * and another in "piece" cannot be ranked at all, and that a top two within 3% on rates
- * frozen on different days is too close to call. A number beside each row here would be
- * making both of those claims by accident. Entry order claims nothing.
+ * ranking. Cheapest-first in the Reporting Currency belongs to the comparison working
+ * sheet (#27), which knows the two things this list does not: that an Item carrying one
+ * Quote in "box of 50" and another in "piece" cannot be ranked at all, and that a top two
+ * within 3% on rates frozen on different days is too close to call. A number beside each
+ * row here would be making both of those claims by accident. Entry order claims nothing.
  *
  * What it does carry is the pair of facts that make two near-identical rows different:
- * **who sourced it**, which is never dropped, and the frozen rate the THB figure came
- * from. Two Assignees ringing the same supplier and getting different prices is expected,
- * and reading it as a duplicate is the mistake this column exists to prevent.
+ * **who sourced it**, which is never dropped, and the frozen rate the converted figure
+ * came from. Two Assignees ringing the same supplier and getting different prices is
+ * expected, and reading it as a duplicate is the mistake this column exists to prevent.
  *
  * Rendered on the server, and sync rather than `async` so that `screens.layout.test.tsx`
  * can measure it at 390px: `useTranslations` and `useFormatter` work in a Server
@@ -43,6 +39,7 @@ export function QuoteList({
   ownerUserId,
   selectedQuoteId,
   yourQuotesOnly,
+  reportingCurrency,
 }: {
   tenderId: string;
   tenderItemId: string;
@@ -64,6 +61,16 @@ export function QuoteList({
    * colleague recorded a price this morning.
    */
   yourQuotesOnly: boolean;
+  /**
+   * The Tender's Reporting Currency, handed down from the page (ADR-0036).
+   *
+   * A prop rather than the module constant it used to read, because there is no longer
+   * one of these to import: the currency is a fact about the Tender this Item sits under,
+   * and it decides both the figure drawn under each price and whether a second figure is
+   * drawn at all. Every Quote in this list shares it, since every Quote in it is on one
+   * Item of one Tender.
+   */
+  reportingCurrency: string;
 }) {
   const t = useTranslations("quotes");
   const format = useFormatter();
@@ -117,8 +124,9 @@ export function QuoteList({
           ) : null}
 
           <div className="flex flex-col gap-0.5">
-            {/* **Original amount primary and bold, THB beneath it in grey with `≈` — and
-                the working sheet now does the opposite, on purpose** (ADR-0029). The two
+            {/* **Original amount primary and bold, the converted figure beneath it in
+                grey with `≈` — and the working sheet now does the opposite, on purpose**
+                (ADR-0029). The two
                 screens used to be bound together so they could never disagree about which
                 number was the real one; they are no longer, because they are read by
                 different people doing different things. This card is the Assignee's: they
@@ -143,13 +151,16 @@ export function QuoteList({
             </span>
 
             {quote.currency === reportingCurrency ? (
-              // No fake conversion. A THB Quote is not converted, and repeating the same
-              // number underneath with a `≈` in front of it would imply it had been.
-              <span className="text-muted-foreground text-sm">{t("quotedInThb")}</span>
+              // No fake conversion. A Quote already in the Reporting Currency is not
+              // converted, and repeating the same number underneath with a `≈` in front
+              // of it would imply it had been.
+              <span className="text-muted-foreground text-sm">
+                {t("quotedInReporting", { currency: reportingCurrency })}
+              </span>
             ) : (
               <span className="text-muted-foreground money text-sm">
                 {t("approx", {
-                  amount: format.number(quote.unitPriceThb, {
+                  amount: format.number(quote.unitPriceReporting, {
                     style: "currency",
                     currency: reportingCurrency,
                   }),
@@ -216,6 +227,7 @@ export function QuoteList({
               quoteId={quote.id}
               supplierName={quote.supplierName}
               isSelected={quote.id === selectedQuoteId}
+              reportingCurrency={reportingCurrency}
             />
           ) : null}
         </li>

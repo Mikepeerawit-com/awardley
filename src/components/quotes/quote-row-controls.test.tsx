@@ -42,6 +42,7 @@ function draw() {
         quoteId="a-quote"
         supplierName="Bangkok Medical Supply"
         isSelected
+        reportingCurrency="THB"
       />
     </NextIntlClientProvider>,
   );

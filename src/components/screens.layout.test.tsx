@@ -204,7 +204,8 @@ describe(`the create-a-Quote form with photos held, at ${phone.width}×${phone.h
           <QuoteForm
             tenderId={tender.id}
             tenderItemId="item-gloves"
-            defaults={blankQuote({ unit: "piece", today: "2026-08-12" })}
+            defaults={blankQuote({ unit: "piece", today: "2026-08-12", reportingCurrency: "THB" })}
+            reportingCurrency="THB"
           />
         </Body>
       </Screen>,

@@ -78,7 +78,8 @@ function renderForm(locale: string, messages: typeof en) {
       <QuoteForm
         tenderId="a-tender"
         tenderItemId="an-item"
-        defaults={blankQuote({ unit: "box of 50", today: "2026-08-21" })}
+        defaults={blankQuote({ unit: "box of 50", today: "2026-08-21", reportingCurrency: "THB" })}
+        reportingCurrency="THB"
       />
     </NextIntlClientProvider>,
   );

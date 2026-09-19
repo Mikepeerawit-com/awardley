@@ -362,6 +362,7 @@ export function screens(m: Messages) {
               items={sheetItems}
               photos={quotePhotos}
               referenceImages={referenceImages}
+              reportingCurrency={tender.reportingCurrency}
             />
           </Section>
           {/* The fold **shut**, as the page draws it and as a reader arriving from a
@@ -453,6 +454,7 @@ export function screens(m: Messages) {
               items={sheetItems}
               photos={quotePhotos}
               referenceImages={referenceImages}
+              reportingCurrency={tender.reportingCurrency}
             />
           </Section>
           <Fold id="tender-facts" title={m.tenders.sections.facts} defaultOpen>
@@ -608,6 +610,7 @@ export function screens(m: Messages) {
             callerId={tender.ownerUserId}
             ownerUserId={tender.ownerUserId}
             selectedQuoteId={selectedGloveQuoteId}
+            reportingCurrency={tender.reportingCurrency}
             // Every Quote on the Item, both Assignees' — the Owner's view, and the widest
             // this list gets. What a non-Owner reads is the screen below rather than this
             // one with rows removed: it counts the list differently and carries a form this
@@ -618,7 +621,12 @@ export function screens(m: Messages) {
             <QuoteForm
               tenderId={tender.id}
               tenderItemId={gloves.id}
-              defaults={blankQuote({ unit: gloves.unit, today: "2026-08-12" })}
+              defaults={blankQuote({
+                unit: gloves.unit,
+                today: "2026-08-12",
+                reportingCurrency: tender.reportingCurrency,
+              })}
+              reportingCurrency={tender.reportingCurrency}
             />
           </Measure>
         </Body>
@@ -665,6 +673,7 @@ export function screens(m: Messages) {
               // than pointing it at a row this reader was never handed.
               selectedQuoteId={null}
               yourQuotesOnly
+              reportingCurrency={tender.reportingCurrency}
             />
           </section>
 
@@ -677,7 +686,12 @@ export function screens(m: Messages) {
               <QuoteForm
                 tenderId={tender.id}
                 tenderItemId={gloves.id}
-                defaults={blankQuote({ unit: gloves.unit, today: "2026-08-12" })}
+                defaults={blankQuote({
+                unit: gloves.unit,
+                today: "2026-08-12",
+                reportingCurrency: tender.reportingCurrency,
+              })}
+                reportingCurrency={tender.reportingCurrency}
               />
             </section>
           </Measure>
@@ -696,6 +710,7 @@ export function screens(m: Messages) {
                 others={refusalsOn(gloves.id).filter(
                   (refusal) => refusal.userId !== "user-nok",
                 )}
+                reportingCurrency={tender.reportingCurrency}
               />
             </section>
           </Measure>
@@ -721,6 +736,7 @@ export function screens(m: Messages) {
               // currency rather than the reporting one it would default to.
               currency={gloveQuotes[0].currency}
               defaults={quoteAsSubmitted(gloveQuotes[0])}
+              reportingCurrency={tender.reportingCurrency}
             />
           </Measure>
         </Body>
@@ -1303,6 +1319,9 @@ const rowBase = {
   clientName: "",
   title: "",
   ownerName: "",
+  // A worklist row states two dates and a Progress and no money at all, so the currency
+  // rides along on the shape without being drawn. It is the Tender's all the same.
+  reportingCurrency: "THB",
 } satisfies WorklistRow;
 
 const ordinaryRow: WorklistRow = {
@@ -1520,6 +1539,11 @@ export const tender: Tender = {
   ownerUserId: "user-somchai",
   ownerName: "Somchai Prasertkul",
   submittedAt: null,
+  // What this Tender opened in (ADR-0036), and what every converted figure on the
+  // contact sheet is drawn in. THB rather than anything else because the fixture prices
+  // below are the ones #27 measured in baht, and this is a rename rather than a
+  // re-pricing: the digits and the currency they were computed in both stay put.
+  reportingCurrency: "THB",
   // Free text somebody typed, which is the fact on this grid that can be any length.
   notes:
     "Client asked for the TFDA registration numbers alongside every line, and confirmation that gloves are non-sterile.",
@@ -1570,7 +1594,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.42,
     currency: "CNY",
     quotedUnit: "piece",
-    unitPriceThb: 2.124864,
+    unitPriceReporting: 2.124864,
     fxRateMid: 4.96,
     fxRateApplied: 5.0592,
     fxRateAsOf: "2026-08-11",
@@ -1595,7 +1619,7 @@ const everyQuote: Quote[] = [
     currency: "THB",
     quotedUnit: "piece",
     // A THB Quote stores both rates as 1 and is not converted at all.
-    unitPriceThb: 2.35,
+    unitPriceReporting: 2.35,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-13",
@@ -1619,7 +1643,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.062,
     currency: "USD",
     quotedUnit: "piece",
-    unitPriceThb: 2.074272,
+    unitPriceReporting: 2.074272,
     fxRateMid: 32.8,
     fxRateApplied: 33.456,
     // A Stale Rate, and the cheapest row on the Item — which is the pair `tooCloseToCall`
@@ -1653,7 +1677,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.45,
     currency: "CNY",
     quotedUnit: "piece",
-    unitPriceThb: 2.27664,
+    unitPriceReporting: 2.27664,
     fxRateMid: 4.96,
     fxRateApplied: 5.0592,
     fxRateAsOf: "2026-08-11",
@@ -1674,7 +1698,7 @@ const everyQuote: Quote[] = [
     unitPrice: 2.31,
     currency: "THB",
     quotedUnit: "piece",
-    unitPriceThb: 2.31,
+    unitPriceReporting: 2.31,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-14",
@@ -1695,7 +1719,7 @@ const everyQuote: Quote[] = [
     unitPrice: 62.5,
     currency: "CNY",
     quotedUnit: "box of 50",
-    unitPriceThb: 316.2,
+    unitPriceReporting: 316.2,
     fxRateMid: 4.96,
     fxRateApplied: 5.0592,
     fxRateAsOf: "2026-08-11",
@@ -1716,7 +1740,7 @@ const everyQuote: Quote[] = [
     unitPrice: 340,
     currency: "THB",
     quotedUnit: "box of 50",
-    unitPriceThb: 340,
+    unitPriceReporting: 340,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-14",
@@ -1737,7 +1761,7 @@ const everyQuote: Quote[] = [
     unitPrice: 1.15,
     currency: "CNY",
     quotedUnit: "piece",
-    unitPriceThb: 5.81808,
+    unitPriceReporting: 5.81808,
     fxRateMid: 4.96,
     fxRateApplied: 5.0592,
     fxRateAsOf: "2026-08-11",
@@ -1767,7 +1791,7 @@ const everyQuote: Quote[] = [
     unitPrice: 540,
     currency: "THB",
     quotedUnit: "box of 100",
-    unitPriceThb: 540,
+    unitPriceReporting: 540,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-14",
@@ -1794,7 +1818,7 @@ const everyQuote: Quote[] = [
     unitPrice: 1.08,
     currency: "CNY",
     quotedUnit: "piece",
-    unitPriceThb: 5.463936,
+    unitPriceReporting: 5.463936,
     fxRateMid: 4.96,
     fxRateApplied: 5.0592,
     fxRateAsOf: "2026-08-11",
@@ -1815,7 +1839,7 @@ const everyQuote: Quote[] = [
     unitPrice: 6.15,
     currency: "THB",
     quotedUnit: "piece",
-    unitPriceThb: 6.15,
+    unitPriceReporting: 6.15,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-14",
@@ -1842,7 +1866,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.17,
     currency: "USD",
     quotedUnit: "piece",
-    unitPriceThb: 5.70486,
+    unitPriceReporting: 5.70486,
     fxRateMid: 32.9,
     fxRateApplied: 33.558,
     fxRateAsOf: "2026-08-12",
@@ -1874,7 +1898,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.16,
     currency: "USD",
     quotedUnit: "piece",
-    unitPriceThb: 5.36928,
+    unitPriceReporting: 5.36928,
     fxRateMid: 32.9,
     fxRateApplied: 33.558,
     fxRateAsOf: "2026-08-12",
@@ -1912,7 +1936,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.55,
     currency: "THB",
     quotedUnit: "piece",
-    unitPriceThb: 0.55,
+    unitPriceReporting: 0.55,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-14",
@@ -1937,7 +1961,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.1,
     currency: "CNY",
     quotedUnit: "piece",
-    unitPriceThb: 0.50592,
+    unitPriceReporting: 0.50592,
     fxRateMid: 4.96,
     fxRateApplied: 5.0592,
     fxRateAsOf: "2026-08-14",
@@ -1962,7 +1986,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.09,
     currency: "CNY",
     quotedUnit: "piece",
-    unitPriceThb: 0.455328,
+    unitPriceReporting: 0.455328,
     fxRateMid: 4.96,
     fxRateApplied: 5.0592,
     fxRateAsOf: "2026-08-14",
@@ -1987,7 +2011,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.62,
     currency: "THB",
     quotedUnit: "piece",
-    unitPriceThb: 0.62,
+    unitPriceReporting: 0.62,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-15",
@@ -2012,7 +2036,7 @@ const everyQuote: Quote[] = [
     unitPrice: 0.011,
     currency: "USD",
     quotedUnit: "piece",
-    unitPriceThb: 0.369138,
+    unitPriceReporting: 0.369138,
     fxRateMid: 32.9,
     fxRateApplied: 33.558,
     fxRateAsOf: "2026-08-15",

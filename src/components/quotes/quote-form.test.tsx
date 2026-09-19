@@ -88,7 +88,8 @@ function renderForm() {
       <QuoteForm
         tenderId="a-tender"
         tenderItemId="an-item"
-        defaults={blankQuote({ unit: "box of 50", today: "2026-08-21" })}
+        defaults={blankQuote({ unit: "box of 50", today: "2026-08-21", reportingCurrency: "THB" })}
+        reportingCurrency="THB"
       />
     </NextIntlClientProvider>,
   );
@@ -210,7 +211,7 @@ describe("photos picked while the Quote is being entered", () => {
 
     server.create.mockResolvedValueOnce({
       error: "invalid_price",
-      submitted: { ...blankQuote({ unit: "box of 50", today: "2026-08-21" }),
+      submitted: { ...blankQuote({ unit: "box of 50", today: "2026-08-21", reportingCurrency: "THB" }),
         supplierName: "Ace Medical" },
     });
 

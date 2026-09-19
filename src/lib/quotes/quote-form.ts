@@ -103,24 +103,33 @@ export function submittedQuote(formData: FormData): SubmittedQuote {
 }
 
 /**
- * A blank form, with the two fields that have a sensible starting point filled in.
+ * A blank form, with the three fields that have a sensible starting point filled in.
  *
  * The Item's own unit, because a supplier usually prices in what was asked for and
  * typing it again is a chance to type it differently — and the two not matching is what
  * refuses to rank the whole Item. Today's date, because a Quote is written down the day
  * it is given, and the rate that gets frozen follows from it.
+ *
+ * The Tender's Reporting Currency, because it is the one currency this Tender is already
+ * priced in and so the likeliest thing a supplier quoted — this used to read `THB`, which
+ * was the same guess made once for everybody (#176). It is **required, with no default**:
+ * a price entered in the wrong currency by a mis-tapped default is out by whatever the
+ * pair is worth, and a default here is exactly the shape that cannot be seen from a call
+ * site.
  */
 export function blankQuote({
   unit,
   today,
+  reportingCurrency,
 }: {
   unit: string;
   today: string;
+  reportingCurrency: string;
 }): SubmittedQuote {
   return {
     supplierName: "",
     unitPrice: "",
-    currency: "THB",
+    currency: reportingCurrency,
     quotedUnit: unit,
     leadTimeDays: "",
     matchType: "exact" satisfies MatchType,

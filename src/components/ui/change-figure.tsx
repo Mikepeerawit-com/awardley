@@ -1,10 +1,6 @@
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 
 import { defaultLocale, isLocale } from "@/i18n/config";
-// From the currency list rather than from `@/lib/quotes/quotes`, which re-exports it:
-// this renders inside a client component on the working sheet, and that module is
-// `server-only`.
-import { reportingCurrency } from "@/lib/fx/currencies";
 import { directionOf, type DirectionTone } from "@/lib/money/direction";
 import { cn } from "@/lib/utils";
 
@@ -33,10 +29,23 @@ import { cn } from "@/lib/utils";
  */
 export function ChangeFigure({
   amount,
+  currency,
   maximumFractionDigits,
 }: {
   amount: number;
-  /** The totals bar rounds to whole baht; a per-Item figure does not. */
+  /**
+   * The Reporting Currency the amount is denominated in — the Tender's, stamped when it
+   * opened (ADR-0036), handed down from whatever holds the Tender.
+   *
+   * **Required, with no default**, which is the one decision worth stating here. This is
+   * a shared primitive and it used to read a module-level `reportingCurrency` constant,
+   * so every figure in the app was a baht figure by construction. A default would put
+   * that back in the one shape that cannot be seen from a call site: a caller under a
+   * Tender opened in SGD forgets the prop and gets a Margin drawn with a `฿` in front of
+   * digits that were never baht. The compiler asking is the whole of the protection.
+   */
+  currency: string;
+  /** The totals bar rounds to whole units of the currency; a per-Item figure does not. */
   maximumFractionDigits?: number;
 }) {
   const t = useTranslations("money.direction");
@@ -73,7 +82,7 @@ export function ChangeFigure({
         {change.sign}
         {format.number(Math.abs(amount), {
           style: "currency",
-          currency: reportingCurrency,
+          currency,
           maximumFractionDigits,
         })}
       </span>

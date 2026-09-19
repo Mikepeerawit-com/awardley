@@ -216,6 +216,7 @@ function renderSheet() {
             items={items}
             photos={photos}
             referenceImages={referenceImages}
+            reportingCurrency="THB"
           />
         </main>
       </div>
@@ -272,7 +273,7 @@ function quote({
     unitPrice,
     currency,
     quotedUnit,
-    unitPriceThb: unitPrice * applied,
+    unitPriceReporting: unitPrice * applied,
     fxRateMid: rateMid,
     fxRateApplied: applied,
     fxRateAsOf: rate.asOf,

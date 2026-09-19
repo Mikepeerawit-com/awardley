@@ -55,10 +55,19 @@ async function signedInAs(email: string): Promise<SupabaseClient> {
   return client;
 }
 
-async function createOrg(name: string): Promise<string> {
+/**
+ * An org, reporting in a currency of its own.
+ *
+ * The two fixture orgs are deliberately given *different* Reporting Currencies, and
+ * neither is the column's THB default. A Tender stamped THB under an org that reports in
+ * THB says nothing about where the value came from, and the guarantee the stamp exists
+ * for — ADR-0036's, that the organisation answers this and the caller does not — is only
+ * visible when the two possible answers differ.
+ */
+async function createOrg(name: string, reportingCurrency: string): Promise<string> {
   const { data, error } = await service
     .from("orgs")
-    .insert({ name })
+    .insert({ name, reporting_currency: reportingCurrency })
     .select("id")
     .single();
 
@@ -115,8 +124,8 @@ async function createTender(orgId: string, ownerId: string): Promise<string> {
 }
 
 beforeAll(async () => {
-  orgs.a = await createOrg(`Org A ${run}`);
-  orgs.b = await createOrg(`Org B ${run}`);
+  orgs.a = await createOrg(`Org A ${run}`, "SGD");
+  orgs.b = await createOrg(`Org B ${run}`, "USD");
 
   await createMember(orgs.a, members.a);
   await createMember(orgs.a, members.mate);
@@ -264,6 +273,66 @@ describe("row-level security", () => {
       .eq("id", tenders.a);
 
     expect(error).not.toBeNull();
+  });
+
+  // The Reporting Currency is asked here, through a member's own key, rather than only
+  // of the triggers in `schema.test.ts`. The stamp is `security definer` precisely so it
+  // can read `orgs` under a caller whose own rights might not reach the row, and a
+  // function that worked for the service role and left `reporting_currency` null for
+  // everybody else would pass there and fail here. This is the seam that proves it.
+  it("stamps a member's new Tender with their own org's currency", async () => {
+    const client = await signedInAs(members.a.email);
+
+    // Sent in the shape a hand-rolled client would send it — the currency included, and
+    // the wrong one on purpose. There is one right answer and it is on the org row, so
+    // whatever the caller supplies is overwritten rather than honoured: honouring it is
+    // how a Tender ends up denominated in something no screen under it expects.
+    const { data, error } = await client
+      .from("tenders")
+      .insert({
+        org_id: orgs.a,
+        client_name: "Bangkok General",
+        title: "Currency the caller does not get to choose",
+        date_received: "2026-08-01",
+        internal_quote_deadline: "2026-08-10",
+        client_submission_deadline: "2026-08-17",
+        owner_user_id: members.a.id,
+        reporting_currency: "USD",
+      })
+      .select("id, reporting_currency")
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.reporting_currency).toBe("SGD");
+
+    await service.from("tenders").delete().eq("id", data?.id);
+  });
+
+  it("keeps a Tender in the currency it opened in, whatever an update sends", async () => {
+    const client = await signedInAs(members.a.email);
+
+    // Sent alongside a legitimate edit, because that is the only way it realistically
+    // arrives: a client posting back every column it read. The title has to land and the
+    // currency has to not — pinning by refusing the whole update would lose honest work
+    // over a column nobody meant to change, which is why `pin_tender_immutables` is
+    // silent rather than an error.
+    const { error } = await client
+      .from("tenders")
+      .update({ reporting_currency: "USD", title: "Retitled by a member" })
+      .eq("id", tenders.a);
+
+    expect(error).toBeNull();
+
+    const { data } = await service
+      .from("tenders")
+      .select("reporting_currency, title")
+      .eq("id", tenders.a)
+      .single();
+
+    expect(data).toEqual({
+      reporting_currency: "SGD",
+      title: "Retitled by a member",
+    });
   });
 
   it("shows a disabled user nothing, including their own org", async () => {
@@ -467,10 +536,16 @@ describe("membership is not business data", () => {
 describe("fx_rates", () => {
   // Shared reference data with no org to scope by. The only legitimate writer is the
   // daily Frankfurter fetch, which runs with the service role.
+  //
+  // `rate_per_eur` since #176: one EUR-relative row per currency per day answers every
+  // pair from the same fetch — `per_eur[to] / per_eur[from]` — where `rate_to_thb` could
+  // only ever answer one. The table stays global and unowned for the reason it always
+  // was, and the reason is now stronger: an ECB reference rate is the same for everyone,
+  // and a second org reporting in SGD costs no extra rows.
   beforeAll(async () => {
     await service
       .from("fx_rates")
-      .upsert({ currency: "CNY", as_of: "2026-08-10", rate_to_thb: 5 });
+      .upsert({ currency: "CNY", as_of: "2026-08-10", rate_per_eur: 5 });
   });
 
   afterAll(async () => {
@@ -488,7 +563,7 @@ describe("fx_rates", () => {
 
     const { data, error } = await client
       .from("fx_rates")
-      .select("rate_to_thb")
+      .select("rate_per_eur")
       .eq("currency", "CNY")
       .eq("as_of", "2026-08-10");
 
@@ -502,7 +577,7 @@ describe("fx_rates", () => {
 
     const { error } = await client
       .from("fx_rates")
-      .insert({ currency: "USD", as_of: "2026-08-10", rate_to_thb: 1 });
+      .insert({ currency: "USD", as_of: "2026-08-10", rate_per_eur: 1 });
 
     expect(error).not.toBeNull();
   });
@@ -512,7 +587,7 @@ describe("fx_rates", () => {
 
     const { error } = await client
       .from("fx_rates")
-      .update({ rate_to_thb: 999 })
+      .update({ rate_per_eur: 999 })
       .eq("currency", "CNY")
       .eq("as_of", "2026-08-10");
 
@@ -525,18 +600,18 @@ describe("fx_rates", () => {
 
     const { data } = await service
       .from("fx_rates")
-      .select("rate_to_thb")
+      .select("rate_per_eur")
       .eq("currency", "CNY")
       .eq("as_of", "2026-08-10")
       .single();
 
-    expect(Number(data?.rate_to_thb)).toBe(5);
+    expect(Number(data?.rate_per_eur)).toBe(5);
   });
 
   it("shows a disabled user no rates either", async () => {
     const client = await signedInAs(members.disabled.email);
 
-    const { data } = await client.from("fx_rates").select("rate_to_thb");
+    const { data } = await client.from("fx_rates").select("rate_per_eur");
 
     expect(data).toEqual([]);
   });

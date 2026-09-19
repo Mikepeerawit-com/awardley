@@ -89,6 +89,10 @@ const base = {
   status: { kind: "due", tone: "signal", deadline: "internal_quote", days: 1 },
   notYetSourced: 0,
   assigneeUserIds: [],
+  // The currency the Tender opened in (ADR-0036). The row draws no money, so this is
+  // here to satisfy the shape rather than to be measured — the widths this file pins
+  // are the reference, the client name and the title.
+  reportingCurrency: "THB",
 } satisfies WorklistRow;
 
 const ordinary: WorklistRow = {

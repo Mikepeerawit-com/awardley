@@ -32,14 +32,14 @@ const item: ComparedItem = {
   selectedQuoteId: null,
 };
 
-/** A Quote at a THB price, exact and in the Item's own unit unless said otherwise. */
+/** A Quote priced in the Item's own unit and currency, exact, unless said otherwise. */
 function quote(fields: Partial<ComparedQuote> & { id: string }): ComparedQuote {
   return {
     supplierName: `Supplier ${fields.id}`,
     unitPrice: 100,
     currency: "THB",
     quotedUnit: "box of 50",
-    unitPriceThb: 100,
+    unitPriceReporting: 100,
     fxRateAsOf: "2026-08-18",
     fxRateIsStale: false,
     matchType: "exact",
@@ -48,14 +48,14 @@ function quote(fields: Partial<ComparedQuote> & { id: string }): ComparedQuote {
   };
 }
 
-describe("ranking cheapest-first in THB", () => {
+describe("ranking cheapest-first in the Reporting Currency", () => {
   it("ranks by the converted price, not the quoted one", () => {
     // The dearer supplier in their own currency is the cheaper one in THB. Sorting on
     // `unitPrice` would rank 2,900 JPY above 620 THB and be wrong by a factor of five.
     const ranked = rankQuotes(item, [
-      quote({ id: "a", unitPrice: 620, currency: "THB", unitPriceThb: 620 }),
-      quote({ id: "b", unitPrice: 2900, currency: "JPY", unitPriceThb: 690 }),
-      quote({ id: "c", unitPrice: 120, currency: "CNY", unitPriceThb: 595 }),
+      quote({ id: "a", unitPrice: 620, currency: "THB", unitPriceReporting: 620 }),
+      quote({ id: "b", unitPrice: 2900, currency: "JPY", unitPriceReporting: 690 }),
+      quote({ id: "c", unitPrice: 120, currency: "CNY", unitPriceReporting: 595 }),
     ]);
 
     expect(ranked.map((row) => [row.quote.id, row.rank])).toEqual([
@@ -67,8 +67,8 @@ describe("ranking cheapest-first in THB", () => {
 
   it("marks the lowest row, and only it", () => {
     const ranked = rankQuotes(item, [
-      quote({ id: "a", unitPriceThb: 620 }),
-      quote({ id: "b", unitPriceThb: 595 }),
+      quote({ id: "a", unitPriceReporting: 620 }),
+      quote({ id: "b", unitPriceReporting: 595 }),
     ]);
 
     expect(ranked.filter((row) => row.isLowest).map((row) => row.quote.id)).toEqual(["b"]);
@@ -78,8 +78,8 @@ describe("ranking cheapest-first in THB", () => {
     // Highlighting one of two identical prices claims a difference the data does not
     // have, and which one got the chip would come down to entry order.
     const ranked = rankQuotes(item, [
-      quote({ id: "a", unitPriceThb: 595 }),
-      quote({ id: "b", unitPriceThb: 595 }),
+      quote({ id: "a", unitPriceReporting: 595 }),
+      quote({ id: "b", unitPriceReporting: 595 }),
     ]);
 
     expect(ranked.filter((row) => row.isLowest).map((row) => row.quote.id)).toEqual([
@@ -89,9 +89,9 @@ describe("ranking cheapest-first in THB", () => {
   });
 
   it("gives the line total in THB against the Item's quantity", () => {
-    const [row] = rankQuotes(item, [quote({ id: "a", unitPriceThb: 620 })]);
+    const [row] = rankQuotes(item, [quote({ id: "a", unitPriceReporting: 620 })]);
 
-    expect(row.lineTotalThb).toBe(620 * 500);
+    expect(row.lineTotalReporting).toBe(620 * 500);
   });
 
   it("ranks a single Quote first, and an Item with none not at all", () => {
@@ -102,9 +102,9 @@ describe("ranking cheapest-first in THB", () => {
 
 describe("a unit mismatch removes ranking from the whole Item", () => {
   const mixed = [
-    quote({ id: "a", quotedUnit: "box of 50", unitPriceThb: 620 }),
-    quote({ id: "b", quotedUnit: "piece", unitPriceThb: 14 }),
-    quote({ id: "c", quotedUnit: "box of 50", unitPriceThb: 595 }),
+    quote({ id: "a", quotedUnit: "box of 50", unitPriceReporting: 620 }),
+    quote({ id: "b", quotedUnit: "piece", unitPriceReporting: 14 }),
+    quote({ id: "c", quotedUnit: "box of 50", unitPriceReporting: 595 }),
   ];
 
   it("puts no rank number anywhere on it — including on the Quotes that do agree", () => {
@@ -122,7 +122,7 @@ describe("a unit mismatch removes ranking from the whole Item", () => {
   });
 
   it("still gives a line total to the Quotes in the Item's own unit, and none to the others", () => {
-    const totals = rankQuotes(item, mixed).map((row) => row.lineTotalThb);
+    const totals = rankQuotes(item, mixed).map((row) => row.lineTotalReporting);
 
     // 14 THB per piece against a quantity counted in boxes is not a line total, it is a
     // number that would be out by fifty.
@@ -131,8 +131,8 @@ describe("a unit mismatch removes ranking from the whole Item", () => {
 
   it("reads the unit as a person would, ignoring case and stray spaces", () => {
     const same = rankQuotes(item, [
-      quote({ id: "a", quotedUnit: " Box of 50 ", unitPriceThb: 620 }),
-      quote({ id: "b", quotedUnit: "box of 50", unitPriceThb: 595 }),
+      quote({ id: "a", quotedUnit: " Box of 50 ", unitPriceReporting: 620 }),
+      quote({ id: "b", quotedUnit: "box of 50", unitPriceReporting: 595 }),
     ]);
 
     expect(same.map((row) => [row.quote.id, row.rank])).toEqual([
@@ -178,11 +178,11 @@ describe("too close to call on frozen rates", () => {
   const leader = quote({
     id: "a",
     supplierName: "Ace Medical",
-    unitPriceThb: 595,
+    unitPriceReporting: 595,
     fxRateAsOf: "2026-08-11",
     fxRateIsStale: true,
   });
-  const runnerUp = quote({ id: "b", supplierName: "Beta Supply", unitPriceThb: 603 });
+  const runnerUp = quote({ id: "b", supplierName: "Beta Supply", unitPriceReporting: 603 });
 
   it("is raised when the top two are within 3% and one of them carries a stale rate", () => {
     // 1.34% between them, on rates frozen a week apart. The lead is smaller than the
@@ -200,7 +200,7 @@ describe("too close to call on frozen rates", () => {
   });
 
   it("is not raised when the gap is wide enough to survive the drift", () => {
-    const clear = quote({ id: "b", supplierName: "Beta Supply", unitPriceThb: 700 });
+    const clear = quote({ id: "b", supplierName: "Beta Supply", unitPriceReporting: 700 });
 
     expect(itemBanners(item, [leader, clear], [])).toEqual([]);
   });
@@ -212,7 +212,7 @@ describe("too close to call on frozen rates", () => {
   });
 
   it("ignores a stale rate below the top two, which cannot change the lead", () => {
-    const third = quote({ id: "c", unitPriceThb: 900, fxRateIsStale: true });
+    const third = quote({ id: "c", unitPriceReporting: 900, fxRateIsStale: true });
     const current = quote({ ...leader, fxRateIsStale: false });
 
     expect(itemBanners(item, [current, runnerUp, third], [])).toEqual([]);
@@ -221,7 +221,7 @@ describe("too close to call on frozen rates", () => {
   it("is not raised on an Item that has no ranking to be close in", () => {
     const unrankable = [
       quote({ ...leader, quotedUnit: "piece" }),
-      quote({ ...runnerUp, unitPriceThb: 603 }),
+      quote({ ...runnerUp, unitPriceReporting: 603 }),
     ];
 
     expect(itemBanners(item, unrankable, [])).toEqual([{ kind: "unit_mismatch" }]);
@@ -239,7 +239,7 @@ describe("the same supplier, quoted twice", () => {
         supplierName: "Ace Medical",
         unitPrice: 620,
         currency: "THB",
-        unitPriceThb: 620,
+        unitPriceReporting: 620,
         sourcedByName: "Mali",
       }),
       quote({
@@ -247,7 +247,7 @@ describe("the same supplier, quoted twice", () => {
         supplierName: "Ace Medical",
         unitPrice: 595,
         currency: "THB",
-        unitPriceThb: 595,
+        unitPriceReporting: 595,
         sourcedByName: "Nok",
       }),
     ];
@@ -277,8 +277,8 @@ describe("the same supplier, quoted twice", () => {
 
   it("says nothing about two different suppliers", () => {
     const distinct = [
-      quote({ id: "a", supplierName: "Ace Medical", unitPriceThb: 620 }),
-      quote({ id: "b", supplierName: "Beta Supply", unitPriceThb: 900 }),
+      quote({ id: "a", supplierName: "Ace Medical", unitPriceReporting: 620 }),
+      quote({ id: "b", supplierName: "Beta Supply", unitPriceReporting: 900 }),
     ];
 
     expect(itemBanners(item, distinct, [])).toEqual([]);

@@ -51,7 +51,7 @@ function anItem(overrides: Partial<SheetItem> = {}): SheetItem {
 function renderRow(item: SheetItem) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <ItemPricing tenderId="a-tender" item={item} />
+      <ItemPricing tenderId="a-tender" item={item} reportingCurrency="THB" />
     </NextIntlClientProvider>,
   );
 }
@@ -162,6 +162,7 @@ describe("pricing inline in the Item's row", () => {
         <ItemPricing
           tenderId="a-tender"
           item={anItem({ landedCostPerUnit: 595, landedCostConfirmedAt: null })}
+          reportingCurrency="THB"
         />
       </NextIntlClientProvider>,
     );

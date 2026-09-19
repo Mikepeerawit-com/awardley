@@ -17,14 +17,14 @@
  * Verified against `https://api.frankfurter.dev/v1/currencies` on 2026-08-21.
  */
 
-/** The one currency every comparison and every dashboard figure is shown in. */
-export const reportingCurrency = "THB";
-
 /**
- * The thirty currencies ECB publishes a reference rate for, THB among them.
+ * The thirty currencies ECB publishes a reference rate for.
  *
- * THB is in the set on its own terms — it is an ECB reference currency — but nothing
- * ever fetches a rate for it, because a THB quote is not converted at all.
+ * It is also the list a **Reporting Currency** may be chosen from (ADR-0036), and for a
+ * harder reason than the picker's: an organisation reporting in something ECB does not
+ * publish could not convert a single foreign Quote into it. Converting *into* a currency
+ * needs its euro leg exactly as converting out of one does, so the two lists are one list
+ * and there is nothing to keep in step.
  */
 export const convertibleCurrencies = [
   "AUD", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "EUR", "GBP", "HKD",
@@ -39,18 +39,30 @@ export function isConvertibleCurrency(currency: string): boolean {
 }
 
 /**
- * The order the picker offers them in: the three seen in real data first, then the rest
- * alphabetically.
+ * The order the picker offers them in: the org's own Reporting Currency first, then the
+ * two others seen in real data, then the rest alphabetically.
  *
- * THB leads because most quotes are in it, and a Baht price entered as Dollars by a
- * mis-tapped default is off by a factor of thirty-three in the one direction that makes
- * a Bid look cheap.
+ * The Reporting Currency leads because it is the one most Quotes arrive in — it is what
+ * the organisation buys and reports in — and a price entered in the wrong one by a
+ * mis-tapped default is out by whatever the pair is worth, in the one direction that makes
+ * a Bid look cheap. Thirty-three times, when the pair was the Baht and the Dollar this
+ * argument was first written about.
+ *
+ * A function since #176 rather than the constant it was, because there is no longer one
+ * Reporting Currency to build the order around: the order is a question about one
+ * organisation, and the only caller that can answer it is one holding a Tender.
+ *
+ * CNY and USD keep their place behind it for the reason they had it in front of the other
+ * twenty-seven — they are what Taihue's suppliers actually quote in — and they are dropped
+ * from the tail rather than repeated when one of them *is* the Reporting Currency.
  */
-export const currencyOptions = [
-  reportingCurrency,
-  "CNY",
-  "USD",
-  ...convertibleCurrencies.filter(
-    (currency) => !["THB", "CNY", "USD"].includes(currency),
-  ),
-];
+export function currencyOptions(reporting: string): string[] {
+  const leading = [reporting, "CNY", "USD"].filter(
+    (currency, index, all) => all.indexOf(currency) === index,
+  );
+
+  return [
+    ...leading,
+    ...convertibleCurrencies.filter((currency) => !leading.includes(currency)),
+  ];
+}

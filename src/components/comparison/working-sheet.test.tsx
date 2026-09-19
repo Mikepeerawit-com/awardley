@@ -242,7 +242,7 @@ function quote(
     currency: "THB",
     quotedUnit,
     // A THB Quote is not converted at all, so both rates are 1 and the row draws one figure.
-    unitPriceThb: unitPrice,
+    unitPriceReporting: unitPrice,
     fxRateMid: 1,
     fxRateApplied: 1,
     fxRateAsOf: "2026-08-11",
@@ -312,6 +312,7 @@ function renderSheet(item: SheetItem) {
         items={[item]}
         photos={new Map<string, QuotePhoto[]>()}
         referenceImages={[]}
+        reportingCurrency="THB"
       />
     </NextIntlClientProvider>,
   );

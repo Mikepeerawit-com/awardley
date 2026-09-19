@@ -32,10 +32,11 @@ import { ownsTender } from "@/lib/tenders/viewer";
  *
  * The Tender's own facts sit above both, and for the Owner everything that decides
  * anything sits in the sheet — one row per Tender Item, undecided Items open, every
- * competing Quote ranked cheapest-first in THB underneath. The layout is wide on purpose
- * and it is one design at every width: the Item's blocks wrap into a column where there is
- * no room for a row, and below 768px the quote table reflows into stacked cards (ADR-0009,
- * #30). Nothing else about the screen changes, and nothing on it scrolls sideways.
+ * competing Quote ranked cheapest-first in the Tender's Reporting Currency underneath.
+ * The layout is wide on purpose and it is one design at every width: the Item's blocks
+ * wrap into a column where there is no room for a row, and below 768px the quote table
+ * reflows into stacked cards (ADR-0009, #30). Nothing else about the screen changes, and
+ * nothing on it scrolls sideways.
  *
  * Everybody else gets {@link SourcingList} in the sheet's place and no Outcome panel:
  * their own Quotes, their own refusals, and no money anywhere. The page never works out
@@ -186,6 +187,16 @@ export default async function TenderPage({ params }: PageProps<"/tenders/[id]">)
               items={view.sheet.items}
               photos={view.sheet.photos}
               referenceImages={referenceImages}
+              // The sheet's own answer where it has one, because taking it from the read
+              // that assembled the figures is what keeps the currency and the money it
+              // labels arriving together. It falls back to the Tender row rather than to
+              // a fabricated `""`: the two say the same thing by construction, and the
+              // only case the sheet answers `null` is a Tender this session cannot read
+              // — which `notFound()` above has already refused, so the fallback is
+              // unreachable rather than a second opinion.
+              reportingCurrency={
+                view.sheet.reportingCurrency ?? tender.reportingCurrency
+              }
             />
           </Section>
 

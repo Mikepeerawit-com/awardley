@@ -4,7 +4,6 @@ import {
   convertibleCurrencies,
   currencyOptions,
   isConvertibleCurrency,
-  reportingCurrency,
 } from "@/lib/fx/currencies";
 
 import { blankQuote, refusedQuote, submittedQuote } from "./quote-form";
@@ -98,7 +97,11 @@ describe("what a refused Quote form hands back", () => {
 
 describe("the blank form", () => {
   it("starts from the Item's own unit and today's date", () => {
-    const blank = blankQuote({ unit: "box of 50", today: "2026-08-21" });
+    const blank = blankQuote({
+      unit: "box of 50",
+      today: "2026-08-21",
+      reportingCurrency: "THB",
+    });
 
     // The supplier usually prices in what was asked for, and typing it again is a chance
     // to type it differently — which is what stops the whole Item being ranked.
@@ -106,13 +109,19 @@ describe("the blank form", () => {
     expect(blank.quotedAt).toBe("2026-08-21");
   });
 
-  it("defaults to THB and to an exact match", () => {
-    const blank = blankQuote({ unit: "piece", today: "2026-08-21" });
+  it("defaults to the Tender's Reporting Currency and to an exact match", () => {
+    const blank = blankQuote({
+      unit: "piece",
+      today: "2026-08-21",
+      reportingCurrency: "SGD",
+    });
 
-    // Most quotes are in Baht, and a Baht price entered as Dollars by a mis-tapped
-    // default is off by a factor of thirty-three in the direction that makes a Bid look
-    // cheap.
-    expect(blank.currency).toBe(reportingCurrency);
+    // Most quotes are in the currency the Tender is priced in, and one entered as Dollars
+    // by a mis-tapped default is off by whatever the pair is worth, in the direction that
+    // makes a Bid look cheap. The literal `THB` that used to sit here was the same guess
+    // made once for everybody — the fault #176 exists to delete — so the test asks for a
+    // Tender that does not report in THB, which is the only way the difference shows.
+    expect(blank.currency).toBe("SGD");
     expect(blank.matchType).toBe("exact");
     expect(blank.unitPrice).toBe("");
   });
@@ -123,12 +132,25 @@ describe("the currencies on offer", () => {
     // A picker offering a currency the server rejects is a refusal nobody could have
     // avoided; one missing a currency the server accepts is a supplier who cannot be
     // recorded at all.
-    expect([...currencyOptions].sort()).toEqual([...convertibleCurrencies].sort());
-    expect(currencyOptions.every(isConvertibleCurrency)).toBe(true);
+    expect([...currencyOptions("THB")].sort()).toEqual(
+      [...convertibleCurrencies].sort(),
+    );
+    expect(currencyOptions("THB").every(isConvertibleCurrency)).toBe(true);
   });
 
-  it("puts THB first, then the two other currencies seen in real data", () => {
-    expect(currencyOptions.slice(0, 3)).toEqual(["THB", "CNY", "USD"]);
+  it("puts the Reporting Currency first, then the two seen in real data", () => {
+    expect(currencyOptions("THB").slice(0, 3)).toEqual(["THB", "CNY", "USD"]);
+    expect(currencyOptions("SGD").slice(0, 4)).toEqual(["SGD", "CNY", "USD", "AUD"]);
+  });
+
+  it("does not offer the Reporting Currency twice when it is one of the other two", () => {
+    // The whole picker would otherwise carry thirty-one entries with USD in two of them,
+    // and a list that repeats itself reads as a bug in the list rather than in the order.
+    const offered = currencyOptions("USD");
+
+    expect(offered.slice(0, 2)).toEqual(["USD", "CNY"]);
+    expect(offered).toHaveLength(convertibleCurrencies.length);
+    expect(new Set(offered).size).toBe(offered.length);
   });
 
   it("refuses a currency ECB does not publish", () => {

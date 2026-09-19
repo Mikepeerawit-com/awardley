@@ -100,7 +100,7 @@ export function marginOf(item: PricedItem): Margin | null {
 export function prefillLandedCost(
   item: { unit: string; landedCostConfirmedAt: string | null },
   /** The newly Selected Quote, or null when the selection has just come back off. */
-  quote: { quotedUnit: string; unitPriceThb: number } | null,
+  quote: { quotedUnit: string; unitPriceReporting: number } | null,
 ): { landedCostPerUnit: number | null } | null {
   if (item.landedCostConfirmedAt !== null) return null;
 
@@ -108,7 +108,7 @@ export function prefillLandedCost(
     return { landedCostPerUnit: null };
   }
 
-  return { landedCostPerUnit: quote.unitPriceThb };
+  return { landedCostPerUnit: quote.unitPriceReporting };
 }
 
 /** What the totals bar under the Item rows says, and nothing more. */
@@ -116,7 +116,10 @@ export type SheetTotals = {
   itemCount: number;
   /** How many Items carry a selling price — the coverage the three money figures cover. */
   pricedCount: number;
-  /** Σ `selling_price_per_unit × quantity`, in THB. What the Bid comes to. */
+  /**
+   * Σ `selling_price_per_unit × quantity`, in the Tender's Reporting Currency. What the Bid
+   * comes to. Never summed across Tenders without breaking out per currency (ADR-0036).
+   */
   bidTotal: number;
   landedCostTotal: number;
   marginTotal: number;
@@ -133,7 +136,7 @@ export type SheetTotals = {
  * boxes, and invisible from the bar itself.
  *
  * **An Item missing a figure is left out of that total rather than counted as zero**: a
- * Tender half-priced is not a Tender with a zero-baht Item in it, and a landed cost read
+ * Tender half-priced is not a Tender with a free Item in it, and a landed cost read
  * as zero would report the whole selling price as Margin. `pricedCount` beside the figures
  * is what says how much of the Tender they cover.
  *

@@ -40,11 +40,22 @@
 -- is a deploy's length of nothing happening, the second is every Quote screen throwing.
 -- `preview-schema.yml` will report `behind` on the pull request for exactly this reason —
 -- that red is expected here, and it is the one case where it is not the fault it names.
--- It advises rather than blocks today, because `main` is not a protected branch yet and
--- so nothing is a required check; whoever turns that protection on (README §"Deploying
--- the schema" describes the setup) inherits this migration as the case that has to be
--- merged past a red status, and should read this block before assuming the check is
--- wrong.
+--
+-- **And it blocks.** A repository ruleset on `main` requires `verify` and `Preview
+-- schema`, so the two steps above cannot actually be taken in that order without an
+-- admin override (`gh pr merge --admin`). Note the legacy branch-protection API answers
+-- `404 Branch not protected` for a repository ruled this way, so "is main protected" has
+-- to be asked of `/repos/{owner}/{repo}/rules/branches/main` — asking the old endpoint
+-- reports no protection and is wrong.
+--
+-- That leaves a destructive migration exactly two ways through, and both are bad:
+-- override the ruleset and merge red, or apply the migration first and let production
+-- run broken until the deploy catches up. **The way out is not to write one.** An
+-- expand/contract pair — add `unit_price_reporting` alongside `unit_price_thb`, ship the
+-- build that reads it, drop the old column in a second migration — keeps every step
+-- forward-compatible, every check green, and needs no override and no window. This
+-- migration did not do that, and the cost was paid on 19 Sep 2026: the push went in
+-- first, and production served the old build against the new schema until #204 landed.
 
 -- The default is what backfills Taihue's row, and it is deliberately kept afterwards.
 --

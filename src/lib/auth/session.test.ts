@@ -166,6 +166,81 @@ describe("currentUser", () => {
       await service.from("users").update({ disabled_at: null }).eq("id", active.id);
     }
   });
+
+  /**
+   * The one case the rest of the suite cannot reach, and the one the whole design rests
+   * on: somebody holding two Memberships.
+   *
+   * Nothing in the app creates a second one (ADR-0038), so this has to be built by hand
+   * here — and it has to be built, because every other test in this file would pass just
+   * as happily if `currentUser` read an arbitrary Membership instead of the right one.
+   * With one row each there is no difference between the two behaviours.
+   *
+   * What it proves is that the embed in `profileColumns` is scoped by the policy on
+   * `memberships` rather than by the array index that reads it. If PostgREST handed back
+   * both rows, `const [membership] = profile.memberships` would pick whichever the planner
+   * put first, and the org the app believes it is in would drift away from the one
+   * `current_org_id()` enforces in SQL — silently, and on the question every policy in the
+   * schema is written in terms of.
+   *
+   * The admin half is the glossary's sentence stated as a test: admin of one organisation
+   * grants nothing anywhere else. The same person, the same session, one `active_org_id`
+   * apart.
+   *
+   * **It was made to fail before it was kept** (ADR-0016), by swapping the policy on
+   * `memberships` for the alternative that keeps suggesting itself — `using (user_id =
+   * auth.uid())`, your own places are yours to see, which would let the switcher's list be
+   * read by the session client and save a round trip. Under it this test goes red on the
+   * second assertion, reporting the *first* org and `isOrgAdmin: false` while
+   * `current_org_id()` went on enforcing the second. That is not a hypothetical: it is a
+   * session whose idea of which organisation it is in disagrees with the database's, which
+   * is the failure this whole file exists to keep out. `lib/org/active-org.ts` says the
+   * same thing at the place somebody would be tempted to make the change.
+   */
+  it("reports the Active Org's Membership, not whichever one comes first", async () => {
+    const { data: second, error } = await service
+      .from("orgs")
+      .insert({ name: `Session second ${run}` })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    try {
+      await service
+        .from("memberships")
+        .insert({ user_id: active.id, org_id: second.id, is_org_admin: true });
+
+      const store = memoryCookieStore();
+      await signIn({ email: active.email, password }, store);
+
+      // Still the org they were already in, and still not an admin of it.
+      await expect(currentUser(store)).resolves.toMatchObject({
+        orgId,
+        isOrgAdmin: false,
+      });
+
+      await service
+        .from("users")
+        .update({ active_org_id: second.id })
+        .eq("id", active.id);
+
+      // The same cookie, the same request, the other organisation — and the capability
+      // that belongs to the Membership rather than to the person.
+      await expect(currentUser(store)).resolves.toMatchObject({
+        orgId: second.id,
+        isOrgAdmin: true,
+      });
+    } finally {
+      await service.from("users").update({ active_org_id: orgId }).eq("id", active.id);
+      await service
+        .from("memberships")
+        .delete()
+        .eq("user_id", active.id)
+        .eq("org_id", second.id);
+      await service.from("orgs").delete().eq("id", second.id);
+    }
+  });
 });
 
 describe("signOut", () => {

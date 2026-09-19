@@ -105,11 +105,31 @@ export async function setWecomUserid(
     return { ok: false, reason: "not_admin" };
   }
 
-  const { data, error } = await createServiceClient()
+  const service = createServiceClient();
+
+  // The boundary is read before the write rather than expressed inside it, which is the
+  // one structural change here. A WeCom userid is a column on the person — it follows them
+  // between organisations exactly as their name does — so the row being written is still
+  // the `users` row, and there is no `org_id` on the update to scope it with any more. What
+  // scopes it is this: an admin may set it for a colleague who holds a Membership of the
+  // org the admin is looking at, and for nobody else.
+  //
+  // Live or ended, deliberately. A Disabled colleague is @-mentioned by nothing, but the
+  // People screen still lists them and still offers the field — a userid corrected after
+  // somebody has left is the fix that makes readmitting them work first time.
+  const { data: membership } = await service
+    .from("memberships")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("org_id", caller.orgId)
+    .maybeSingle();
+
+  if (!membership) return { ok: false, reason: "not_found" };
+
+  const { data, error } = await service
     .from("users")
     .update({ wecom_userid: wecomUserid })
     .eq("id", userId)
-    .eq("org_id", caller.orgId)
     .select("id");
 
   if (error !== null) {

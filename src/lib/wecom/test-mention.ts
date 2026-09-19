@@ -68,11 +68,21 @@ export async function sendTestMention(
     return { ok: false, reason: "not_admin" };
   }
 
+  // The service client bypasses RLS, so this filter *is* the boundary — and since the
+  // Membership table it is a boundary drawn through `memberships` rather than through a
+  // column on the person. `wecom_userid` still comes off the `users` row, because a WeCom
+  // identity follows somebody between organisations exactly as their name does; what does
+  // not follow them is the right of *this* admin to exercise it, and that is what the
+  // embed states.
+  //
+  // Live or ended, matching `setWecomUserid`, which is the other half of this screen: a
+  // departed colleague's userid is still worth testing before readmitting them, and the
+  // message this sends goes to the group either way.
   const { data: member } = await createServiceClient()
     .from("users")
-    .select("wecom_userid")
+    .select("wecom_userid, memberships!inner(org_id)")
     .eq("id", userId)
-    .eq("org_id", caller.orgId)
+    .eq("memberships.org_id", caller.orgId)
     .maybeSingle();
 
   if (!member) {

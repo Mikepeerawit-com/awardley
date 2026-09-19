@@ -40,16 +40,28 @@ export type OwnerOption = Member & { former: boolean };
 export async function listMembers(store: SessionCookieStore): Promise<Member[]> {
   const { data } = await createSessionClient(store)
     .from("users")
-    .select("id, name")
-    .is("disabled_at", null)
+    // Still a read of `users`, and it has to be: the ordering below is the whole reason
+    // this function exists, and it can only be stated on the table that carries `name`.
+    // What the embed adds is the half that moved — being here, and still being here — and
+    // `!inner` turns it into the join that keeps everyone else out. A person with no
+    // Membership of the caller's Active Org produces no row rather than a nameless one.
+    .select("id, name, memberships!inner(disabled_at)")
+    // The Membership's end, not the account's. They say the same thing today, because one
+    // person holds one Membership and a trigger keeps the two columns in step; they stop
+    // saying the same thing the moment somebody holds two, and a colleague let go here
+    // should leave *this* org's pickers and no others'.
+    .is("memberships.disabled_at", null)
     // Two colleagues can share a name — this is a picker, and an option that moves
     // between two openings of the same form is one a person clicks the wrong one of.
     // `id` decides that rather than the heap.
     .order("name")
-    .order("id")
-    .overrideTypes<Member[], { merge: false }>();
+    .order("id");
 
-  return data ?? [];
+  // Narrowed rather than handed back as read, which `overrideTypes` used to do for this
+  // query. An embed puts a `memberships` array on every row, and a `Member` that quietly
+  // carries one is a shape that reaches a client component and a `<select>` for no reason
+  // anybody reading either would be able to guess at.
+  return (data ?? []).map((row) => ({ id: row.id, name: row.name }));
 }
 
 /**
@@ -70,7 +82,13 @@ export async function listMemberships(
 ): Promise<Membership[]> {
   const { data } = await createSessionClient(store)
     .from("users")
-    .select("id, name, email, wecom_userid, is_org_admin, disabled_at")
+    // Four columns from the person and two from their place here, in one read. The split
+    // is the point rather than an accident of storage: a name and an email follow somebody
+    // between organisations, and whether they are an admin and whether they are still here
+    // do not. `!inner` is doing no filtering work this policy would not already do — the
+    // `users` policy shows exactly the people who hold a Membership of the Active Org —
+    // but it is what makes the embedded row's presence something the mapper can rely on.
+    .select("id, name, email, wecom_userid, memberships!inner(is_org_admin, disabled_at)")
     // The same rule as {@link listMembers}, stated the same way: names are not unique, and
     // this is the table an admin reads down looking for one person.
     //
@@ -95,15 +113,25 @@ export async function listMemberships(
   // row's shape means writing `is_org_admin:` in a type, and `conventions.test.ts` allows
   // exactly one file in the repo to write that column's name followed by a colon —
   // `auth/setup.ts`, which is where an Org Admin is minted (ADR-0017). Inferring the shape
-  // from the query keeps that rule a real one rather than one with an exception in it.
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    wecomUserid: row.wecom_userid,
-    isOrgAdmin: row.is_org_admin,
-    disabledAt: row.disabled_at,
-  }));
+  // from the query keeps that rule a real one rather than one with an exception in it, and
+  // it survives the column moving to `memberships`, because the rule is about the name and
+  // the name did not change.
+  return (data ?? []).map((row) => {
+    // One element, because a person holds at most one Membership per org and the policy on
+    // the embedded table answers with one org. Taken without a fallback, because there is
+    // nothing sensible to fall back *to* — a person on this screen with no Membership of
+    // this org is a contradiction, and `!inner` has already ruled it out of the result set.
+    const [membership] = row.memberships;
+
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      wecomUserid: row.wecom_userid,
+      isOrgAdmin: membership.is_org_admin,
+      disabledAt: membership.disabled_at,
+    };
+  });
 }
 
 /**
@@ -191,12 +219,20 @@ export async function setMembershipDisabled(
 
   const service = createServiceClient();
 
-  // Read the person before writing them, so "they are not yours to Disable" is answered
-  // as `not_found` rather than by the rule below happening to look at the wrong org.
+  // Read the Membership before writing the person, so "they are not yours to Disable" is
+  // answered as `not_found` rather than by the rule below happening to look at the wrong
+  // org. It reads the Membership and not the `users` row because that is now the only
+  // place the two facts it needs both live: whether this colleague is here at all, and
+  // whether they are an admin *here*. A person who runs another organisation entirely is
+  // not an admin this rule has to protect.
+  //
+  // The org is filtered by hand, as every service-role read in this file is: the client
+  // bypasses RLS, so the boundary the session client would have stated has to be written
+  // out. `caller.orgId` is the Active Org, which is the org this screen is showing.
   const { data: target } = await service
-    .from("users")
+    .from("memberships")
     .select("is_org_admin")
-    .eq("id", userId)
+    .eq("user_id", userId)
     .eq("org_id", caller.orgId)
     .maybeSingle();
 
@@ -210,11 +246,29 @@ export async function setMembershipDisabled(
     return { ok: false, reason: "last_admin" };
   }
 
+  // **Still a write to `users.disabled_at`, and that is the one thing in this ticket the
+  // Membership table has not yet taken over.** The trigger carries it across, so the
+  // Membership above ends at the same instant and every read in the app agrees. What it
+  // cannot carry is *scope*: `users.disabled_at` is the account, and an account spans
+  // organisations. Today that is a distinction without a difference — everybody holds one
+  // Membership — and the day somebody holds two it becomes the sentence this whole ticket
+  // was written against, an Org Admin of one organisation ending somebody's access to
+  // another. Nothing in v1 creates a second Membership (ADR-0038), so the reach is
+  // unreachable rather than merely unlikely; the write moves onto `memberships` in the
+  // contract migration, which is the release that takes this column away and has to touch
+  // this line regardless.
+  //
+  // The org filter that used to sit here is gone rather than kept, and its absence is the
+  // safer of the two. It read `users.org_id` — the legacy column, the person's one
+  // organisation — while `caller.orgId` now means the Active Org. The two hold the same
+  // value today and stop meaning the same thing the moment the column is dropped, which is
+  // how a filter that looks like a boundary becomes one that silently is not. The boundary
+  // is the Membership read above: it established that this colleague is one of *ours*, in
+  // the org this admin is actually looking at, which is more than the column ever said.
   const { data, error } = await service
     .from("users")
     .update({ disabled_at: disabledAt === null ? null : disabledAt.toISOString() })
     .eq("id", userId)
-    .eq("org_id", caller.orgId)
     .select("id");
 
   // A write that failed is not a person who is not here. The row was read a moment ago,
@@ -239,13 +293,17 @@ export async function setMembershipDisabled(
  * invite nobody, so they leave the org exactly as stranded as no second admin at all.
  */
 async function anotherAdminRemains(userId: string, orgId: string): Promise<boolean> {
+  // Counted over Memberships rather than people, which is what makes the sentence above
+  // narrow enough to be true: the question is whether *this organisation* would still have
+  // somebody able to invite into it, and an admin of some other org answers it no better
+  // than a stranger would.
   const { count } = await createServiceClient()
-    .from("users")
+    .from("memberships")
     .select("id", { count: "exact", head: true })
     .eq("org_id", orgId)
     .eq("is_org_admin", true)
     .is("disabled_at", null)
-    .neq("id", userId);
+    .neq("user_id", userId);
 
   return (count ?? 0) > 0;
 }

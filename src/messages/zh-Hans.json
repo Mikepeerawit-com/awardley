@@ -23,6 +23,10 @@
     "dark": "深色",
     "switching": "正在切换外观…"
   },
+  "orgSwitcher": {
+    "label": "所属组织",
+    "switching": "正在切换组织…"
+  },
   "login": {
     "title": "登录",
     "description": "Awardley 仅限邀请使用。若您尚未有账号，请联系组织管理员邀请您。",

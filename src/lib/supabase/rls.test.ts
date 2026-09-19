@@ -533,6 +533,136 @@ describe("membership is not business data", () => {
   });
 });
 
+describe("memberships", () => {
+  /**
+   * The table every policy in the schema now turns on, and the one whose own policy has
+   * to be right before any of theirs can be. `current_org_id()` reads it, so a member who
+   * could write a row here could write themselves into any organisation that exists —
+   * which is not a leak of one table, it is the org boundary itself.
+   *
+   * The checks below are the three sentences the table makes. Nothing a member does writes
+   * it — neither promoting themselves in the org they are in nor conjuring a place in one
+   * they are not, which are the two shapes that attempt takes; what they read is one org's
+   * worth; and holding two Memberships without having said which one they are in is a
+   * state that reads *nothing*, rather than one that guesses.
+   */
+
+  // Somebody the two-org case can be asked about. Every other fixture member holds one
+  // Membership, which is the whole world today and exactly the case that cannot tell an
+  // Active Org apart from the only org there is.
+  const traveller = { id: "", email: `traveller-${run}@example.test` };
+
+  // An organisation nobody in this suite belongs to, which is the only way to write an
+  // Active Org that names somewhere the reader is not. Org A and org B are both places the
+  // traveller holds, and a stale pointer at a place you hold is not stale.
+  let unheld = "";
+
+  beforeAll(async () => {
+    unheld = await createOrg(`Org C ${run}`, "EUR");
+
+    await createMember(orgs.a, traveller);
+
+    // Written with the service role because that is the only thing that can write this
+    // table at all — which is the first of the three sentences, asserted below.
+    const { error } = await service
+      .from("memberships")
+      .insert({ user_id: traveller.id, org_id: orgs.b });
+
+    if (error) throw error;
+  });
+
+  afterAll(async () => {
+    if (traveller.id === "") return;
+
+    // The Memberships go with the person: `memberships.user_id` is `on delete cascade`,
+    // because a place somebody holds has no reading at all without them.
+    await service.from("users").delete().eq("id", traveller.id);
+    await service.auth.admin.deleteUser(traveller.id);
+
+    if (unheld !== "") await service.from("orgs").delete().eq("id", unheld);
+  });
+
+  it("refuses to let a member write one", async () => {
+    const client = await signedInAs(members.a.email);
+
+    // The one that would matter: an ordinary member making themselves an Org Admin of the
+    // org they are already in. It is refused twice over — `authenticated` holds no
+    // `update` on the table, and the policy is `for select` — and it is written as an
+    // update of their own live row so that neither half can be the only reason.
+    const { error } = await client
+      .from("memberships")
+      .update({ is_org_admin: true })
+      .eq("user_id", members.a.id);
+
+    expect(error).not.toBeNull();
+  });
+
+  it("refuses to let a member conjure one in another org", async () => {
+    const client = await signedInAs(members.a.email);
+
+    const { error } = await client
+      .from("memberships")
+      .insert({ user_id: members.a.id, org_id: orgs.b });
+
+    expect(error).not.toBeNull();
+  });
+
+  it("shows a member the Memberships of the org they are looking at, and no others", async () => {
+    const client = await signedInAs(traveller.email);
+
+    const { data, error } = await client.from("memberships").select("user_id, org_id");
+
+    expect(error).toBeNull();
+    // Org A's four — the three fixture members plus this one — and not the Membership
+    // this very person holds of org B. A window into every org you belong to at once is
+    // the thing the Active Org exists to prevent; what a member reads is one org, and it
+    // is the one they are in.
+    expect(new Set(data?.map((row) => row.org_id))).toEqual(new Set([orgs.a]));
+    expect(new Set(data?.map((row) => row.user_id))).toEqual(
+      new Set([members.a.id, members.mate.id, members.disabled.id, traveller.id]),
+    );
+  });
+
+  it("shows nothing at all to somebody in two orgs pointed at a third", async () => {
+    // An Active Org naming an organisation this person holds no Membership of. It is the
+    // shape a stale value takes — an org they were Disabled out of, a pointer left behind
+    // by a switch that raced a Disable — and the one `current_org_id()` is written to
+    // answer with null rather than with a guess, because the guess would be an
+    // organisation the column does not name.
+    //
+    // It needs *two* live Memberships to ask at all. With one, the fallback in
+    // `current_org_id()` answers with it and is right to: one Membership is not a choice,
+    // it is the only org there is, and no stale pointer can make it ambiguous.
+    const { error: pointed } = await service
+      .from("users")
+      .update({ active_org_id: unheld })
+      .eq("id", traveller.id);
+
+    if (pointed) throw pointed;
+
+    const client = await signedInAs(traveller.email);
+
+    // Reading nothing is the right way for this to fail. The wrong way would be quietly
+    // showing org A because it sorts first or was written first — a person entering a
+    // Quote into an organisation they did not choose, on a screen that looks exactly like
+    // the one they meant.
+    const { data: theirMemberships } = await client.from("memberships").select("org_id");
+    const { data: theirTenders } = await client.from("tenders").select("id");
+    const { data: theirColleagues } = await client.from("users").select("id");
+
+    expect(theirMemberships).toEqual([]);
+    expect(theirTenders).toEqual([]);
+    expect(theirColleagues).toEqual([]);
+
+    // Put it back, so this block leaves the fixture as it found it rather than as a trap
+    // for whatever is added below it.
+    await service
+      .from("users")
+      .update({ active_org_id: orgs.a })
+      .eq("id", traveller.id);
+  });
+});
+
 describe("fx_rates", () => {
   // Shared reference data with no org to scope by. The only legitimate writer is the
   // daily Frankfurter fetch, which runs with the service role.

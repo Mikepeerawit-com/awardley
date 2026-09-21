@@ -43,7 +43,7 @@ export type OrgSettings = {
  * every deadline by a day.
  *
  * `THB` matches the column default, which exists to have backfilled Taihue's row. It is
- * not an answer for a new organisation — signup must ask (#178) — but a fallback that
+ * not an answer for a new organisation — signup asks (ADR-0039) — but a fallback that
  * disagreed with the column would be worse than one that repeats it: the figure on screen
  * would then be labelled in a currency the Tender was not stamped with.
  */

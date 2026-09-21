@@ -172,9 +172,12 @@ enable_refresh_token_rotation = true
 # Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
-# Accounts exist only by invitation — the Org Admin invites by email and the invitee
-# sets a password. There is no self-signup and no other route into the app, so this is
-# off at the platform level rather than merely unlinked from the UI.
+# Accounts are created two ways, and neither is this endpoint: an Invite from an Org
+# Admin, and signing up at `/signup` to create a new organisation. Both run on the server
+# through the service role, which is what lets them write the Membership that goes with
+# the account. The platform's own signup endpoint stays off because an account it made
+# would hold no Membership at all — it could hold a password and read nothing — and
+# `conventions.test.ts` asserts that it answers `signup_disabled`.
 enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false

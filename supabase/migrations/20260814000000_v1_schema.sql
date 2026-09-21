@@ -369,10 +369,18 @@ create policy org_members_read on fx_rates
   using (public.current_org_id() is not null);
 
 -- ---------------------------------------------------------------------------------
--- Seed
+-- No seed
 --
--- The one org. `org_id` is a placeholder column populated with a single value, so this
--- row has to exist before any other row in the database can.
+-- This file ended with `insert into orgs (name) values ('Taihue');` for as long as
+-- `org_id` was a placeholder column populated with a single value. The line left on
+-- 21 September 2026 (#178, ADR-0039): an organisation exists because somebody signed up
+-- at `/signup`, and a fresh database holds none until somebody does.
+--
+-- Editing an applied migration is the thing to be careful about, and it is safe here for
+-- two reasons worth writing down. The row the line created on the hosted project is that
+-- customer's data now and stays exactly where it is — nothing deletes it, and no later
+-- migration reads it. And `/api/health` compares migration *versions* against
+-- `supabase_migrations.schema_migrations`, never file contents, so the hosted history
+-- and this checkout still agree. What changes is only what a `db:reset` produces: zero
+-- organisations, and a signup screen that makes the first.
 -- ---------------------------------------------------------------------------------
-
-insert into orgs (name) values ('Taihue');

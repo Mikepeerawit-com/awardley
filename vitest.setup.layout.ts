@@ -40,8 +40,8 @@ vi.mock("@/app/actions/auth", () => ({
   setPasswordAction: async () => ({}),
   chooseLanguageAction: async () => ({}),
 }));
-// Its own module rather than `auth`, and reached only by the first-admin setup screen.
-vi.mock("@/app/actions/setup", () => ({ setUpAction: async () => ({}) }));
+// Its own module rather than `auth`, and reached only by the sign-up screen.
+vi.mock("@/app/actions/signup", () => ({ signUpAction: async () => ({}) }));
 vi.mock("@/app/actions/admin", () => ({
   inviteAction: async () => ({}),
   setWecomUseridAction: async () => ({}),

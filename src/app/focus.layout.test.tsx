@@ -127,7 +127,7 @@ describe.each(themes)("the %s theme", (theme) => {
 
   /**
    * The signed-out screens, from the record beside the other one. They are the screens
-   * that are *most* keyboard — four of the five things on `/setup` are fields — and the
+   * that are *most* keyboard — six of the seven things on `/signup` are fields — and the
    * first any reader meets, on the one path where a ring nobody can see means somebody
    * cannot get into the app at all.
    */

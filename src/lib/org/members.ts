@@ -112,10 +112,10 @@ export async function listMemberships(
   // Mapped inline rather than through a named row mapper like `tenderSummary`: naming the
   // row's shape means writing `is_org_admin:` in a type, and `conventions.test.ts` allows
   // exactly one file in the repo to write that column's name followed by a colon —
-  // `auth/setup.ts`, which is where an Org Admin is minted (ADR-0017). Inferring the shape
-  // from the query keeps that rule a real one rather than one with an exception in it, and
-  // it survives the column moving to `memberships`, because the rule is about the name and
-  // the name did not change.
+  // `auth/signup.ts`, which is where an Org Admin is minted (ADR-0039). Inferring the
+  // shape from the query keeps that rule a real one rather than one with an exception in
+  // it, and it survives the column moving to `memberships`, because the rule is about the
+  // name and the name did not change.
   return (data ?? []).map((row) => {
     // One element, because a person holds at most one Membership per org and the policy on
     // the embedded table answers with one org. Taken without a fallback, because there is

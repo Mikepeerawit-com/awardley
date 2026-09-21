@@ -140,22 +140,27 @@ describe("the v1 schema", () => {
     expect(error).toBeNull();
   });
 
-  it("seeds exactly one org, on Bangkok time, 2% FX buffer, reporting in baht", async () => {
-    // The Reporting Currency is read here alongside the other two because it is a
-    // setting of exactly their kind since #176 — an Org Admin's answer rather than a
-    // deploy. Taihue's is THB because the column's default backfilled the row that
-    // already existed, which is the one org that default is for: a *new* customer
-    // inheriting baht because Taihue did is the bug ADR-0036 was written to remove, and
-    // signup (#178) is where that gets asked rather than assumed.
+  it("gives a new org Bangkok time and a 2% buffer, and seeds none", async () => {
+    // Nothing is seeded any more. An organisation exists because somebody signed up
+    // (ADR-0039), and a fresh database holds none until somebody does — so what the
+    // schema still says about an org is its *defaults*, which are what a row gets for
+    // the questions the form does not ask. The Reporting Currency is read back here too,
+    // because the form asks it precisely so that a customer never inherits this third
+    // value: THB is what the column says when nobody answers, and signup always answers.
     const { data, error } = await service
       .from("orgs")
+      .insert({ name: `Defaults ${run}` })
       .select("timezone, fx_buffer_pct, reporting_currency")
-      .eq("name", "Taihue");
+      .single();
 
     expect(error).toBeNull();
-    expect(data).toEqual([
-      { timezone: "Asia/Bangkok", fx_buffer_pct: 0.02, reporting_currency: "THB" },
-    ]);
+    expect(data).toEqual({
+      timezone: "Asia/Bangkok",
+      fx_buffer_pct: 0.02,
+      reporting_currency: "THB",
+    });
+
+    await service.from("orgs").delete().eq("name", `Defaults ${run}`);
   });
 });
 

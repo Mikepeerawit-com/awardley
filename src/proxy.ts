@@ -21,8 +21,8 @@ import type { SessionCookieStore } from "@/lib/supabase/session-client";
  * The paths that must not be behind the session gate, and why each one is not.
  *
  * Four of these are reached by somebody with no session *yet* — a redirected visitor, an
- * invite link opened before an account exists, the setup screen on a database with no
- * accounts in it at all, an uptime probe that will never hold a cookie. The fifth is
+ * invite link opened before an account exists, the sign-up screen somebody creates an
+ * organisation on, an uptime probe that will never hold a cookie. The fifth is
  * different and is the one that was missing: **Vercel Cron
  * authenticates with a bearer token, not a cookie.** Redirecting it to `/login` does not
  * secure anything; it just means the run is answered with a 307 every night and the whole
@@ -30,16 +30,15 @@ import type { SessionCookieStore } from "@/lib/supabase/session-client";
  * fires. It did exactly that until `src/proxy.test.ts` was written.
  *
  * Being listed here is not the same as being unprotected. `/api/cron/daily` gates itself
- * on `CRON_SECRET` and answers a bare 404 to anyone who fails, `/setup` gates itself on
- * `SETUP_SECRET` *and* on `users` being empty (ADR-0017), and `/api/health` is a liveness
- * probe by design. What this list says is "the session cookie is not the lock on this
- * door", which for the cron and for setup is a statement about *which* lock, not whether
- * there is one.
+ * on `CRON_SECRET` and answers a bare 404 to anyone who fails, `/signup` gates itself on
+ * `SIGNUP_CODE` (ADR-0039), and `/api/health` is a liveness probe by design. What this
+ * list says is "the session cookie is not the lock on this door", which for the cron and
+ * for signup is a statement about *which* lock, not whether there is one.
  */
 const publicPaths = [
   "/login",
   "/auth/confirm",
-  "/setup",
+  "/signup",
   "/api/health",
   "/api/cron/daily",
 ];

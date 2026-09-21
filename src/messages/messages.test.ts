@@ -7,7 +7,7 @@ import { defaultLocale, locales } from "@/i18n/config";
 import { themeChoices } from "@/lib/theme/config";
 import { loginErrors } from "@/lib/auth/session";
 import { setPasswordErrors } from "@/lib/auth/password";
-import { setupErrors } from "@/lib/auth/setup";
+import { signupErrors } from "@/lib/auth/signup";
 import { inviteStatuses, wecomUserIdStatuses } from "@/lib/auth/invite";
 import { pricingProblems, selectionProblems } from "@/lib/comparison/sheet";
 import { fxBufferStatuses } from "@/lib/org/fx-buffer";
@@ -260,12 +260,12 @@ describe.each(locales)("%s wording", (locale) => {
     expect(missing).toEqual([]);
   });
 
-  it("says why the first Org Admin was not created", () => {
-    // The screen with the least behind it: no session, no account anywhere in the
-    // database, and no Org Admin to ask. Whoever is reading a refusal here is the person
-    // standing up the deployment, and a raw key leaves them with a form and no idea which
-    // of the two guards turned them away.
-    const missing = setupErrors.filter((error) => !flat.has(`setup.error.${error}`));
+  it("says why an organisation was not created", () => {
+    // The screen with the least behind it: nobody is signed in, there is no organisation
+    // yet and no Org Admin to ask. Whoever is reading a refusal here has no app to
+    // retreat into, and a raw key leaves them with a form and no idea which guard turned
+    // them away — the code, the address, or the currency.
+    const missing = signupErrors.filter((error) => !flat.has(`signup.error.${error}`));
 
     expect(missing).toEqual([]);
   });

@@ -665,6 +665,44 @@ describe("memberships", () => {
   });
 });
 
+describe("an organisation", () => {
+  /**
+   * Signing up creates one through the service role, and nothing else does (ADR-0039).
+   * That sentence is only true if the browser's key cannot: the two cases below are a
+   * member — a real stranger to every org but their own — and somebody signed out, each
+   * trying to make an organisation exist.
+   *
+   * Both are refused by the **grant**, and the assertion names the code so that a policy
+   * cannot be the reason. `authenticated` holds `select` on `orgs` and nothing else
+   * (`20260825010000`), so the answer is `permission denied` — 42501 — rather than an
+   * insert that went through and a row the policy then hid. The second shape still
+   * creates an organisation, and this is the table every `org_id` in the schema points
+   * at.
+   */
+
+  const conjured = `Conjured ${run}`;
+
+  afterAll(async () => {
+    // Only ever a row if one of the assertions below failed; removed so that a failure
+    // reads as one failure and not as a fixture the next run trips over.
+    await service.from("orgs").delete().eq("name", conjured);
+  });
+
+  it("cannot be created by a member", async () => {
+    const client = await signedInAs(members.a.email);
+
+    const { error } = await client.from("orgs").insert({ name: conjured }).select("id");
+
+    expect(error?.code).toBe("42501");
+  });
+
+  it("cannot be created by a signed-out caller", async () => {
+    const { error } = await anonClient().from("orgs").insert({ name: conjured }).select("id");
+
+    expect(error?.code).toBe("42501");
+  });
+});
+
 describe("fx_rates", () => {
   // Shared reference data with no org to scope by. The only legitimate writer is the
   // daily Frankfurter fetch, which runs with the service role.

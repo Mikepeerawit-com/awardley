@@ -57,6 +57,28 @@ export type TenderScreenData =
       screen: "comparison";
       /** The whole Tender's commercial apparatus: every Quote ranked, and the money. */
       sheet: ComparisonSheet;
+      /**
+       * Whether this organisation's plan includes the money at all (#179, ADR-0040).
+       *
+       * The same seam ADR-0020 draws per role, drawn per plan — and drawn the same way,
+       * which is why `sheet` above still says "and the money" without a caveat: when this
+       * is false the figures are **not in the sheet**. `landedCostPerUnit`,
+       * `landedCostConfirmedAt` and `sellingPricePerUnit` come through null, subtracted
+       * rather than flagged, because what is not in the payload cannot be drawn by
+       * mistake.
+       *
+       * So this boolean is not the money's guard — it is the reason the money is absent,
+       * and it travels with it so the screen can leave out the fields somebody would
+       * otherwise type into and the totals bar that would sum four nulls to zero. An
+       * empty Landed Cost and a Landed Cost this plan does not have are the same payload
+       * and a very different screen.
+       *
+       * **Off is the free tier losing the money and keeping everything else.** Ranked
+       * Quotes, their conversion into the Reporting Currency, selecting one and ruling
+       * one out all stay: the sourcing mechanism is the product, and what the paid tier
+       * adds is what we pay and what we charge.
+       */
+      moneyLayer: boolean;
     })
   | (TenderScreenFacts & {
       screen: "sourcing";
@@ -197,7 +219,50 @@ export async function loadTenderScreen(
     return { ...facts, screen: "sourcing", ...yourWorkOnly(callerId, sheet) };
   }
 
-  return { ...facts, screen: "comparison", sheet };
+  // A non-Owner is never reached by this: they already have a shape with no money in it,
+  // so the plan changes nothing about what they are handed. The two subtractions compose
+  // rather than overlap — ADR-0020 takes the money off a reader, #179 takes it off an
+  // organisation, and an Owner on a plan without it is the only case where the second one
+  // has anything left to do.
+  const { moneyLayer } = settings.plan;
+
+  return {
+    ...facts,
+    screen: "comparison",
+    moneyLayer,
+    sheet: moneyLayer ? sheet : withoutMoney(sheet),
+  };
+}
+
+/**
+ * The same sheet with the three money columns taken out of it.
+ *
+ * **Subtracted, not flagged** — ADR-0020's rule, applied to the plan rather than to the
+ * role. A `moneyLayer: false` sitting next to a Landed Cost is still a Landed Cost: it is
+ * serialised into the client payload, it reaches the component, and it is one forgotten
+ * `if` away from being drawn on a screen the organisation did not pay for. Nulls cannot
+ * be drawn by mistake.
+ *
+ * Everything else survives untouched, and that is the point of doing this here rather
+ * than by handing back a narrower type: the Quotes, their ranking, their frozen converted
+ * prices and the Selected Quote are the sourcing mechanism, and the free tier keeps all
+ * of it. `selectedQuoteId` in particular stays — choosing which supplier wins is not
+ * money, and an Item this Owner has decided still reads as decided.
+ *
+ * Nothing is written. The columns keep whatever is in them, which is what makes a plan
+ * lapsing lose the drawing of a figure and never the figure: an organisation that
+ * upgrades again finds its costs where it left them.
+ */
+function withoutMoney(sheet: ComparisonSheet): ComparisonSheet {
+  return {
+    ...sheet,
+    items: sheet.items.map((item) => ({
+      ...item,
+      landedCostPerUnit: null,
+      landedCostConfirmedAt: null,
+      sellingPricePerUnit: null,
+    })),
+  };
 }
 
 /**

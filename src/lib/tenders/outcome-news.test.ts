@@ -194,7 +194,10 @@ async function notificationsOn(itemId: string) {
 beforeAll(async () => {
   const { data: org, error } = await service
     .from("orgs")
-    .insert({ name: `Outcome news ${run}` })
+    // On the uncapped tier: a new org defaults to `free`, which allows one open Tender
+    // (ADR-0040), and the announcements below are read off more than one. The seeded row
+    // is referenced and never written.
+    .insert({ name: `Outcome news ${run}`, plan_id: "paid" })
     .select("id")
     .single();
 

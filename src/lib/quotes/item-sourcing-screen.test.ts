@@ -68,6 +68,22 @@ let rivalQuoteId = "";
 /** Every object any fixture put in the bucket. Nothing cascades from a row into Storage. */
 const objects: string[] = [];
 
+/**
+ * The plan this suite's org is on, and one that caps photos per Item.
+ *
+ * Rows of this suite's own rather than the seeded `free` and `paid`: those are the
+ * product's public promise, and every suite in the repo runs against the same database at
+ * the same time, so a test that edited one would be changing what a dozen others were
+ * half-way through asking. The org sits uncapped throughout — this suite enrols four
+ * people and is about none of the caps — and moves to the second only inside the tests
+ * about what the photo allowance comes to.
+ */
+const planId = `plan-${run}`;
+const cappedPlanId = `plan-${run}-capped`;
+
+/** What the fixture leaves on the Item: one photo on a Quote of each Assignee's. */
+const photosOnTheItem = 2;
+
 async function signedInAs(email: string): Promise<SessionCookieStore> {
   const store = memoryCookieStore();
   const result = await signIn({ email, password }, store);
@@ -263,7 +279,30 @@ let colleagueViewer: Viewer;
 let outsiderViewer: Viewer;
 
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert([
+    {
+      id: planId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: true,
+    },
+    {
+      id: cappedPlanId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: 5,
+      money_layer: true,
+    },
+  ]);
+
+  if (planError) throw planError;
+
   orgId = await createOrg(`Item sourcing ${run}`);
+
+  // Before anybody is enrolled or anything is opened, so nothing in the suite is measured
+  // against the `free` row a new organisation defaults to.
+  await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
 
   for (const who of [owner, assignee, colleague, outsider]) {
     await createMember(orgId, who);
@@ -336,6 +375,11 @@ afterAll(async () => {
   }
 
   await service.from("orgs").delete().eq("id", orgId);
+
+  // After the org, never before: `orgs.plan_id` references these rows, and a plan deleted
+  // out from under an organisation still pointing at it is a foreign key refusing the
+  // teardown rather than the teardown happening.
+  await service.from("plans").delete().in("id", [planId, cappedPlanId]);
 });
 
 /** The screen as one reader gets it. `withMembers` is off unless a case is about it. */
@@ -557,5 +601,79 @@ describe("what each viewer is handed", () => {
     expect(screen.quotes).toEqual([]);
     expect(screen.photos.size).toBe(0);
     expect(screen.selectedQuoteId).toBeNull();
+  });
+});
+
+/**
+ * **What the plan leaves room for, so the picker can refuse at the pick** (#179).
+ *
+ * A Quote Photo is signed only after the Quote row is written, so the server's
+ * `plan_limit` lands on a form whose only offer is a retry — of the same batch, against
+ * the same standing cap, refused every time. The allowance is what lets the picker say it
+ * first. It is a courtesy and never the gate: `signQuotePhotoUploads` still refuses, and
+ * `quote-photos.test.ts` is where that is proved.
+ *
+ * The number is counted across **every** Quote on the Item, which is the claim worth a
+ * test of its own: the cap is per Item (ADR-0040) while a non-Owner is handed only their
+ * own Quotes (ADR-0020), so an allowance derived from what they were shown would be
+ * larger than the one that exists and would walk them straight into the refusal.
+ */
+describe("the photo allowance the pickers are given", () => {
+  async function onTheCappedPlan<T>(act: () => Promise<T>): Promise<T> {
+    await service.from("orgs").update({ plan_id: cappedPlanId }).eq("id", orgId);
+
+    try {
+      return await act();
+    } finally {
+      await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
+    }
+  }
+
+  it("is no number at all on a plan that caps none", async () => {
+    // Null rather than a large figure, so the picker's comparison is one an uncapped
+    // organisation never enters.
+    expect((await load(ownerViewer, itemId)).photoAllowance).toBeNull();
+  });
+
+  it("is the cap less what the Item already holds", async () => {
+    const screen = await onTheCappedPlan(() => load(ownerViewer, itemId));
+
+    expect(screen.photoAllowance).toBe(5 - photosOnTheItem);
+  });
+
+  it("is the same number for an Assignee who is shown only their own Quote", async () => {
+    // The one that matters. This reader is handed one of the Item's three Quotes and one
+    // of its two photos, and the allowance they get is still the Item's — counted over
+    // every Quote on it, including the rival's they cannot see. A count is not a price.
+    const theirs = await onTheCappedPlan(() => load(assigneeViewer, itemId));
+
+    expect(theirs.photos.size).toBe(1);
+    expect(theirs.photoAllowance).toBe(5 - photosOnTheItem);
+  });
+
+  it("is the whole cap on an Item nothing has been photographed on", async () => {
+    const screen = await onTheCappedPlan(() => load(ownerViewer, otherItemId));
+
+    expect(screen.photoAllowance).toBe(5);
+  });
+
+  it("never goes below nothing", async () => {
+    // An org lapsed onto a tighter plan holds more than it now allows. The answer to "how
+    // many more" is none — a negative would read as an allowance to the `>` comparing it.
+    await service
+      .from("plans")
+      .update({ photos_per_item_cap: 1 })
+      .eq("id", cappedPlanId);
+
+    try {
+      const screen = await onTheCappedPlan(() => load(ownerViewer, itemId));
+
+      expect(screen.photoAllowance).toBe(0);
+    } finally {
+      await service
+        .from("plans")
+        .update({ photos_per_item_cap: 5 })
+        .eq("id", cappedPlanId);
+    }
   });
 });

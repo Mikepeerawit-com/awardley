@@ -71,7 +71,23 @@ export type ImageUpload = {
   upload: (files: File[], to: ImageDestination) => Promise<UploadOutcome>;
 };
 
-export function useImageUpload(): ImageUpload {
+/**
+ * What the picker is allowed to add, and why the hook is the one holding it.
+ *
+ * `allowance` is how many more pictures the thing being uploaded to may carry under the
+ * organisation's plan — null on a plan that caps none, and already net of what is stored,
+ * so it is compared against this batch alone.
+ *
+ * **It is a courtesy and never the gate.** The server refuses `plan_limit` when it signs,
+ * and that refusal is what actually holds. This exists because of *where* the server's
+ * refusal lands: by the time a batch is signed the reader has picked their photographs
+ * and, on the create-a-Quote form, the price is already written — and a retry of the same
+ * batch against the same standing cap is refused every time, forever. Said at the pick it
+ * is one somebody can act on, which is the whole of why `too_many` is checked here too.
+ */
+export function useImageUpload(
+  { allowance }: { allowance?: number | null } = {},
+): ImageUpload {
   const [error, setError] = useState<ImageProblem | null>(null);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
 
@@ -86,6 +102,16 @@ export function useImageUpload(): ImageUpload {
     setError(null);
 
     if (files.length > maxImagesAtOnce) return refuse("too_many", files);
+
+    // After `too_many`, and the order is the advice rather than the arithmetic. Both can
+    // be true of one batch — eleven pictures against an allowance of five — and only one
+    // of the two sentences is then worth reading: *add them in smaller batches* is what
+    // gets the five in, while *remove one, or upgrade* would send somebody to delete a
+    // picture they did not need to. When the allowance is genuinely the wall, picking
+    // fewer cannot help and `too_many` is not true, so this is what is said.
+    if (allowance !== null && allowance !== undefined && files.length > allowance) {
+      return refuse("plan_limit", files);
+    }
 
     setProgress({ done: 0, total: files.length });
 

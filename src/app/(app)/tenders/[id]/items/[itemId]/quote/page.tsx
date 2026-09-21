@@ -80,6 +80,7 @@ export default async function ItemSourcingPage({
     timezone,
     members,
     selectedQuoteId,
+    photoAllowance,
   } = await loadItemSourcingScreen(
     {
       tenderId: tender.id,
@@ -159,6 +160,9 @@ export default async function ItemSourcingPage({
           ownerUserId={tender.ownerUserId}
           selectedQuoteId={selectedQuoteId}
           yourQuotesOnly={yourQuotesOnly}
+          // What the plan leaves room for on this Item, so the picker beside an existing
+          // Quote's thumbnails refuses at the pick rather than after the upload.
+          photoAllowance={photoAllowance}
           // Off the Tender this Item belongs to, which is already read above — the
           // currency is the Tender's answer (ADR-0036) and this screen is one Item of
           // one Tender, so there is nothing here to ask a second question about.
@@ -188,6 +192,11 @@ export default async function ItemSourcingPage({
                   reportingCurrency: tender.reportingCurrency,
                 })}
                 reportingCurrency={tender.reportingCurrency}
+                // The same allowance the list above was given, for the same reason: a
+                // photo picked here is signed only after the Quote is written, so a
+                // refusal that waited for the server would land where nothing but a
+                // doomed retry is on offer.
+                photoAllowance={photoAllowance}
               />
             </section>
           </Measure>

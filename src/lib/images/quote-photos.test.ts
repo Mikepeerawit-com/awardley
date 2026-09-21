@@ -46,6 +46,19 @@ let otherOrgId = "";
 let quoteId = "";
 let otherQuoteId = "";
 
+/**
+ * The plan both fixture orgs are on, and one with nothing on it at all.
+ *
+ * A row of this suite's own rather than the seeded `free` and `paid`: those are the
+ * product's public promise and every suite in the repo runs against the same database at
+ * the same time, so a test that edited one would be changing what a dozen other suites
+ * were half-way through asking. `photos_per_item_cap: 2` is small enough to reach in a
+ * test and the other caps are null, because this suite opens several Tenders and is
+ * about none of that.
+ */
+const planId = `plan-${run}`;
+const uncappedPlanId = `plan-${run}-uncapped`;
+
 /** Every object any test put in the bucket. Nothing cascades from a row into Storage. */
 const objects: string[] = [];
 
@@ -186,8 +199,34 @@ async function uploaded(
 }
 
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert([
+    {
+      id: planId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: 2,
+      money_layer: false,
+    },
+    {
+      id: uncappedPlanId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: false,
+    },
+  ]);
+
+  if (planError) throw planError;
+
   orgId = await createOrg(`Quote photos ${run}`);
   otherOrgId = await createOrg(`Quote photos other ${run}`);
+
+  // Before a single Tender is opened, so nothing in the suite is ever measured against
+  // the `free` row a new organisation defaults to.
+  await service
+    .from("orgs")
+    .update({ plan_id: planId })
+    .in("id", [orgId, otherOrgId]);
 
   await createMember(orgId, assignee);
   await createMember(otherOrgId, outsider);
@@ -215,6 +254,11 @@ afterAll(async () => {
   }
 
   await service.from("orgs").delete().in("id", [orgId, otherOrgId]);
+
+  // After the orgs, never before: `orgs.plan_id` references this row, and a plan deleted
+  // out from under an organisation still pointing at it is a foreign key refusing the
+  // teardown rather than the teardown happening.
+  await service.from("plans").delete().in("id", [planId, uncappedPlanId]);
 });
 
 describe("signing an upload", () => {
@@ -407,5 +451,211 @@ describe("taking one off", () => {
       reason: "not_found",
     });
     expect(await listQuotePhotos(quoteId, mine)).toHaveLength(1);
+  });
+});
+
+/**
+ * **The plan's cap, which is a cap on the Tender Item and not on the Quote** (#179).
+ *
+ * The distinction is the whole of what is worth testing here. A photo attaches to a
+ * Quote, so a cap counted per Quote is the one anybody would write by accident — and on
+ * an Item with eight competing Quotes it is eight times the cap the plan row states,
+ * arrived at without anybody deciding it. So the count crosses every Quote on the Item,
+ * and stops at the Item: another Item's pictures are another Item's allowance.
+ *
+ * The suite's org is on a plan of this suite's own with the cap at two, which is what
+ * makes "the third one" a thing a test can reach without uploading six.
+ */
+describe("the plan's cap on one Item's photos", () => {
+  /** Two Quotes on one Item, and a third Quote on a second Item of the same Tender. */
+  let firstQuoteId = "";
+  let sameItemQuoteId = "";
+  let otherItemQuoteId = "";
+
+  async function aQuoteOn(
+    tenderItemId: string,
+    supplierName: string,
+    store: SessionCookieStore,
+  ): Promise<string> {
+    const quote = await createQuote(
+      {
+        tenderItemId,
+        supplierName,
+        unitPrice: 125.5,
+        currency: "THB",
+        quotedUnit: "box of 50",
+        leadTimeDays: 14,
+        matchType: "exact",
+        alternativeProductName: null,
+        detailNotes: null,
+        quotedAt: "2026-08-18",
+      },
+      store,
+    );
+
+    if (!quote.ok) throw new Error(`could not create a Quote: ${quote.reason}`);
+
+    return quote.quoteId;
+  }
+
+  beforeAll(async () => {
+    const store = await signedInAs(assignee.email);
+    const tender = await createTender(
+      {
+        clientName: "Bangkok General Hospital",
+        title: "Capped consumables",
+        dateReceived: "2026-08-01",
+        internalQuoteDeadline: "2026-08-20",
+        clientSubmissionDeadline: "2026-08-28",
+        expectedDecisionDate: null,
+        ownerUserId: assignee.id,
+        notes: null,
+        items: [
+          {
+            productName: "Nitrile gloves, powder-free",
+            description: null,
+            quantity: 500,
+            unit: "box of 50",
+          },
+          {
+            productName: "Syringes, 5 ml",
+            description: null,
+            quantity: 500,
+            unit: "box of 50",
+          },
+        ],
+      },
+      store,
+    );
+
+    if (!tender.ok) throw new Error(`could not create a Tender: ${tender.reason}`);
+
+    const full = await getTender(tender.tenderId, store);
+
+    for (const item of full!.items) {
+      await addAssignee({ tenderItemId: item.id, userId: assignee.id }, store);
+    }
+
+    firstQuoteId = await aQuoteOn(full!.items[0].id, `Ace Capped ${run}`, store);
+    sameItemQuoteId = await aQuoteOn(full!.items[0].id, `Bee Capped ${run}`, store);
+    otherItemQuoteId = await aQuoteOn(full!.items[1].id, `Cee Capped ${run}`, store);
+  });
+
+  afterEach(async () => {
+    await service
+      .from("quote_photos")
+      .delete()
+      .in("quote_id", [firstQuoteId, sameItemQuoteId, otherItemQuoteId]);
+  });
+
+  /** Two photos recorded against one Quote — the cap, reached. */
+  async function fillTheItem(store: SessionCookieStore): Promise<void> {
+    const recorded = await recordQuotePhotos(
+      { quoteId: firstQuoteId, storagePaths: await uploaded(2, store, firstQuoteId) },
+      store,
+    );
+
+    if (!recorded.ok) throw new Error(`could not record photos: ${recorded.reason}`);
+  }
+
+  it("signs photos up to the cap and refuses the one after it", async () => {
+    const store = await signedInAs(assignee.email);
+
+    await fillTheItem(store);
+
+    const result = await signQuotePhotoUploads(
+      { quoteId: firstQuoteId, images: [{ contentType: "image/jpeg", byteSize: 100 }] },
+      store,
+    );
+
+    expect(result).toEqual({ ok: false, reason: "plan_limit" });
+  });
+
+  it("counts every Quote on the Item, so the next Quote is already at the cap", async () => {
+    // The failure this suite exists for: a cap counted per Quote would sign this
+    // happily, and the Item would end up with two photos per supplier on a plan that
+    // promised two altogether.
+    const store = await signedInAs(assignee.email);
+
+    await fillTheItem(store);
+
+    const result = await signQuotePhotoUploads(
+      {
+        quoteId: sameItemQuoteId,
+        images: [{ contentType: "image/jpeg", byteSize: 100 }],
+      },
+      store,
+    );
+
+    expect(result).toEqual({ ok: false, reason: "plan_limit" });
+  });
+
+  it("stops at the Item, leaving another Item's allowance untouched", async () => {
+    const store = await signedInAs(assignee.email);
+
+    await fillTheItem(store);
+
+    const result = await signQuotePhotoUploads(
+      {
+        quoteId: otherItemQuoteId,
+        images: [{ contentType: "image/jpeg", byteSize: 100 }],
+      },
+      store,
+    );
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) objects.push(...result.uploads.map((upload) => upload.storagePath));
+  });
+
+  it("refuses a batch that would cross the cap, whole", async () => {
+    // All-or-nothing, as `pendingProblem` already has it: one photo of the two would fit
+    // and signing that one would leave somebody holding a phone with a picture on it and
+    // no idea which of the two went.
+    const store = await signedInAs(assignee.email);
+    const recorded = await recordQuotePhotos(
+      { quoteId: firstQuoteId, storagePaths: await uploaded(1, store, firstQuoteId) },
+      store,
+    );
+
+    if (!recorded.ok) throw new Error(recorded.reason);
+
+    const result = await signQuotePhotoUploads(
+      {
+        quoteId: firstQuoteId,
+        images: [
+          { contentType: "image/jpeg", byteSize: 100 },
+          { contentType: "image/jpeg", byteSize: 100 },
+        ],
+      },
+      store,
+    );
+
+    expect(result).toEqual({ ok: false, reason: "plan_limit" });
+  });
+
+  it("caps nothing at all on a plan whose cap is null", async () => {
+    // Uncapped is the absence of a number rather than a large one, so the check has to
+    // be skipped outright rather than compared against something generous.
+    const store = await signedInAs(assignee.email);
+
+    await fillTheItem(store);
+    await service.from("orgs").update({ plan_id: uncappedPlanId }).eq("id", orgId);
+
+    try {
+      const result = await signQuotePhotoUploads(
+        {
+          quoteId: firstQuoteId,
+          images: [{ contentType: "image/jpeg", byteSize: 100 }],
+        },
+        store,
+      );
+
+      expect(result.ok).toBe(true);
+
+      if (result.ok) objects.push(...result.uploads.map((upload) => upload.storagePath));
+    } finally {
+      await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
+    }
   });
 });

@@ -49,6 +49,16 @@ const run = crypto.randomUUID().slice(0, 8);
 
 const service = createServiceClient();
 
+/**
+ * The plan this suite's orgs are on — this run's own row, never a seeded one.
+ *
+ * Inserted uncapped, because everything above the write here is about who a read shows
+ * and the caps have no opinion on that. The one block that is about the cap puts a number
+ * on the row and takes it off again, which it can only do safely because the row belongs
+ * to this run: `free` and `paid` are read by every suite running beside this one.
+ */
+const planId = `plan-${run}`;
+
 /** Two colleagues who share a name — the tie both reads have to settle the same way. */
 const twins = [
   { id: "", email: `member-twin-a-${run}@example.test` },
@@ -147,10 +157,30 @@ async function writeProfile(
   if (membershipError) throw membershipError;
 }
 
+/** Puts a cap on this suite's own plan for the length of one test, or takes it off. */
+async function capMembershipsAt(cap: number | null): Promise<void> {
+  const { error } = await service
+    .from("plans")
+    .update({ membership_cap: cap })
+    .eq("id", planId);
+
+  if (error) throw error;
+}
+
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert({
+    id: planId,
+    open_tender_cap: null,
+    membership_cap: null,
+    photos_per_item_cap: null,
+    money_layer: true,
+  });
+
+  if (planError) throw planError;
+
   const { data, error } = await service
     .from("orgs")
-    .insert({ name: `Members ${run}` })
+    .insert({ name: `Members ${run}`, plan_id: planId })
     .select("id")
     .single();
 
@@ -160,7 +190,7 @@ beforeAll(async () => {
 
   const { data: other, error: otherError } = await service
     .from("orgs")
-    .insert({ name: `Members other ${run}` })
+    .insert({ name: `Members other ${run}`, plan_id: planId })
     .select("id")
     .single();
 
@@ -206,6 +236,10 @@ afterAll(async () => {
   for (const id of ids) await service.auth.admin.deleteUser(id);
 
   await service.from("orgs").delete().in("id", [orgId, otherOrgId].filter(Boolean));
+
+  // After the orgs: `orgs.plan_id` references this row, and a plan dropped while an org
+  // still points at it makes the teardown report a foreign key instead of the suite.
+  await service.from("plans").delete().eq("id", planId);
 });
 
 describe("listMembers", () => {
@@ -482,6 +516,95 @@ describe("setMembershipDisabled", () => {
     );
 
     expect(result).toEqual({ ok: false, reason: "not_found" });
+  });
+
+  /**
+   * The plan's cap on live Memberships, at the other way in (ADR-0040).
+   *
+   * Readmitting somebody is an Invite by another name — it adds a live Membership — and
+   * the cap is the same one `invite` asks. Only that direction: Disabling is refused by
+   * no plan ever, because a cap that stopped an organisation letting somebody go would be
+   * a cap that made itself impossible to get under.
+   *
+   * The org's live Memberships are the two twins once `leaver` has gone, so a plan
+   * allowing two is an org exactly on its line.
+   */
+  describe("the plan's cap on Memberships", () => {
+    async function leaverHasGone(): Promise<void> {
+      const { error } = await service
+        .from("memberships")
+        .update({ disabled_at: disabledAt.toISOString() })
+        .eq("user_id", leaver.id)
+        .eq("org_id", orgId);
+
+      if (error) throw error;
+    }
+
+    afterEach(async () => {
+      await capMembershipsAt(null);
+    });
+
+    it("refuses to readmit somebody when the org is already at its cap", async () => {
+      await leaverHasGone();
+      await capMembershipsAt(2);
+
+      const result = await setMembershipDisabled(
+        { userId: leaver.id, disabledAt: null },
+        await signedInAs(adminTwin().email),
+      );
+
+      expect(result).toEqual({ ok: false, reason: "plan_limit" });
+
+      // And they are still Disabled. A refusal changes nothing.
+      const { data } = await service
+        .from("memberships")
+        .select("disabled_at")
+        .eq("user_id", leaver.id)
+        .eq("org_id", orgId)
+        .single();
+
+      expect(data?.disabled_at).not.toBeNull();
+    });
+
+    it("readmits them once there is room", async () => {
+      await leaverHasGone();
+      await capMembershipsAt(3);
+
+      const result = await setMembershipDisabled(
+        { userId: leaver.id, disabledAt: null },
+        await signedInAs(adminTwin().email),
+      );
+
+      expect(result).toEqual({ ok: true });
+    });
+
+    it("never refuses a Disabling, however far over the cap the org is", async () => {
+      // The direction that gets an org *under* its line cannot be the direction the line
+      // refuses. Capped at one against an org of three, which is what a plan lapsing from
+      // paid to free looks like.
+      await capMembershipsAt(1);
+
+      const result = await setMembershipDisabled(
+        { userId: leaver.id, disabledAt },
+        await signedInAs(adminTwin().email),
+      );
+
+      expect(result).toEqual({ ok: true });
+    });
+
+    it("leaves a colleague who never left alone, rather than refusing the no-op", async () => {
+      // Restore pressed on somebody who is already here adds nobody. Answering it with a
+      // sentence about the plan would put a refusal on the one screen where the admin can
+      // see for themselves that nothing changed.
+      await capMembershipsAt(2);
+
+      const result = await setMembershipDisabled(
+        { userId: leaver.id, disabledAt: null },
+        await signedInAs(adminTwin().email),
+      );
+
+      expect(result).toEqual({ ok: true });
+    });
   });
 });
 

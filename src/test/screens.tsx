@@ -191,7 +191,9 @@ export function screens(m: Messages) {
       {/* Outside the measure, as the page draws it: the gallery is a grid of tiles
           scanned rather than a line of prose read along. */}
       <Section id="reference-images" title={m.tenders.referenceImages.title}>
-        <ReferenceImageUploader tenderId={tender.id} />
+        {/* Uncapped, which is the widest the picker ever is: the record measures the
+            shape a paid organisation gets, and an allowance changes no pixel of it. */}
+        <ReferenceImageUploader tenderId={tender.id} allowance={null} />
         <ReferenceImageGallery
           tenderId={tender.id}
           images={referenceImages}
@@ -363,6 +365,11 @@ export function screens(m: Messages) {
               photos={quotePhotos}
               referenceImages={referenceImages}
               reportingCurrency={tender.reportingCurrency}
+              // The record is the paid shape, which is the one every guard in this file
+              // was written against: the money is what makes this the densest screen in
+              // the app, and a fixture drawn without it would measure a shorter page than
+              // any Owner on a plan with it ever sees.
+              moneyLayer
             />
           </Section>
           {/* The fold **shut**, as the page draws it and as a reader arriving from a
@@ -455,6 +462,11 @@ export function screens(m: Messages) {
               photos={quotePhotos}
               referenceImages={referenceImages}
               reportingCurrency={tender.reportingCurrency}
+              // The record is the paid shape, which is the one every guard in this file
+              // was written against: the money is what makes this the densest screen in
+              // the app, and a fixture drawn without it would measure a shorter page than
+              // any Owner on a plan with it ever sees.
+              moneyLayer
             />
           </Section>
           <Fold id="tender-facts" title={m.tenders.sections.facts} defaultOpen>
@@ -611,6 +623,7 @@ export function screens(m: Messages) {
             ownerUserId={tender.ownerUserId}
             selectedQuoteId={selectedGloveQuoteId}
             reportingCurrency={tender.reportingCurrency}
+            photoAllowance={null}
             // Every Quote on the Item, both Assignees' — the Owner's view, and the widest
             // this list gets. What a non-Owner reads is the screen below rather than this
             // one with rows removed: it counts the list differently and carries a form this
@@ -627,6 +640,7 @@ export function screens(m: Messages) {
                 reportingCurrency: tender.reportingCurrency,
               })}
               reportingCurrency={tender.reportingCurrency}
+              photoAllowance={null}
             />
           </Measure>
         </Body>
@@ -674,6 +688,7 @@ export function screens(m: Messages) {
               selectedQuoteId={null}
               yourQuotesOnly
               reportingCurrency={tender.reportingCurrency}
+              photoAllowance={null}
             />
           </section>
 
@@ -692,6 +707,7 @@ export function screens(m: Messages) {
                 reportingCurrency: tender.reportingCurrency,
               })}
                 reportingCurrency={tender.reportingCurrency}
+                photoAllowance={null}
               />
             </section>
           </Measure>
@@ -1109,14 +1125,24 @@ export function Body({
  */
 export function SettingsBody({
   isOrgAdmin = true,
+  moneyLayer = true,
   children,
 }: {
   isOrgAdmin?: boolean;
+  /**
+   * Whether the organisation's plan has the money layer, which decides whether Foreign
+   * prices is a fourth row in the column (#179). On by default for the reason
+   * `isOrgAdmin` is: the widest column is the one worth measuring, and it is the one a
+   * paid organisation's Administrator really gets.
+   */
+  moneyLayer?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <Body measure="42rem">
-      <SettingsFrame isOrgAdmin={isOrgAdmin}>{children}</SettingsFrame>
+      <SettingsFrame isOrgAdmin={isOrgAdmin} moneyLayer={moneyLayer}>
+        {children}
+      </SettingsFrame>
     </Body>
   );
 }

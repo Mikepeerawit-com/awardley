@@ -301,7 +301,11 @@ async function notificationsOn(tenderId: string) {
 beforeAll(async () => {
   const { data: org, error } = await service
     .from("orgs")
-    .insert({ name: `Send ${run}` })
+    // On the uncapped tier, and so are the three orgs the blocks below make: a new org
+    // defaults to `free`, which allows one open Tender (ADR-0040), and a nightly run is
+    // only worth staging over several. The seeded row is referenced and never written —
+    // `paid` is read by every suite running beside this one.
+    .insert({ name: `Send ${run}`, plan_id: "paid" })
     .select("id")
     .single();
 
@@ -1325,7 +1329,7 @@ describe("the daily Digest", () => {
   beforeAll(async () => {
     const { data: org, error } = await service
       .from("orgs")
-      .insert({ name: `Digest ${run}` })
+      .insert({ name: `Digest ${run}`, plan_id: "paid" })
       .select("id")
       .single();
 
@@ -1452,7 +1456,7 @@ describe("the daily Digest", () => {
     // hear the reminders through.
     const { data: org, error } = await service
       .from("orgs")
-      .insert({ name: `Quiet ${run}` })
+      .insert({ name: `Quiet ${run}`, plan_id: "paid" })
       .select("id")
       .single();
 
@@ -1606,7 +1610,7 @@ describe("email, the floor", () => {
   beforeAll(async () => {
     const { data: org, error } = await service
       .from("orgs")
-      .insert({ name: `Mail ${run}` })
+      .insert({ name: `Mail ${run}`, plan_id: "paid" })
       .select("id")
       .single();
 

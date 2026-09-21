@@ -61,7 +61,15 @@ async function signedInAs(email: string): Promise<SessionCookieStore> {
 }
 
 async function createOrg(name: string): Promise<string> {
-  const { data, error } = await service.from("orgs").insert({ name }).select("id").single();
+  // On the uncapped tier, because nothing in this file is about the plan and every
+  // fixture below holds several open Tenders at once: a new org defaults to `free`, which
+  // allows one (ADR-0040). The seeded row is *referenced* and never written — `paid` is
+  // read by every suite running beside this one.
+  const { data, error } = await service
+    .from("orgs")
+    .insert({ name, plan_id: "paid" })
+    .select("id")
+    .single();
 
   if (error) throw error;
 

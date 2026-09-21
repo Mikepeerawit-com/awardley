@@ -226,9 +226,47 @@ let bystanderStore: SessionCookieStore;
 let adminStore: SessionCookieStore;
 let outsiderStore: SessionCookieStore;
 
+/**
+ * The plan both fixture orgs are on, and one without the money layer.
+ *
+ * Rows of this suite's own rather than the seeded `free` and `paid`: those are the
+ * product's public promise, and every suite in the repo runs against the same database at
+ * the same time, so a test that edited one would be changing what a dozen others were
+ * half-way through asking. Every cap is null because this suite is about neither — it
+ * enrols six people, opens more than one Tender and puts three pictures on one of them,
+ * all of which the free tier's figures would refuse for reasons that have nothing to do
+ * with what is being tested. `money_layer` is what it *is* about, from #179 on: the
+ * comparison shape either carries the money or does not.
+ */
+const planId = `plan-${run}`;
+const noMoneyPlanId = `plan-${run}-no-money`;
+
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert([
+    {
+      id: planId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: true,
+    },
+    {
+      id: noMoneyPlanId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: false,
+    },
+  ]);
+
+  if (planError) throw planError;
+
   orgId = await createOrg(`Tender screen ${run}`);
   otherOrgId = await createOrg(`Tender screen outsiders ${run}`);
+
+  // Before a single Tender is opened or a single person enrolled, so nothing in the suite
+  // is ever measured against the `free` row a new organisation defaults to.
+  await service.from("orgs").update({ plan_id: planId }).in("id", [orgId, otherOrgId]);
 
   await createMember(orgId, owner);
   await createMember(orgId, mate);
@@ -294,6 +332,11 @@ afterAll(async () => {
   for (const org of [orgId, otherOrgId]) {
     await service.from("orgs").delete().eq("id", org);
   }
+
+  // After the orgs, never before: `orgs.plan_id` references these rows, and a plan deleted
+  // out from under an organisation still pointing at it is a foreign key refusing the
+  // teardown rather than the teardown happening.
+  await service.from("plans").delete().in("id", [planId, noMoneyPlanId]);
 });
 
 /** One Quote against an Item, entered by whoever the store is signed in as. */
@@ -637,12 +680,107 @@ describe("what each viewer is handed", () => {
     );
   }
 
+  /**
+   * **The plan, which is the second subtraction and not a second permission** (#179).
+   *
+   * ADR-0020 takes the money off a *reader* — a non-Owner gets the `"sourcing"` shape and
+   * there is nothing left to take. This takes it off an *organisation*, so the only case
+   * where it has anything to do is an Owner on a plan without the money layer, and the
+   * shape they get is the comparison sheet with three fields nulled.
+   *
+   * Nulled rather than flagged, for the reason the ADR gives and this file already tests
+   * for the role: what is in the payload reaches the component, and a `moneyLayer: false`
+   * sitting beside a Landed Cost is still a Landed Cost. `moneyLayer` travels with it
+   * anyway, because the screen has to know not to draw the *boxes* those figures would
+   * have gone in — an empty box is an invitation to type into a field whose write
+   * refuses.
+   */
+  describe("a plan without the money layer", () => {
+    async function onThatPlan<T>(act: () => Promise<T>): Promise<T> {
+      await service.from("orgs").update({ plan_id: noMoneyPlanId }).eq("id", orgId);
+
+      try {
+        return await act();
+      } finally {
+        await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
+      }
+    }
+
+    it("hands the Owner the sheet with the money subtracted, not flagged", async () => {
+      const screen = await onThatPlan(async () =>
+        ownersScreen(await loadTenderScreen(viewed.tenderId, owner.id, store)),
+      );
+      const [first] = screen.sheet.items;
+
+      expect(screen.moneyLayer).toBe(false);
+      expect(first.landedCostPerUnit).toBeNull();
+      expect(first.landedCostConfirmedAt).toBeNull();
+      expect(first.sellingPricePerUnit).toBeNull();
+
+      // Nowhere in the payload, not merely off the fields somebody thought of — the same
+      // criterion this file holds the role's subtraction to.
+      const everything = everythingIn(screen);
+
+      expect(everything).not.toContain(String(priced.landedCost));
+      expect(everything).not.toContain(String(priced.sellingPrice));
+    });
+
+    it("keeps the whole sourcing mechanism, which is what the free tier is", async () => {
+      const screen = await onThatPlan(async () =>
+        ownersScreen(await loadTenderScreen(viewed.tenderId, owner.id, store)),
+      );
+      const [first] = screen.sheet.items;
+
+      expect(screen.screen).toBe("comparison");
+      expect(first.quotes.map((quote) => quote.supplierName).sort()).toEqual([
+        "Mate Trading",
+        "Rival Imports",
+      ]);
+      // The frozen converted prices the ranking is drawn from, which are not the money
+      // layer: they are what makes eight suppliers one sorted column.
+      expect(first.quotes.every((quote) => quote.unitPriceReporting > 0)).toBe(true);
+      expect(screen.sheet.reportingCurrency).not.toBeNull();
+      expect(screen.sheet.photos.size).toBe(2);
+      expect(screen.referenceImages).toHaveLength(1);
+    });
+
+    it("changes nothing for a non-Owner, who never had the money to lose", async () => {
+      const screen = await onThatPlan(async () =>
+        reducedScreen(await loadTenderScreen(viewed.tenderId, mate.id, mateStore)),
+      );
+
+      expect(screen.items.map((item) => item.productName)).toEqual([
+        "Nitrile gloves, powder-free",
+        "Surgical mask, 3-ply",
+      ]);
+      expect(everythingIn(screen)).not.toMatch(/landedCost|sellingPrice|selectedQuote/i);
+    });
+
+    it("writes nothing, so the figures are there again on a plan that has them", async () => {
+      // A cap refuses the next act and never destroys data (ADR-0040), and the money
+      // layer is the same promise about a column rather than a count: an organisation
+      // that lapses stops being shown its costs and does not stop having them.
+      await onThatPlan(async () =>
+        ownersScreen(await loadTenderScreen(viewed.tenderId, owner.id, store)),
+      );
+
+      const screen = ownersScreen(
+        await loadTenderScreen(viewed.tenderId, owner.id, store),
+      );
+
+      expect(screen.moneyLayer).toBe(true);
+      expect(screen.sheet.items[0].landedCostPerUnit).toBe(priced.landedCost);
+      expect(screen.sheet.items[0].sellingPricePerUnit).toBe(priced.sellingPrice);
+    });
+  });
+
   it("hands the Owner the whole sheet, exactly as before", async () => {
     const screen = ownersScreen(
       await loadTenderScreen(viewed.tenderId, owner.id, store),
     );
     const [first] = screen.sheet.items;
 
+    expect(screen.moneyLayer).toBe(true);
     expect(screen.sheet.items).toHaveLength(2);
     expect(first.quotes.map((quote) => quote.supplierName).sort()).toEqual([
       "Mate Trading",

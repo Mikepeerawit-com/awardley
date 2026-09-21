@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Screen } from "@/components/screen";
 import { SettingsFrame } from "@/components/settings/settings-nav";
 import { currentUser } from "@/lib/auth/session";
+import { getOrgSettings } from "@/lib/org/org";
 
 /**
  * **Settings: one destination, one frame, four screens** (#132).
@@ -25,11 +26,23 @@ import { currentUser } from "@/lib/auth/session";
  * the answer, so asking again costs no round trip.
  */
 export default async function SettingsLayout({ children }: LayoutProps<"/settings">) {
-  const user = await currentUser(await cookies());
+  const store = await cookies();
+  // Two reads rather than one, and they are independent of each other, so they go
+  // together: who is looking decides whether the Organisation group is drawn, and what
+  // the organisation is on decides whether one screen inside it is (#179).
+  const [user, settings] = await Promise.all([
+    currentUser(store),
+    getOrgSettings(store),
+  ]);
 
   return (
     <Screen measure="42rem">
-      <SettingsFrame isOrgAdmin={user?.isOrgAdmin ?? false}>{children}</SettingsFrame>
+      <SettingsFrame
+        isOrgAdmin={user?.isOrgAdmin ?? false}
+        moneyLayer={settings.plan.moneyLayer}
+      >
+        {children}
+      </SettingsFrame>
     </Screen>
   );
 }

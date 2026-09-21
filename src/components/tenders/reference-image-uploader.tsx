@@ -25,10 +25,28 @@ import { imageAccept, type PendingImage } from "@/lib/images/images";
  *
  * The sign-upload-record loop itself lives in `useImageUpload`, shared with Quote Photos.
  */
-export function ReferenceImageUploader({ tenderId }: { tenderId: string }) {
+export function ReferenceImageUploader({
+  tenderId,
+  allowance,
+}: {
+  tenderId: string;
+  /**
+   * How many more Reference Images this Tender may carry, or null on a plan capping none.
+   *
+   * The Tender's allowance and not an Item's, because that is the grain the act has: a
+   * Reference Image arrives Unassigned, so the per-Item figure on the plan row is turned
+   * into the Tender's by `referenceImageCap` before it is counted against what is stored
+   * (ADR-0040).
+   *
+   * A courtesy, never the gate — `signReferenceImageUploads` refuses the same way and is
+   * what actually holds. This is so the refusal arrives before a phone on mobile data
+   * spends the upload, and while the picker is still on screen to act on it.
+   */
+  allowance: number | null;
+}) {
   const t = useTranslations("tenders.referenceImages");
   const input = useRef<HTMLInputElement>(null);
-  const { error, progress, busy, upload } = useImageUpload();
+  const { error, progress, busy, upload } = useImageUpload({ allowance });
   const toThisTender = {
     sign: (images: PendingImage[]) =>
       signReferenceImageUploadsAction({ tenderId, images }),

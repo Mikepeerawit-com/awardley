@@ -39,6 +39,18 @@ const run = crypto.randomUUID().slice(0, 8);
 
 const service = createServiceClient();
 
+/**
+ * The plan both of this suite's orgs are on — its own row, never a seeded one.
+ *
+ * `free` caps open Tenders at one (ADR-0040), and most of this file opens more than one
+ * Tender in the same org, so a suite left on the default would be testing the cap in
+ * every test that is not about it. The row is inserted uncapped and the one describe
+ * block that is about the cap puts a number on it and takes it off again — which is also
+ * why it has to be a row of this run's own: `free` and `paid` are shared by every suite
+ * running in parallel, and a test that edited either would fail somebody else's.
+ */
+const planId = `plan-${run}`;
+
 const owner = { id: "", email: `owner-${run}@example.test` };
 const mate = { id: "", email: `mate-${run}@example.test` };
 const outsider = { id: "", email: `outsider-${run}@example.test` };
@@ -76,13 +88,23 @@ async function signedInAs(email: string): Promise<SessionCookieStore> {
 async function createOrg(name: string): Promise<string> {
   const { data, error } = await service
     .from("orgs")
-    .insert({ name })
+    .insert({ name, plan_id: planId })
     .select("id")
     .single();
 
   if (error) throw error;
 
   return data.id;
+}
+
+/** Puts a cap on this suite's own plan for the length of one test, or takes it off. */
+async function capOpenTendersAt(cap: number | null): Promise<void> {
+  const { error } = await service
+    .from("plans")
+    .update({ open_tender_cap: cap })
+    .eq("id", planId);
+
+  if (error) throw error;
 }
 
 async function createMember(org: string, who: { id: string; email: string }) {
@@ -137,6 +159,16 @@ async function anItemOf(tenderId: string): Promise<string> {
 }
 
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert({
+    id: planId,
+    open_tender_cap: null,
+    membership_cap: null,
+    photos_per_item_cap: null,
+    money_layer: true,
+  });
+
+  if (planError) throw planError;
+
   orgId = await createOrg(`Tenders ${run}`);
   otherOrgId = await createOrg(`Tenders other ${run}`);
 
@@ -164,6 +196,11 @@ afterAll(async () => {
 
   // The reference counters go with the orgs — the FK cascades.
   await service.from("orgs").delete().in("id", [orgId, otherOrgId]);
+
+  // After the orgs, never before: `orgs.plan_id` references this row, and a plan deleted
+  // while an org still points at it is a foreign key the teardown would report instead of
+  // whatever the suite actually found.
+  await service.from("plans").delete().eq("id", planId);
 });
 
 describe("createTender", () => {
@@ -1141,5 +1178,143 @@ describe("recording what happened", () => {
     expect(
       await setItemOutcome({ itemId: item.id, outcome: "won", decidedAt }, memoryCookieStore()),
     ).toEqual({ ok: false, reason: "forbidden" });
+  });
+});
+
+/**
+ * The plan's cap on open Tenders, at the two points that can cross it (ADR-0040).
+ *
+ * Both are *additions*, and that is the only thing the cap has an opinion about:
+ * creating a Tender, and clearing the Outcome that was keeping a decided one closed.
+ * Everything else here — recording an Outcome, editing a Tender the org already holds,
+ * reading any of them — stays available however far over the line the organisation is,
+ * because a cap refuses the next act and never takes anything away.
+ *
+ * Staged against a real plan row and the real count, rather than against a stub: the
+ * arithmetic is checked next door in `plan.test.ts`, so what is worth the database here
+ * is the half that cannot be checked anywhere else — that "open" means to the cap
+ * exactly what it means to the Tender list, derived from the Items and stored nowhere.
+ */
+describe("the plan's cap on open Tenders", () => {
+  const decidedAt = new Date("2026-09-10T04:00:00.000Z");
+
+  async function itemsOf(tenderId: string) {
+    const tender = await getTender(tenderId, await signedInAs(owner.email));
+
+    if (!tender) throw new Error("the Tender went missing");
+
+    return tender.items;
+  }
+
+  /** Back to uncapped, so nothing here reaches the rest of the file. */
+  afterEach(async () => {
+    await capOpenTendersAt(null);
+  });
+
+  it("lets the org open its one Tender and refuses the second", async () => {
+    await capOpenTendersAt(1);
+    await aTender();
+
+    const second = await createTender(tenderInput(), await signedInAs(owner.email));
+
+    expect(second).toEqual({ ok: false, reason: "plan_limit" });
+  });
+
+  it("writes no Tender when it refuses, so the reference counter does not move", async () => {
+    // The cap is asked before the insert rather than rolled back after it. A reference
+    // issued to a Tender that was never created is a gap in the org's own numbering, and
+    // the counter has no way back.
+    await capOpenTendersAt(1);
+    await aTender();
+
+    await createTender(tenderInput(), await signedInAs(owner.email));
+
+    const { count } = await service
+      .from("tenders")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", orgId);
+
+    expect(count).toBe(1);
+  });
+
+  it("lets the next one open once an Outcome has closed the last", async () => {
+    // The whole promise of a cap on *open* Tenders: the way back under the line is to
+    // finish the work, and it takes effect on the next act rather than on the next bill.
+    await capOpenTendersAt(1);
+
+    const first = await aTender();
+    const store = await signedInAs(owner.email);
+    const [item] = await itemsOf(first);
+
+    expect(await setItemOutcome({ itemId: item.id, outcome: "won", decidedAt }, store)).toEqual({
+      ok: true,
+    });
+
+    const second = await createTender(tenderInput(), store);
+
+    expect(second.ok).toBe(true);
+
+    if (second.ok) created.push(second.tenderId);
+  });
+
+  it("refuses to reopen a decided Tender while the org is at its cap", async () => {
+    // Taking the Outcome back off would make two Tenders open on a plan that allows one,
+    // so it is an addition and is refused as one — the cap would otherwise be a rule
+    // anybody could step around by deciding a Tender and undeciding it.
+    await capOpenTendersAt(1);
+
+    const first = await aTender();
+    const store = await signedInAs(owner.email);
+    const [item] = await itemsOf(first);
+
+    await setItemOutcome({ itemId: item.id, outcome: "won", decidedAt }, store);
+
+    const second = await createTender(tenderInput(), store);
+
+    if (!second.ok) throw new Error(second.reason);
+    created.push(second.tenderId);
+
+    expect(
+      await setItemOutcome({ itemId: item.id, outcome: null, decidedAt }, store),
+    ).toEqual({ ok: false, reason: "plan_limit" });
+
+    // And the Outcome is still there. A refusal changes nothing.
+    expect((await itemsOf(first))[0].outcome).toBe("won");
+  });
+
+  it("still lets an Outcome be corrected on a Tender that is already open", async () => {
+    // Clearing an Item on a Tender with another Item still undecided adds nothing: the
+    // Tender was open before and is open after, and it is already counted. An org sitting
+    // on its cap has to stay able to fix a mistake it made on the work it is doing.
+    await capOpenTendersAt(1);
+
+    const tenderId = await aTender({
+      items: [
+        { productName: "Nitrile gloves", description: null, quantity: 500, unit: "box of 50" },
+        { productName: "PICC catheter 4Fr", description: null, quantity: 40, unit: "piece" },
+      ],
+    });
+    const store = await signedInAs(owner.email);
+    const [gloves] = await itemsOf(tenderId);
+
+    await setItemOutcome({ itemId: gloves.id, outcome: "won", decidedAt }, store);
+
+    expect(
+      await setItemOutcome({ itemId: gloves.id, outcome: null, decidedAt }, store),
+    ).toEqual({ ok: true });
+  });
+
+  it("refuses nothing at all on a plan with no cap", async () => {
+    // Null is how the row says uncapped, and there is no other way to say it. Three
+    // Tenders because two could be a cap of two.
+    const store = await signedInAs(owner.email);
+
+    for (let i = 0; i < 3; i += 1) {
+      const result = await createTender(tenderInput(), store);
+
+      expect(result.ok).toBe(true);
+
+      if (result.ok) created.push(result.tenderId);
+    }
   });
 });

@@ -1,9 +1,14 @@
 import "server-only";
 
-import { listQuotePhotosByQuote, type QuotePhoto } from "@/lib/images/quote-photos";
+import {
+  countQuotePhotosOnItem,
+  listQuotePhotosByQuote,
+  type QuotePhoto,
+} from "@/lib/images/quote-photos";
 import { listReferenceImages, type ReferenceImage } from "@/lib/images/reference-images";
 import { listMembers, type Member } from "@/lib/org/members";
 import { getOrgSettings } from "@/lib/org/org";
+import { remainingUnderCap } from "@/lib/plan/plan";
 import type { SessionCookieStore } from "@/lib/supabase/session-client";
 import { ownsTender, yourQuotes } from "@/lib/tenders/viewer";
 
@@ -105,6 +110,28 @@ export type ItemSourcingScreenData = {
    * every member is already an Assignee, and this is an org nobody asked about.
    */
   members: Member[] | null;
+  /**
+   * How many more Quote Photos this Item may carry, or null on a plan that caps none.
+   *
+   * **A courtesy, not a gate.** `signQuotePhotoUploads` is the gate and stays exactly as
+   * it is; this exists so the two pickers on this screen can refuse at the *pick*, which
+   * is the only moment a refusal is still actionable. A Quote Photo is signed after the
+   * Quote row is written, so a `plan_limit` raised by the server lands on a form whose
+   * only offer is a retry — and a retry of the same batch against the same standing cap
+   * is refused every time, forever. `too_many` was moved to the picker for that exact
+   * reason; this is the same move for the same failure.
+   *
+   * **Counted across every Quote on the Item, including ones this reader cannot see.**
+   * The cap is per Item (ADR-0040), and a non-Owner is handed only their own Quotes
+   * (ADR-0020) — so deriving it from `photos` above would report an allowance larger than
+   * the one that exists, and invite them into the refusal this is here to prevent. A
+   * count is not a price: how many pictures an Item holds says nothing about who quoted
+   * what.
+   *
+   * **Zero when the count could not be read.** Every plan check fails closed, and an
+   * allowance that failed open would be a picker promising room the server will refuse.
+   */
+  photoAllowance: number | null;
 };
 
 /**
@@ -177,7 +204,7 @@ export async function loadItemSourcingScreen(
   },
   store: SessionCookieStore,
 ): Promise<ItemSourcingScreenData> {
-  const [everyQuote, sourcing, referenceImages, settings, members, selected] =
+  const [everyQuote, sourcing, referenceImages, settings, members, selected, photoCount] =
     await Promise.all([
       listQuotes(tenderItemId, store),
       listItemSourcing(tenderId, store),
@@ -187,6 +214,10 @@ export async function loadItemSourcingScreen(
       // when it is not there is no round trip to start.
       withMembers ? listMembers(store) : null,
       selectedQuoteId(tenderItemId, store),
+      // A seventh member of the batch rather than a second stage, because it depends on
+      // nothing that comes back: the Item's id is the argument this function was called
+      // with. It is a `head: true` count, so it costs a round trip and carries no rows.
+      countQuotePhotosOnItem(tenderItemId, store),
     ]);
 
   // Fail-closed, and `ownsTender` is what makes it so: a Tender that could not be read is
@@ -217,5 +248,22 @@ export async function loadItemSourcingScreen(
       selected !== null && quotes.some((quote) => quote.id === selected)
         ? selected
         : null,
+    photoAllowance: photoAllowanceOf(settings.plan.photosPerItemCap, photoCount),
   };
+}
+
+/**
+ * What is left of the Item's photo allowance, given a count that may not have been read.
+ *
+ * Two answers and they fall in opposite directions, which is why this is a named unit
+ * rather than a ternary in the object above. **A plan with no cap is uncapped whatever
+ * the count did** — there is no room to have run out of, and returning zero there would
+ * withhold a picker from an organisation that bought no limit. **A count that could not
+ * be read leaves no room**, because every plan check fails closed (ADR-0040) and an
+ * allowance that failed open is a picker promising room the server is about to refuse.
+ */
+function photoAllowanceOf(cap: number | null, count: number | null): number | null {
+  if (cap === null) return null;
+
+  return count === null ? 0 : remainingUnderCap(cap, count);
 }

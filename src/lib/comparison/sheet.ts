@@ -9,6 +9,7 @@ import {
   type ItemSourcing,
   type Quote,
 } from "@/lib/quotes/quotes";
+import { getOrgSettings } from "@/lib/org/org";
 import {
   createSessionClient,
   type SessionCookieStore,
@@ -88,10 +89,19 @@ export type SelectionResult = { ok: true } | { ok: false; reason: SelectionProbl
  *
  * There is no `failed` here, unlike the selection's list: a write that changes no row is
  * an Item this caller cannot see, which is `not_found` and is the answer to give.
+ *
+ * `not_on_plan` is the odd one of the three, and it is not an error: nothing was typed
+ * wrongly and nothing is missing. It is the organisation's plan saying that cost, price
+ * and Margin are not part of what it bought (#179, ADR-0040). An Owner on such a plan is
+ * never handed these fields to type into — `loadTenderScreen` subtracts the figures and
+ * the sheet draws no pricing at all — so reaching this refusal means a server action was
+ * posted to directly, which is a public HTTP endpoint and therefore has to answer for
+ * itself rather than trust the screen that usually calls it.
  */
 export const pricingProblems = [
   "forbidden",
   "not_found",
+  "not_on_plan",
   "invalid_amount",
 ] as const;
 
@@ -291,6 +301,22 @@ export async function setSellingPrice(
  *
  * There is no Assignee check, for the reason `selectQuote` gives — the price we bid is
  * not one person's private act, and everyone on the Tender sees cost and Margin alike.
+ *
+ * **The plan is asked after the caller is known and before anything is written.** After,
+ * because a signed-out request has no organisation to have a plan, and answering it with
+ * anything but `forbidden` would be telling somebody who is not here what this
+ * organisation bought. Before the write, because the whole of what the money layer means
+ * — and after `isMoney`, which each caller applies to its own field before it gets here,
+ * so a malformed figure is still reported as malformed. That order is arguable and is the
+ * cheaper of the two to be wrong about: `isMoney` costs no round trip, and a plan read
+ * spent on a figure that was never going to be written is a read spent for nothing
+ * is that these two columns are not this plan's to set — and a refusal that arrived after
+ * the update would be a Landed Cost stored on a Tender whose sheet will never draw it.
+ *
+ * Selecting a Quote is deliberately *not* gated the same way. The free tier keeps the
+ * entire sourcing mechanism — Quotes ranked, converted into the Reporting Currency,
+ * selected, ruled out — and loses only what we pay and what we charge. Deciding which
+ * supplier wins is the sourcing, not the money.
  */
 async function writePricing(
   tenderItemId: string,
@@ -300,6 +326,10 @@ async function writePricing(
   const caller = await currentUser(store);
 
   if (!caller) return { ok: false, reason: "forbidden" };
+
+  const { plan } = await getOrgSettings(store);
+
+  if (!plan.moneyLayer) return { ok: false, reason: "not_on_plan" };
 
   const supabase = createSessionClient(store);
   const { data, error } = await supabase

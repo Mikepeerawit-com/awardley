@@ -787,6 +787,76 @@ describe("fx_rates", () => {
   });
 });
 
+describe("plans", () => {
+  // Reference data with no owner, in exactly the posture `fx_rates` has above, and for a
+  // sharper reason: a plan is what caps this organisation, so a plan a member could edit
+  // is a cap a member could lift. Every signed-in member reads them — their own screens
+  // are shaped by one — and the only writer is the service role, which is what a Stripe
+  // webhook (#180) will hold.
+  //
+  // The seeded rows are read and never written here: `free` and `paid` are shared by
+  // every suite in the run, and a write that succeeded when it should not have would be
+  // the kind of failure that shows up in somebody else's file.
+  it("is readable by any member", async () => {
+    const client = await signedInAs(members.a.email);
+
+    const { data, error } = await client
+      .from("plans")
+      .select("id, open_tender_cap, money_layer")
+      .eq("id", "free");
+
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+  });
+
+  it("cannot have a new tier conjured from the browser's key", async () => {
+    const client = await signedInAs(members.a.email);
+
+    const { error } = await client
+      .from("plans")
+      .insert({ id: `conjured-${run}`, open_tender_cap: 999, money_layer: true });
+
+    expect(error).not.toBeNull();
+
+    const { data } = await service.from("plans").select("id").eq("id", `conjured-${run}`);
+
+    expect(data).toEqual([]);
+  });
+
+  it("cannot have a cap lifted by the member it caps", async () => {
+    const client = await signedInAs(members.a.email);
+
+    const { error } = await client
+      .from("plans")
+      .update({ open_tender_cap: null, membership_cap: null })
+      .eq("id", "free");
+
+    // The same two acceptable answers `fx_rates` has: refused outright by the grant, or
+    // silently matching no updatable row. Either leaves the tier alone, which is the part
+    // that matters — so the row is read back regardless.
+    expect(error === null || error.code === "42501").toBe(true);
+
+    const { data } = await service
+      .from("plans")
+      .select("open_tender_cap, membership_cap")
+      .eq("id", "free")
+      .single();
+
+    expect(data?.open_tender_cap).not.toBeNull();
+    expect(data?.membership_cap).not.toBeNull();
+  });
+
+  it("shows a disabled user no plans either", async () => {
+    // The policy asks `current_org_id() is not null`, which a Disabled Membership does
+    // not answer — so somebody who has been let go cannot read what their old org is on.
+    const client = await signedInAs(members.disabled.email);
+
+    const { data } = await client.from("plans").select("id");
+
+    expect(data).toEqual([]);
+  });
+});
+
 /**
  * The one value in this schema the org boundary is not enough for.
  *

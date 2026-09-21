@@ -521,3 +521,21 @@ mode is worth its cost only to the people who actually have a second thing to sw
 It is a column on the person rather than a claim or a cookie, and it selects among
 Memberships actually held rather than granting anything itself (ADR-0037).
 _Avoid_: current org, selected org, workspace, tenant
+
+**Plan**:
+What an organisation may do, as a row it points at: how many open Tenders it may hold
+at once, how many live Memberships, how many photos per Tender Item, and whether the
+money layer is drawn at all. The values are data rather than code — changing what the
+free tier allows is an update, not a deploy — and what is code is the mechanism: **a cap
+refuses the next act and never destroys data**. An organisation over a cap, lapsed from
+paid to free with six open Tenders, keeps all six readable and loses only the ability to
+open a seventh until one is decided. Counts are derived from the rows each time — open
+means no Outcome recorded, live means not Disabled — and a Disabled colleague occupies
+nothing (ADR-0040).
+
+The money layer is the ADR-0020 seam drawn per plan rather than per role: without it the
+Owner keeps the ranked Quotes, the conversion, selection and ruling out, and loses Landed
+Cost, Selling price, Margin, Coverage and the FX Buffer setting. Prices, tier names and
+trial terms are not here and not in the repo; they are Stripe's, which is what moves an
+organisation between plans.
+_Avoid_: tier, subscription, seat, quota, licence

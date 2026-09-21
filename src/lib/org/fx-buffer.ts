@@ -1,6 +1,7 @@
 import "server-only";
 
 import { currentUser } from "@/lib/auth/session";
+import { getOrgSettings } from "@/lib/org/org";
 import { createServiceClient } from "@/lib/supabase/service-client";
 import type { SessionCookieStore } from "@/lib/supabase/session-client";
 
@@ -60,8 +61,16 @@ const maxPercent = 10;
  */
 const percentDecimals = 2;
 
+/**
+ * `not_on_plan` sits beside `not_admin` because it is the same kind of sentence: neither
+ * is a complaint about the figure, and both are about whether this screen is this
+ * reader's to use at all. The difference is who they are addressed to — one says ask an
+ * Administrator, the other says the organisation did not buy the money layer (#179), and
+ * an Administrator can be refused by the second while passing the first.
+ */
 export const fxBufferRefusals = [
   "not_admin",
+  "not_on_plan",
   "not_a_percentage",
   "out_of_range",
   "too_precise",
@@ -157,6 +166,17 @@ export async function setFxBuffer(
   const caller = await currentUser(store);
 
   if (!caller?.isOrgAdmin) return { ok: false, reason: "not_admin" };
+
+  // After the admin check and before the figure is even parsed. After, because an
+  // organisation's plan is not something to report to somebody who is not an
+  // Administrator of it; before the parse, because telling an admin on the free tier that
+  // their 2.5 has too many decimal places would be answering a question they did not ask
+  // on a screen they cannot use. The buffer is the FX side of the money layer — it exists
+  // to price a foreign Quote into a Landed Cost — so a plan without the money has no use
+  // for it and no screen showing it.
+  const { plan } = await getOrgSettings(store);
+
+  if (!plan.moneyLayer) return { ok: false, reason: "not_on_plan" };
 
   const parsed = parseBufferPercent(entered);
 

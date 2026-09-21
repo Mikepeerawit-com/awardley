@@ -66,7 +66,7 @@ const { data: users, error: usersError } = await db
   .is("disabled_at", null);
 
 if (usersError) die(`could not read users: ${usersError.message}`);
-if (!users?.length) die("no users yet — sign up through /setup first.");
+if (!users?.length) die("no users yet — sign up through /signup first.");
 
 let user;
 

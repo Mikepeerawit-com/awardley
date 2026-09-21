@@ -20,7 +20,10 @@ export function AuthScreen({
 }: {
   title: string;
   description?: string;
-  /** Optional: a signed-out screen can be a notice with nothing to fill in, as `/setup` is once it has run. */
+  /**
+   * Optional: a signed-out screen can be a notice with nothing to fill in, as `/signup`
+   * is on a deployment with no `SIGNUP_CODE`.
+   */
   children?: ReactNode;
 }) {
   return (

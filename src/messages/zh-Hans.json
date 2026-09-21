@@ -55,31 +55,36 @@
       "no_session": "该邀请链接已过期或已被使用。请联系组织管理员重新发送。"
     }
   },
-  "setup": {
-    "title": "创建首位组织管理员",
-    "description": "此应用尚无任何账号。您在此创建的账号可以邀请其他所有人，并且只能创建一次。",
+  "signup": {
+    "title": "创建组织",
+    "description": "您的组织从零开始，由您担任组织管理员。未经您邀请，任何人都无法加入。",
     "name": "您的姓名",
     "email": "邮箱",
     "password": "密码",
     "confirmation": "重复密码",
-    "secret": "初始化密钥",
-    "secretHint": "此部署所配置的 SETUP_SECRET。",
     "requirement": "至少 8 个字符。",
-    "submit": "创建账号",
+    "organisation": "组织名称",
+    "reportingCurrency": "报表币种",
+    "reportingCurrencyPlaceholder": "请选择币种",
+    "reportingCurrencyHint": "比价和汇总金额均以此币种显示。供应商仍可用任意币种报价。",
+    "code": "邀请码",
+    "codeHint": "见您收到的邀请。",
+    "submit": "创建组织",
     "submitting": "正在创建…",
     "closed": {
-      "title": "初始化已完成",
-      "description": "此应用已存在账号，因此无法再次创建首位组织管理员。请登录，或联系组织管理员邀请您。",
+      "title": "注册仅限邀请",
+      "description": "此应用目前不接受新组织注册。若已有账号请登录，或联系组织管理员邀请您。",
       "signIn": "前往登录页面"
     },
     "error": {
-      "closed": "此应用已存在账号。初始化只能执行一次，且已经执行过。",
-      "wrong_secret": "初始化密钥不正确。",
-      "no_org": "数据库中不存在组织。请先应用数据库迁移。",
-      "create_failed": "账号创建失败。系统未保存任何内容，请查看服务器日志后重试。",
-      "incomplete": "请填写所有字段，包括初始化密钥。",
+      "closed": "此应用目前不接受新组织注册。",
+      "wrong_code": "邀请码不正确。",
+      "email_taken": "该邮箱已有账号。请直接登录，或改用其他邮箱。",
+      "create_failed": "组织创建失败。系统未保存任何内容，请重试或查看服务器日志。",
+      "incomplete": "请填写所有字段，包括邀请码。",
       "too_short": "请至少使用 8 个字符。",
-      "mismatch": "两次输入的密码不一致。"
+      "mismatch": "两次输入的密码不一致。",
+      "unknown_currency": "该币种没有公布的参考汇率。请从列表中选择。"
     }
   },
   "chooseLanguage": {

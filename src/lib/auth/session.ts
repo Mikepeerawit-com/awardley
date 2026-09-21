@@ -172,7 +172,7 @@ export const currentUser = cache(async function currentUser(
   // The shape is left to be inferred from the select string rather than written out, for
   // the reason `members.ts` gives at the same point: naming it means writing
   // `is_org_admin` followed by a colon, and `conventions.test.ts` allows exactly one file
-  // in the repo to do that — the one where an Org Admin is minted (ADR-0017).
+  // in the repo to do that — the one where an Org Admin is minted (ADR-0039).
   const [membership] = profile.memberships;
 
   if (!membership) return null;

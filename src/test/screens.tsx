@@ -12,7 +12,7 @@ import { AuthScreen } from "@/components/auth/auth-screen";
 import { ChooseLanguageOptions } from "@/components/auth/choose-language-options";
 import { LoginForm } from "@/components/auth/login-form";
 import { SetPasswordForm } from "@/components/auth/set-password-form";
-import { SetupForm } from "@/components/auth/setup-form";
+import { SignupForm } from "@/components/auth/signup-form";
 import { WorkingSheet } from "@/components/comparison/working-sheet";
 import { ImageCountBadge } from "@/components/images/image-count-badge";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -869,8 +869,8 @@ export function screens(m: Messages) {
  * **All four, since #135.** Only the sign-in screen was ever measured, hand-composed twice
  * over in two suites, and the reason given was that `LoginForm` is the busiest of the
  * three forms. That is true of a *width* — the busiest column is the one that pushes — and
- * it is not true of a colour: `/setup` draws a shared-secret field with a hint under it
- * that no other screen has, and `/choose-language` draws no field at all and two full-width
+ * it is not true of a colour: `/signup` draws a currency picker and hinted fields that no
+ * other screen has, and `/choose-language` draws no field at all and two full-width
  * buttons instead. A palette that failed on either would have failed unwatched.
  *
  * Each is a fragment rather than a whole page, for the reason the record above gives:
@@ -900,12 +900,13 @@ export function signedOutScreens(m: Messages) {
         </AuthScreen>
       ),
     },
-    // The guarded screen the very first Org Admin arrives through (ADR-0017). The longest
-    // signed-out form there is, and the only one carrying a hint under a field.
-    "the first-admin setup screen": {
+    // The screen an organisation is created through (ADR-0039). The longest signed-out
+    // form there is, the only one with a select on it, and the only one carrying hints
+    // under fields.
+    "the sign-up screen": {
       body: (
-        <AuthScreen title={m.setup.title} description={m.setup.description}>
-          <SetupForm />
+        <AuthScreen title={m.signup.title} description={m.signup.description}>
+          <SignupForm />
         </AuthScreen>
       ),
     },

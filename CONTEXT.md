@@ -303,10 +303,9 @@ as surely as one that moved, and re-deriving the old rows is refused by ADR-0018
 many words (ADR-0036). Every figure under one Tender is therefore in one currency, which
 is what lets a Working Sheet rank a column at all; money is never summed across two of
 them, and a figure spanning Tenders is broken out per currency rather than added up.
-_Not built yet_: an Org Admin cannot set it. The currency is held on the organisation and
-stamped onto each Tender as written above, and every screen reads it — but the only way to
-change it is SQL, because the Settings picker is #178's. A new organisation gets THB by
-the column's default, which is the guess this entry exists to refuse.
+_Not built yet_: an Org Admin cannot change it. Signing Up asks it, so a new organisation
+reports in what it answered rather than in the column's THB default (ADR-0039) — but once
+answered, the only way to change it is SQL, because the Settings picker is not built.
 _Avoid_: base currency, home currency, display currency
 
 **FX Buffer**:
@@ -457,9 +456,32 @@ Auth's own mailer rather than the app's Email transport — the one email that d
 since ADR-0034 made Email the floor for Reminders, the Digest and Outcome News.
 Scanning a WeCom QR code never creates an account. Signing up creates a new, empty
 organisation and never joins an existing one — so no stranger can put themselves inside
-another org's prices (ADR-0017). An Invite grants Membership only; becoming an Org Admin
+another org's prices (ADR-0017, ADR-0039). An Invite grants Membership only; becoming an Org Admin
 is a separate deliberate act by an existing one.
 _Avoid_: signup, registration, onboarding link, join request
+
+**Signing Up**:
+How an organisation comes to exist: one person fills in one form, and a new, empty
+organisation appears with them as its first Org Admin. It never joins an existing one —
+there is no organisation to choose on the form and no lookup by name — because inside an
+org a member reads every price and every Margin, so a self-chosen "join" would hand over
+the business. Bringing somebody into an organisation that already exists is an Invite's
+job and nobody else's (ADR-0039). During the closed beta the form also asks for the
+**Beta Code**.
+_Label_: en "Create your organisation" · zh 创建组织.
+_Avoid_: registration, onboarding, join, setup — the last was the guarded screen this
+replaced
+
+**Beta Code**:
+The one string the operator hands an invited client during the closed beta, and the whole
+of what makes Signing Up invitation-only. Held on the deployment rather than in the
+database, and unset means nobody can sign up. It is the guest list, not the org boundary:
+somebody holding it gets an empty organisation of their own and nothing of anybody else's
+(ADR-0039). Not an Invite, which is an Org Admin's act and opens an organisation that
+already exists. Open self-serve signup, when it comes, is this entry leaving.
+_Label_: en "Invitation code" · zh 邀请码 — the words the client's email used, and not a
+domain term.
+_Avoid_: setup secret, access code, invite code, promo code
 
 **Connected WeCom**:
 A user who has linked their WeCom identity to their existing account, and may thereafter

@@ -1,6 +1,8 @@
 # The first Org Admin arrives through a guarded setup screen
 
-**Status:** accepted. Qualifies one clause of [ADR-0006](0006-email-password-floor-wecom-convenience.md); the rest of it, and all of [ADR-0008](0008-wecom-qr-login-deferred-from-v1.md), stand unchanged.
+> **Superseded by [ADR-0039](0039-signing-up-creates-a-new-empty-organisation-behind-a-beta-code.md) (#178).** The guarded screen and `SETUP_SECRET` are gone: an organisation and its first Org Admin now come from `/signup`, which creates the organisation rather than reading a seeded one, and the seed row has left the migrations. The 31 August amendment below is what #178 built, with one clause corrected — `enable_signup` stays `false`, because the app creates the account through the service role and an account the platform made would hold no Membership. Everything the amendment says about joining still holds, and the two guards below are the posture `/signup`'s Beta Code inherited.
+
+**Status:** superseded by ADR-0039 (#178) — see the banner above. Qualified one clause of [ADR-0006](0006-email-password-floor-wecom-convenience.md); the rest of it, and all of [ADR-0008](0008-wecom-qr-login-deferred-from-v1.md), stand unchanged.
 
 ADR-0006 decided that **accounts are created by invitation, never otherwise**, and `supabase/config.toml` puts `enable_signup = false` "at the platform level rather than merely unlinked from the UI". Both still hold. But an Invite can only be sent by an Org Admin, so the _first_ account cannot invite itself into existence, and that gap has to be closed by something.
 

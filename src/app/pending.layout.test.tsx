@@ -108,7 +108,7 @@ vi.mock("@/app/actions/auth", () => ({
   setPasswordAction: () => new Promise(() => {}),
   chooseLanguageAction: () => new Promise(() => {}),
 }));
-vi.mock("@/app/actions/setup", () => ({ setUpAction: () => new Promise(() => {}) }));
+vi.mock("@/app/actions/signup", () => ({ signUpAction: () => new Promise(() => {}) }));
 vi.mock("@/app/actions/admin", () => ({
   inviteAction: () => new Promise(() => {}),
   setWecomUseridAction: () => new Promise(() => {}),

@@ -24,10 +24,12 @@ cp .env.example .env.local # fill from `supabase status -o env`
 npm run dev
 ```
 
-Then set `SETUP_SECRET` in `.env.local` to anything you like and open
-<http://127.0.0.1:3000/setup> to create your local Org Admin. It is the same screen a real
-deployment uses (§6), and it reopens after every `npm run db:reset` — which wipes the
-accounts along with everything else.
+Then set `SIGNUP_CODE` in `.env.local` to anything you like and open
+<http://localhost:3000/signup> to create your local organisation and its Org Admin. The
+host has to be `localhost` rather than `127.0.0.1` — the dev server answers 403 on its own
+chunks otherwise and nothing hydrates. It is the same screen a real customer uses (§6),
+and it works again after every `npm run db:reset` — which wipes the organisations along
+with everything else.
 
 | Script              | What it does                                             |
 | ------------------- | -------------------------------------------------------- |
@@ -173,7 +175,7 @@ keeps them correct if a key is ever rotated. Hand-copied values are how a deploy
 ends up pointed at the local stack in `.env.local`.
 
 Two variables the integration does not supply: `CRON_SECRET`, which Vercel sets for the
-scheduled job, and **`SETUP_SECRET`**, which you set by hand and which §6 uses once. Both
+scheduled job, and **`SIGNUP_CODE`**, which you set by hand and which §6 explains. Both
 are secrets in the ordinary sense — long, random, and not reused.
 
 A third, which is not a secret at all: **`APP_ORIGIN`**, the app's own public origin —
@@ -308,26 +310,21 @@ a password from **Authentication → Users** in the Supabase dashboard. That is 
 the email surface at exactly one template, which is what makes an SMTP problem obvious
 instead of a category of intermittent bug.
 
-### 6. The first Org Admin
+### 6. The first Org Admin of an organisation
 
-Accounts exist only by invitation and `enable_signup` is off at the platform level, so
-the first account cannot invite itself into existence. **`/setup` is where it comes from**
-— once per database, and never again
-([ADR-0017](docs/adr/0017-the-first-org-admin-arrives-through-a-guarded-setup-screen.md)).
+**An organisation comes into existence at `/signup`** (ADR-0039), and the person who signs
+up is its first Org Admin. During the closed beta the form also asks for a **Beta Code**:
+set `SIGNUP_CODE` on the deployment (§1), redeploy so the build actually has it, and hand
+that one string to each invited client. Unset means the screen is **closed**, not "open
+with no code", which is the only safe direction for that mistake to fail in.
 
-1. Set `SETUP_SECRET` on the deployment (§1) and redeploy, so the build actually has it.
-2. Open `/setup`, fill in your name, email and password, and paste the secret.
+The platform's own `enable_signup` stays off regardless, because the app creates the
+account itself through the service role — an account Supabase created would hold no
+Membership and could read nothing.
 
-That is the whole procedure. It signs you in and lands on the language choice, exactly as
-an accepted invitation does. From here everyone else arrives by invitation from inside the
-app, at **Settings → Organisation → People** (`/settings/people`).
-
-The screen guards itself twice: an unset `SETUP_SECRET` means **closed**, not "open with
-no password", and any row at all in `users` closes it permanently. So **create
-production's Org Admin through the deployed screen rather than by hand** — an account
-created in the dashboard consumes the second guard forever, and the path then only ever
-runs locally. Locally it reopens after every `npm run db:reset`, which is the point: the
-same screen, run the same way, on a database that resets often.
+Signing up signs you in and lands on the language choice, exactly as an accepted
+invitation does. From here everyone else arrives by invitation from inside the app, at
+**Settings → Organisation → People** (`/settings/people`).
 
 `is_org_admin` gates inviting and nothing else — it grants no extra visibility, and it is
 not writable through the app by anyone, including an Org Admin. It is a column of a
@@ -343,9 +340,6 @@ where user_id = (select id from users where email = '<email>');
 
 Everybody holds one Membership today (ADR-0038). If somebody ever holds several, add
 `and org_id = '<org>'` — admin of one organisation says nothing about any other.
-
-If the database somehow has no `orgs` row, `/setup` says so rather than guessing — the row
-is seeded by the schema migration, so its absence means §2 has not run.
 
 ### 7. When somebody leaves
 

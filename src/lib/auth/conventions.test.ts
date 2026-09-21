@@ -88,8 +88,11 @@ describe("the WeCom webview", () => {
 
 describe("the way in", () => {
   it("refuses self-signup at the platform, not just in the UI", async () => {
-    // Accounts exist only by invitation. An unlinked signup form is not the gate — the
-    // endpoint is public whether or not anything renders a link to it.
+    // Accounts exist only by invitation or by signing up *in the app*, which creates the
+    // account through the service role. The platform's own signup endpoint stays shut
+    // because an account it created would hold no Membership and read nothing — and an
+    // unlinked form is not the gate, since the endpoint is public whether or not anything
+    // renders a link to it.
     const response = await fetch(
       `${requiredEnv("NEXT_PUBLIC_SUPABASE_URL")}/auth/v1/signup`,
       {
@@ -112,13 +115,14 @@ describe("the way in", () => {
   });
 
   it("mints an Org Admin in exactly one place", () => {
-    // ADR-0017's whole claim, and the one part of it no runtime test can reach: a test
-    // proves what the code it calls does, not that a *second* writer has appeared
-    // somewhere else. `/setup` earns the right to set this column by being unreachable
-    // twice — a secret, and a `users` table that is empty exactly once per database.
-    // Neither guard travels with the column. Anything else that learns to write it is
-    // promotion with no gate at all, and it would work perfectly in every environment a
-    // developer will try.
+    // ADR-0039's whole claim, and ADR-0017's before it, and the one part of it no
+    // runtime test can reach: a test proves what the code it calls does, not that a
+    // *second* writer has appeared somewhere else. `/signup` earns the right to set this
+    // column by being the one place an organisation is created, behind a code the
+    // deployment holds, and by only ever writing it on a Membership of the organisation
+    // it just created. Neither of those travels with the column. Anything else that
+    // learns to write it is promotion with no gate at all, and it would work perfectly in
+    // every environment a developer will try.
     //
     // Promoting a second admin stays an `update` from the Supabase dashboard (README §6),
     // which is why this is a rule about the codebase rather than about the database.
@@ -128,16 +132,16 @@ describe("the way in", () => {
     // session, the People screen, the last-admin count — and not one of those reads trips
     // this, because reading a column is `select("is_org_admin")` and setting one is
     // `is_org_admin:`. The two are told apart by the colon, and the colon is what a write
-    // has. `setup.ts` writes it on the Membership it creates, once, and is still the only
-    // file that does. An Invite writes a Membership without the column at all, which is
-    // how "an Invite grants Membership only" is spelled in code.
+    // has. `signup.ts` writes it on the Membership it creates, once, and is still the
+    // only file that does. An Invite writes a Membership without the column at all, which
+    // is how "an Invite grants Membership only" is spelled in code.
     //
     // For one release a sibling rule here forbade writing `memberships` from the app at
     // all, because a trigger was the sole writer and a second one would have raced it. The
     // contract migration (#206) dropped the trigger, and the rule went with it: the three
     // writers now write the shape they mean.
     expect(offendingFiles(/is_org_admin\s*:/)).toEqual([
-      join(sourceRoot, "lib", "auth", "setup.ts"),
+      join(sourceRoot, "lib", "auth", "signup.ts"),
     ]);
   });
 });

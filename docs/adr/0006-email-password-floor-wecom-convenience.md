@@ -1,6 +1,8 @@
 # Email/password is the floor; WeCom QR login is a convenience layer
 
 > **Superseded in part by [ADR-0008](0008-wecom-qr-login-deferred-from-v1.md) (ticket 11).** QR login is **deferred out of v1** — email/password ships alone. Everything else here stands: invite-only accounts, link-while-signed-in, no prefill, `is_org_admin`, soft-disable, 30-day sessions, Resend. `users.wecom_userid` also stays, but for reminder targeting rather than login.
+>
+> **Qualified by [ADR-0037](0037-the-active-org-is-a-row-and-a-membership-is-what-makes-it-true.md) (#177, #206).** `is_org_admin` is still a boolean and still gates inviting, but it is a column of a **Membership** rather than of the `users` row, and "true for exactly one row" became "at least one per organisation" (ADR-0017's amendment). Disabling likewise ends a Membership; `users.disabled_at` survives as the account-level switch.
 
 `buildspec_1` planned WeCom login as a custom OAuth 2.0 provider and claimed it would double as the org-membership check. Tickets 02, 03 and 06 dismantled the mechanism but not the goal. WeCom **web OAuth** — both the in-client `oauth2/authorize` flow and the QR/SSO flow — binds `redirect_uri` to the app's **Trusted domain name**, which the WeCom console rejects unless the domain's ICP **filing entity** matches the company entity. An ICP filing needs a mainland-registered entity *and* mainland-hosted servers, so a Thailand-registered company cannot obtain one without becoming a different company. Ticket 06 observed the rejection directly.
 

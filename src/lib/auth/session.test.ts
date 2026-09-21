@@ -30,13 +30,20 @@ async function createMember(
 
   const { error: profileError } = await service.from("users").insert({
     id: member.id,
-    org_id: orgId,
+    active_org_id: orgId,
     name: member.email,
     email: member.email,
-    disabled_at: disabledAt,
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: member.id,
+    org_id: orgId,
+    disabled_at: disabledAt,
+  });
+
+  if (membershipError) throw membershipError;
 }
 
 beforeAll(async () => {
@@ -153,9 +160,10 @@ describe("currentUser", () => {
     await expect(currentUser(store)).resolves.not.toBeNull();
 
     await service
-      .from("users")
+      .from("memberships")
       .update({ disabled_at: "2026-08-14T00:00:00.000Z" })
-      .eq("id", active.id);
+      .eq("user_id", active.id)
+      .eq("org_id", orgId);
 
     try {
       // RLS is doing this, not a session check: a disabled user reads nothing, their own
@@ -163,7 +171,11 @@ describe("currentUser", () => {
       // rather than whenever a 30-day cookie happens to expire.
       await expect(currentUser(store)).resolves.toBeNull();
     } finally {
-      await service.from("users").update({ disabled_at: null }).eq("id", active.id);
+      await service
+        .from("memberships")
+        .update({ disabled_at: null })
+        .eq("user_id", active.id)
+        .eq("org_id", orgId);
     }
   });
 

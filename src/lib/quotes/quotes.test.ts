@@ -113,15 +113,15 @@ async function createMember(
 
   const { error: profileError } = await service
     .from("users")
-    .insert({
-      id: who.id,
-      org_id: org,
-      name: who.email,
-      email: who.email,
-      is_org_admin: isOrgAdmin,
-    });
+    .insert({ id: who.id, active_org_id: org, name: who.email, email: who.email });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service
+    .from("memberships")
+    .insert({ user_id: who.id, org_id: org, is_org_admin: isOrgAdmin });
+
+  if (membershipError) throw membershipError;
 }
 
 /** A Tender with one Item, with `assignees` enrolled on it. */

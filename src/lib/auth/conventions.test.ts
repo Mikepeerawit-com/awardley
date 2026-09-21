@@ -111,28 +111,6 @@ describe("the way in", () => {
     });
   });
 
-  it("writes nothing into `memberships`", () => {
-    // The Membership table is read by the app and written by nobody in it, for exactly one
-    // release. `users.org_id`, `users.is_org_admin` and `users.disabled_at` are still the
-    // columns every write lands on — inviting somebody, seeding the first org, Disabling a
-    // colleague — and a trigger mirrors each of those into a Membership. A second writer
-    // here would not be an extra safeguard, it would be a race with that trigger over the
-    // same `(user_id, org_id)` row, and the loser is whichever one the statement order
-    // happened to put second.
-    //
-    // This is the half of ADR-0017's rule the old check could not have caught. That one
-    // reads the *column* name, which is why it survived `is_org_admin` gaining a second
-    // home: the name did not change. It says nothing about `insert into memberships (...)
-    // values (...)`, which mints an Org Admin without ever writing the two words
-    // `is_org_admin:` anywhere, and which is the shape the contract migration will make
-    // the only shape there is.
-    //
-    // `[^;]*` spans the query chain and cannot cross a statement, because a Supabase chain
-    // is one expression ending in a semicolon.
-    expect(offendingFiles(/from\("memberships"\)[^;]*\.(insert|upsert|update|delete)\(/))
-      .toEqual([]);
-  });
-
   it("mints an Org Admin in exactly one place", () => {
     // ADR-0017's whole claim, and the one part of it no runtime test can reach: a test
     // proves what the code it calls does, not that a *second* writer has appeared
@@ -146,13 +124,18 @@ describe("the way in", () => {
     // which is why this is a rule about the codebase rather than about the database.
     //
     // **The column has moved and the rule has not, which is the point of writing it about
-    // a name.** `is_org_admin` is read off `memberships` everywhere now — the session, the
-    // People screen, the last-admin count — and not one of those reads trips this, because
-    // reading a column is `select("is_org_admin")` and setting one is `is_org_admin:`. The
-    // two are told apart by the colon, and the colon is what a write has. `setup.ts` still
-    // writes the `users` column and a trigger still carries it across; when the contract
-    // migration takes that column away, the one file named here is the one file that has
-    // to change, and this assertion is what will say so.
+    // a name.** `is_org_admin` lives on `memberships` and is read off it everywhere — the
+    // session, the People screen, the last-admin count — and not one of those reads trips
+    // this, because reading a column is `select("is_org_admin")` and setting one is
+    // `is_org_admin:`. The two are told apart by the colon, and the colon is what a write
+    // has. `setup.ts` writes it on the Membership it creates, once, and is still the only
+    // file that does. An Invite writes a Membership without the column at all, which is
+    // how "an Invite grants Membership only" is spelled in code.
+    //
+    // For one release a sibling rule here forbade writing `memberships` from the app at
+    // all, because a trigger was the sole writer and a second one would have raced it. The
+    // contract migration (#206) dropped the trigger, and the rule went with it: the three
+    // writers now write the shape they mean.
     expect(offendingFiles(/is_org_admin\s*:/)).toEqual([
       join(sourceRoot, "lib", "auth", "setup.ts"),
     ]);

@@ -84,17 +84,30 @@ export async function signIn(
     return { ok: false, reason: "invalid" };
   }
 
-  // Supabase Auth knows nothing about `disabled_at`, so the credentials check passing
-  // is not the whole answer. This has to be asked with the service client: RLS hides a
-  // disabled user's profile row from them, so asking as them cannot distinguish
-  // "disabled" from "no such row".
+  // Supabase Auth knows nothing about Disabling, so the credentials check passing is not
+  // the whole answer. This has to be asked with the service client: RLS hides everything
+  // from somebody with no live Membership, their own profile row included, so asking as
+  // them cannot distinguish "disabled" from "no such row".
+  //
+  // Two things can have ended this person's access, and both are read. Disabling in the
+  // app ends a Membership, so somebody whose every Membership has ended is Disabled even
+  // though their account row says nothing about it. `users.disabled_at` is the account,
+  // switched off from the dashboard, and ends everything at once. Somebody holding a live
+  // Membership on an account that is not switched off is let through here: whether they
+  // then *see* anything is `currentUser`'s question, and a person holding two Memberships
+  // who has selected neither is not Disabled, they are undecided.
   const { data: profile } = await createServiceClient()
     .from("users")
-    .select("disabled_at")
+    .select("disabled_at, memberships(disabled_at)")
     .eq("id", data.user.id)
     .maybeSingle();
 
-  if (!profile || profile.disabled_at !== null) {
+  const holdsLiveMembership =
+    profile?.memberships.some(
+      (membership: { disabled_at: string | null }) => membership.disabled_at === null,
+    ) ?? false;
+
+  if (!profile || profile.disabled_at !== null || !holdsLiveMembership) {
     await supabase.auth.signOut();
     return { ok: false, reason: "disabled" };
   }

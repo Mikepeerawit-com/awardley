@@ -72,9 +72,11 @@ export async function listHeldOrgs(store: SessionCookieStore): Promise<HeldOrg[]
 /**
  * Look at a different organisation.
  *
- * The one writer of `users.active_org_id`, and the whole of what switching is: a column,
- * not a cookie and not a claim (ADR-0037), so the answer `current_org_id()` gives inside
- * every policy changes on the next statement rather than on the next token refresh.
+ * The one thing that *changes* `users.active_org_id` — `setup.ts` and `invite.ts` default
+ * it on the row they create, to the org of the person's first Membership, and nothing
+ * else touches it — and the whole of what switching is: a column, not a cookie and not a
+ * claim (ADR-0037), so the answer `current_org_id()` gives inside every policy changes on
+ * the next statement rather than on the next token refresh.
  *
  * **It refuses an org the caller holds no live Membership in, and that refusal is not
  * belt-and-braces.** `current_org_id()` already treats the column as a selector over

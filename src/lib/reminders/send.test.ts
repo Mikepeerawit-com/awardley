@@ -99,13 +99,20 @@ async function createMember(
 
   const { error: profileError } = await service.from("users").insert({
     id: who.id,
-    org_id: inOrg,
+    active_org_id: inOrg,
     name: who.email,
     email: who.email,
     wecom_userid: who.wecom,
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: who.id,
+    org_id: inOrg,
+  });
+
+  if (membershipError) throw membershipError;
 }
 
 type TenderShape = {
@@ -319,7 +326,7 @@ afterAll(async () => {
   await service.from("notifications").delete().eq("org_id", orgId);
   await service.from("tenders").delete().eq("org_id", orgId);
   await service.from("suppliers").delete().eq("org_id", orgId);
-  await service.from("users").delete().eq("org_id", orgId);
+  await service.from("users").delete().in("id", [owner.id, nok.id, anong.id]);
 
   for (const who of [owner, nok, anong]) await service.auth.admin.deleteUser(who.id);
 
@@ -772,16 +779,21 @@ describe("who a reminder @s", () => {
     const robot = recordingRobot();
 
     await service
-      .from("users")
+      .from("memberships")
       .update({ disabled_at: "2026-08-09T00:00:00Z" })
-      .eq("id", anong.id);
+      .eq("user_id", anong.id)
+      .eq("org_id", orgId);
 
     try {
       await sendDailyPosts(runInstant, { robot, email: recordingEmail() });
     } finally {
       // Restored here rather than in an `afterEach`: every other test in this file shares
       // these three members and expects all of them active.
-      await service.from("users").update({ disabled_at: null }).eq("id", anong.id);
+      await service
+        .from("memberships")
+        .update({ disabled_at: null })
+        .eq("user_id", anong.id)
+        .eq("org_id", orgId);
     }
 
     const message = mine(robot).find((sent) =>
@@ -1336,7 +1348,7 @@ describe("the daily Digest", () => {
     await service.from("group_robots").delete().eq("org_id", digestOrgId);
     await service.from("notifications").delete().eq("org_id", digestOrgId);
     await service.from("tenders").delete().eq("org_id", digestOrgId);
-    await service.from("users").delete().eq("org_id", digestOrgId);
+    await service.from("users").delete().eq("id", digestOwner.id);
     await service.auth.admin.deleteUser(digestOwner.id);
     await service.from("orgs").delete().eq("id", digestOrgId);
   });
@@ -1466,7 +1478,7 @@ describe("the daily Digest", () => {
     expect(robot.sent.filter((message) => message.url.endsWith("-quiet"))).toEqual([]);
 
     await service.from("group_robots").delete().eq("org_id", org.id);
-    await service.from("users").delete().eq("org_id", org.id);
+    await service.from("users").delete().eq("id", quietOwner.id);
     await service.auth.admin.deleteUser(quietOwner.id);
     await service.from("orgs").delete().eq("id", org.id);
   });
@@ -1612,15 +1624,19 @@ describe("email, the floor", () => {
     await service.from("users").update({ locale: "en" }).eq("id", mailOwner.id);
     await service.from("users").update({ locale: "zh-Hans" }).eq("id", somchai.id);
     await service
-      .from("users")
+      .from("memberships")
       .update({ disabled_at: "2026-08-01T00:00:00.000Z" })
-      .eq("id", revoked.id);
+      .eq("user_id", revoked.id)
+      .eq("org_id", mailOrgId);
   });
 
   afterAll(async () => {
     await service.from("notifications").delete().eq("org_id", mailOrgId);
     await service.from("tenders").delete().eq("org_id", mailOrgId);
-    await service.from("users").delete().eq("org_id", mailOrgId);
+    await service
+      .from("users")
+      .delete()
+      .in("id", [mailOwner.id, somchai.id, newcomer.id, revoked.id]);
 
     for (const member of [mailOwner, somchai, newcomer, revoked]) {
       if (member.id !== "") await service.auth.admin.deleteUser(member.id);

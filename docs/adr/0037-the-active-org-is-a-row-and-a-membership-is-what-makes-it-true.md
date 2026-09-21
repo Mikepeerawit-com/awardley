@@ -104,8 +104,10 @@ Fail closed, never arbitrary.
 ## What follows from it
 
 - **`users.active_org_id` is nullable, and null is not a fault.** Every row the backfill
-  touched has a value and every row the app writes gets one, but the function is correct
-  without it, so nothing has to defend the column's contents.
+  touched has a value and every row the app writes gets one — by trigger for one release,
+  and since the contract migration (#206) by the two writers that create a person's first
+  Membership, `setup.ts` and `invite.ts`, which name the org that Membership is of. The
+  function is correct without it, so nothing has to defend the column's contents.
 - **It is not writable by `authenticated`.** `users` was revoked down to `update (name,
   locale, theme)` by 20260814010000 and 20260904000000, and the Active Org does not join
   that list: switching goes through a server action that checks the Membership and writes

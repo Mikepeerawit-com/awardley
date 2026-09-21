@@ -69,9 +69,14 @@ beforeAll(async () => {
 
   await service.from("users").insert({
     id: fixture.userId,
-    org_id: fixture.orgId,
+    active_org_id: fixture.orgId,
     name: "Schema fixture",
     email: `schema-${run}@example.test`,
+  });
+
+  await service.from("memberships").insert({
+    user_id: fixture.userId,
+    org_id: fixture.orgId,
   });
 
   fixture.supplierId = await insert("suppliers", {

@@ -58,14 +58,21 @@ async function createMember(
 
   const { error: profileError } = await service.from("users").insert({
     id: who.id,
-    org_id: org,
+    active_org_id: org,
     name: who.email,
     email: who.email,
-    is_org_admin: extra.isOrgAdmin ?? false,
     wecom_userid: extra.wecomUserid ?? null,
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: who.id,
+    org_id: org,
+    is_org_admin: extra.isOrgAdmin ?? false,
+  });
+
+  if (membershipError) throw membershipError;
 }
 
 async function signedInAs(email: string) {

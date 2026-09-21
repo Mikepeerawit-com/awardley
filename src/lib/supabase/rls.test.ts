@@ -93,13 +93,20 @@ async function createMember(
 
   const { error: profileError } = await service.from("users").insert({
     id: member.id,
-    org_id: orgId,
+    active_org_id: orgId,
     name: member.email,
     email: member.email,
-    disabled_at: disabledAt,
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: member.id,
+    org_id: orgId,
+    disabled_at: disabledAt,
+  });
+
+  if (membershipError) throw membershipError;
 }
 
 async function createTender(orgId: string, ownerId: string): Promise<string> {
@@ -383,16 +390,10 @@ describe("membership is not business data", () => {
   // itself. Column-level privileges handle those, because they are the layer that
   // answers "which columns", where RLS answers "which rows".
 
-  it("refuses to let a member make themselves an Org Admin", async () => {
-    const client = await signedInAs(members.a.email);
-
-    const { error } = await client
-      .from("users")
-      .update({ is_org_admin: true })
-      .eq("id", members.a.id);
-
-    expect(error).not.toBeNull();
-  });
+  // "Refuses to let a member make themselves an Org Admin" used to be asked here, of
+  // `users.is_org_admin`. The column is gone (#206) and the question moved with it: the
+  // `memberships` block below asks it of the row the capability now lives on. Asked here
+  // it would pass because the column does not exist, which proves nothing.
 
   it("refuses to let a member re-enable a disabled colleague", async () => {
     const client = await signedInAs(members.a.email);
@@ -410,9 +411,10 @@ describe("membership is not business data", () => {
 
     const { error } = await client
       .from("users")
+      // No `org_id`: the column is gone (#206), and a payload naming it would be refused
+      // on schema grounds before the grant was ever consulted.
       .insert({
         id: crypto.randomUUID(),
-        org_id: orgs.a,
         name: "Uninvited",
         email: `uninvited-${run}@example.test`,
       });

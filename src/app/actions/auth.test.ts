@@ -91,7 +91,7 @@ beforeAll(async () => {
   // both pinned, both on their own row.
   const { error: profileError } = await service.from("users").insert({
     id: member.id,
-    org_id: orgId,
+    active_org_id: orgId,
     name: member.email,
     email: member.email,
     locale: "zh-Hans",
@@ -99,6 +99,13 @@ beforeAll(async () => {
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: member.id,
+    org_id: orgId,
+  });
+
+  if (membershipError) throw membershipError;
 });
 
 afterAll(async () => {

@@ -102,9 +102,15 @@ async function createMember(org: string, who: { id: string; email: string }) {
 
   const { error: profileError } = await service
     .from("users")
-    .insert({ id: who.id, org_id: org, name: who.email, email: who.email });
+    .insert({ id: who.id, active_org_id: org, name: who.email, email: who.email });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service
+    .from("memberships")
+    .insert({ user_id: who.id, org_id: org });
+
+  if (membershipError) throw membershipError;
 }
 
 /** A Tender with two Items, so "this Item's" can be told from "the Tender's". */

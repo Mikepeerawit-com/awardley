@@ -173,7 +173,7 @@ describe("the account it creates", () => {
 
     const { data: profile } = await service
       .from("users")
-      .select("email, name, is_org_admin, locale, org_id, disabled_at")
+      .select("email, name, locale")
       .eq("id", result.userId)
       .single();
 
@@ -183,9 +183,15 @@ describe("the account it creates", () => {
       .limit(1)
       .single();
 
-    expect(profile).toMatchObject({
-      email,
-      name: "First Admin",
+    const { data: membership } = await service
+      .from("memberships")
+      .select("is_org_admin, org_id, disabled_at")
+      .eq("user_id", result.userId)
+      .single();
+
+    expect(profile).toMatchObject({ email, name: "First Admin" });
+
+    expect(membership).toMatchObject({
       is_org_admin: true,
       org_id: org!.id,
       disabled_at: null,
@@ -234,9 +240,14 @@ describe("having run once", () => {
 
     await service.from("users").insert({
       id: data.user!.id,
-      org_id: org!.id,
+      active_org_id: org!.id,
       name: "By Hand",
       email: `by-hand-${run}@example.test`,
+    });
+
+    await service.from("memberships").insert({
+      user_id: data.user!.id,
+      org_id: org!.id,
     });
 
     created.push(data.user!.id);

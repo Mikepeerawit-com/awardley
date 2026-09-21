@@ -54,12 +54,19 @@ beforeAll(async () => {
   // has an answer.
   const { error: profileError } = await service.from("users").insert({
     id: member.id,
-    org_id: orgId,
+    active_org_id: orgId,
     name: member.email,
     email: member.email,
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: member.id,
+    org_id: orgId,
+  });
+
+  if (membershipError) throw membershipError;
 });
 
 afterAll(async () => {

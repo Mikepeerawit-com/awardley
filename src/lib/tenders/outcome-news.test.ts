@@ -67,7 +67,7 @@ async function createMember(who: { id: string; email: string; wecom: string }) {
 
   const { error: profileError } = await service.from("users").insert({
     id: who.id,
-    org_id: orgId,
+    active_org_id: orgId,
     // The name the group is told we bid on. A colleague's, never a supplier's.
     name: who === nok ? "Nok" : who === anong ? "Anong" : "Owner",
     email: who.email,
@@ -75,6 +75,13 @@ async function createMember(who: { id: string; email: string; wecom: string }) {
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: who.id,
+    org_id: orgId,
+  });
+
+  if (membershipError) throw membershipError;
 }
 
 /** A Tender with one Item, and whoever should be able to quote on it assigned. */
@@ -211,7 +218,7 @@ afterAll(async () => {
   await service.from("notifications").delete().eq("org_id", orgId);
   await service.from("tenders").delete().eq("org_id", orgId);
   await service.from("suppliers").delete().eq("org_id", orgId);
-  await service.from("users").delete().eq("org_id", orgId);
+  await service.from("users").delete().in("id", [owner.id, nok.id, anong.id]);
 
   for (const who of [owner, nok, anong]) await service.auth.admin.deleteUser(who.id);
 

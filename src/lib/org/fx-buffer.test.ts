@@ -91,13 +91,20 @@ async function createMember(
 
   const { error: profileError } = await service.from("users").insert({
     id: who.id,
-    org_id: orgId,
+    active_org_id: orgId,
     name: who.email,
     email: who.email,
-    is_org_admin: isOrgAdmin,
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: who.id,
+    org_id: orgId,
+    is_org_admin: isOrgAdmin,
+  });
+
+  if (membershipError) throw membershipError;
 }
 
 /** What the column really holds, read past `getOrgSettings` and its fallback. */

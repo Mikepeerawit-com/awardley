@@ -138,14 +138,20 @@ beforeAll(async () => {
 
   const { error: profileError } = await service
     .from("users")
-    .insert({ id: owner.id, org_id: orgId, name: "Owner", email: owner.email });
+    .insert({ id: owner.id, active_org_id: orgId, name: "Owner", email: owner.email });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service
+    .from("memberships")
+    .insert({ user_id: owner.id, org_id: orgId });
+
+  if (membershipError) throw membershipError;
 });
 
 afterAll(async () => {
   await service.from("tenders").delete().eq("org_id", orgId);
-  await service.from("users").delete().eq("org_id", orgId);
+  await service.from("users").delete().eq("id", owner.id);
   await service.auth.admin.deleteUser(owner.id);
   await service.from("orgs").delete().eq("id", orgId);
 });

@@ -75,9 +75,14 @@ beforeAll(async () => {
 
   await service.from("users").insert({
     id: admin.id,
-    org_id: orgId,
+    active_org_id: orgId,
     name: "Org Admin",
     email: admin.email,
+  });
+
+  await service.from("memberships").insert({
+    user_id: admin.id,
+    org_id: orgId,
     is_org_admin: true,
   });
 });

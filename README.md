@@ -330,13 +330,19 @@ runs locally. Locally it reopens after every `npm run db:reset`, which is the po
 same screen, run the same way, on a database that resets often.
 
 `is_org_admin` gates inviting and nothing else — it grants no extra visibility, and it is
-not writable through the app by anyone, including an Org Admin (see the column grants in
-`20260814010000_membership_is_not_business_data.sql`). **Promoting a second admin** is an
-`update` run from the Supabase dashboard, and stays one:
+not writable through the app by anyone, including an Org Admin. It is a column of a
+Membership rather than of a person, and `memberships` is read-only to `authenticated` (see
+the grants at the foot of
+`20260919000000_a_membership_is_a_persons_place_in_one_organisation.sql`). **Promoting a
+second admin** is an `update` run from the Supabase dashboard, and stays one:
 
 ```sql
-update users set is_org_admin = true where email = '<email>';
+update memberships set is_org_admin = true
+where user_id = (select id from users where email = '<email>');
 ```
+
+Everybody holds one Membership today (ADR-0038). If somebody ever holds several, add
+`and org_id = '<org>'` — admin of one organisation says nothing about any other.
 
 If the database somehow has no `orgs` row, `/setup` says so rather than guessing — the row
 is seeded by the schema migration, so its absence means §2 has not run.

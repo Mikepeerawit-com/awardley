@@ -69,9 +69,12 @@ export async function invite(
 
   const { error: profileError } = await service.from("users").insert({
     id: data.user.id,
-    org_id: caller.orgId,
     name,
     email,
+    // The Active Org, defaulted to the org the Membership below is of — the one org this
+    // new account holds a place in (ADR-0037). `setup.ts` does the same for the first
+    // admin; only the switcher ever changes it afterwards.
+    active_org_id: caller.orgId,
     // `locale` is left null deliberately: first start-up asks rather than inferring.
   });
 
@@ -79,6 +82,25 @@ export async function invite(
     // The auth account now exists with no profile, which is an account that can hold a
     // password and read nothing. Undo it, or the address is permanently un-invitable —
     // a second attempt would come back as `already_invited`.
+    await service.auth.admin.deleteUser(data.user.id);
+
+    return { ok: false, reason: "send_failed" };
+  }
+
+  // An Invite grants Membership — of the org the admin is looking at, and only that.
+  // `is_org_admin` is not written and so defaults false: becoming an Org Admin is a
+  // separate deliberate act by an existing one (CONTEXT.md, **Invite**), and
+  // `conventions.test.ts` holds this file to never spelling the column with a colon.
+  //
+  // A profile row without a Membership is the same un-invitable account as one without
+  // a profile — `current_org_id()` answers null for it — so the undo reaches both rows.
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: data.user.id,
+    org_id: caller.orgId,
+  });
+
+  if (membershipError) {
+    await service.from("users").delete().eq("id", data.user.id);
     await service.auth.admin.deleteUser(data.user.id);
 
     return { ok: false, reason: "send_failed" };

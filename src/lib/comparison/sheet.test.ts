@@ -71,9 +71,15 @@ async function createMember(who: { id: string; email: string }) {
 
   const { error: profileError } = await service
     .from("users")
-    .insert({ id: who.id, org_id: orgId, name: who.email, email: who.email });
+    .insert({ id: who.id, active_org_id: orgId, name: who.email, email: who.email });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service
+    .from("memberships")
+    .insert({ user_id: who.id, org_id: orgId });
+
+  if (membershipError) throw membershipError;
 }
 
 /** A Quote as somebody actually gives one, in THB so no rate has to be fetched. */

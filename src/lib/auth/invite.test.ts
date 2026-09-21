@@ -50,13 +50,20 @@ async function createMember(
 
   const { error: profileError } = await service.from("users").insert({
     id: who.id,
-    org_id: org,
+    active_org_id: org,
     name: who.email,
     email: who.email,
-    is_org_admin: isOrgAdmin,
   });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: who.id,
+    org_id: org,
+    is_org_admin: isOrgAdmin,
+  });
+
+  if (membershipError) throw membershipError;
 }
 
 async function signedInAs(email: string) {
@@ -129,16 +136,19 @@ describe("invite", () => {
 
     const { data } = await service
       .from("users")
-      .select("org_id, name, locale, is_org_admin")
+      .select("name, locale")
       .eq("id", result.userId)
       .single();
 
-    expect(data).toEqual({
-      org_id: orgId,
-      name: "Nok",
-      locale: null,
-      is_org_admin: false,
-    });
+    expect(data).toEqual({ name: "Nok", locale: null });
+
+    const { data: membership } = await service
+      .from("memberships")
+      .select("org_id, is_org_admin")
+      .eq("user_id", result.userId)
+      .single();
+
+    expect(membership).toEqual({ org_id: orgId, is_org_admin: false });
   });
 
   it("refuses a member who is not an Org Admin", async () => {

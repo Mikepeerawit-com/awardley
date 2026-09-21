@@ -130,14 +130,21 @@ async function writeProfile(
 ): Promise<void> {
   const { error } = await service.from("users").insert({
     id: who.id,
-    org_id: fields.org ?? orgId,
+    active_org_id: fields.org ?? orgId,
     name: fields.name,
     email: who.email,
+  });
+
+  if (error) throw error;
+
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: who.id,
+    org_id: fields.org ?? orgId,
     is_org_admin: fields.isOrgAdmin ?? false,
     disabled_at: fields.disabledAt ?? null,
   });
 
-  if (error) throw error;
+  if (membershipError) throw membershipError;
 }
 
 beforeAll(async () => {
@@ -282,14 +289,19 @@ describe("setMembershipDisabled", () => {
    */
   afterEach(async () => {
     await service
-      .from("users")
+      .from("memberships")
       .update({ disabled_at: null, is_org_admin: false })
-      .eq("id", leaver.id);
+      .eq("user_id", leaver.id)
+      .eq("org_id", orgId);
 
     // And the org's Org Admin, who several tests below aim the write at. Without this a
     // broken last-Org-Admin rule would Disable the account every later test signs in as,
     // and the file would report a cascade rather than the one rule that went.
-    await service.from("users").update({ disabled_at: null }).eq("id", adminTwin().id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: null })
+      .eq("user_id", adminTwin().id)
+      .eq("org_id", orgId);
   });
 
   it("ends a Membership, stamped at the instant it was handed", async () => {
@@ -303,9 +315,10 @@ describe("setMembershipDisabled", () => {
     expect(result).toEqual({ ok: true });
 
     const { data } = await service
-      .from("users")
+      .from("memberships")
       .select("disabled_at")
-      .eq("id", leaver.id)
+      .eq("user_id", leaver.id)
+      .eq("org_id", orgId)
       .single();
 
     // The instant is the one the request boundary read, never one this write went and
@@ -393,7 +406,11 @@ describe("setMembershipDisabled", () => {
     // The rule counts the Org Admins who would be left, not the flag on the row in front
     // of it. Read the other way it would be "an Org Admin can never leave", which is a
     // different and wrong rule.
-    await service.from("users").update({ is_org_admin: true }).eq("id", leaver.id);
+    await service
+      .from("memberships")
+      .update({ is_org_admin: true })
+      .eq("user_id", leaver.id)
+      .eq("org_id", orgId);
 
     const result = await setMembershipDisabled(
       { userId: leaver.id, disabledAt },
@@ -407,9 +424,10 @@ describe("setMembershipDisabled", () => {
     // A second admin who has themselves been Disabled leaves the org exactly as stuck as
     // no second admin at all.
     await service
-      .from("users")
+      .from("memberships")
       .update({ is_org_admin: true, disabled_at: disabledAt.toISOString() })
-      .eq("id", leaver.id);
+      .eq("user_id", leaver.id)
+      .eq("org_id", orgId);
 
     const result = await setMembershipDisabled(
       { userId: adminTwin().id, disabledAt },
@@ -445,9 +463,10 @@ describe("setMembershipDisabled", () => {
     );
 
     const { data } = await service
-      .from("users")
+      .from("memberships")
       .select("disabled_at")
-      .eq("id", leaver.id)
+      .eq("user_id", leaver.id)
+      .eq("org_id", orgId)
       .single();
 
     expect(data?.disabled_at).toBeNull();

@@ -114,8 +114,8 @@ export async function setUpOrgAdmin({
 
   // The org is seeded by the schema migration (`insert into orgs (name) values
   // ('Taihue')`), so this reads it rather than creating one. Org creation is deliberately
-  // not here: `org_id` is a placeholder column and this app is single-org until the
-  // multi-org map says otherwise.
+  // not here: this app is single-org until #178 makes signup create one, and the
+  // Membership written below is the whole of what ties the first admin to it.
   const { data: org } = await service
     .from("orgs")
     .select("id")
@@ -135,10 +135,13 @@ export async function setUpOrgAdmin({
 
   const { error: profileError } = await service.from("users").insert({
     id: data.user.id,
-    org_id: org.id,
     name,
     email,
-    is_org_admin: true,
+    // The Active Org, defaulted to the one org this person is about to hold a place in
+    // (ADR-0037). A trigger did this for one release; now the writer that creates a
+    // person's first Membership says which org they are looking at, and the switcher in
+    // `active-org.ts` is the only thing that ever changes it.
+    active_org_id: org.id,
     // `locale` is left null for the same reason an invited colleague's is: first
     // start-up asks rather than inferring.
   });
@@ -147,6 +150,27 @@ export async function setUpOrgAdmin({
     // An auth account with no profile row is an account that can hold a password and read
     // nothing — and worse here than after a failed Invite, because this address is the one
     // the operator will immediately try again with. Undo it. `invite.ts` does the same.
+    await service.auth.admin.deleteUser(data.user.id);
+
+    return { ok: false, reason: "create_failed" };
+  }
+
+  // The Membership is the second write, and it is the one that mints the Org Admin:
+  // `is_org_admin` is a property of a person's place in one organisation, not of the
+  // person (CONTEXT.md, **Org Admin**). A profile row on its own is an account that can
+  // hold a password and read nothing — `current_org_id()` answers null for somebody
+  // holding no live Membership — so a failure here is undone the same way as one above,
+  // profile row included. That is the same undo the race guard below performs, and it is
+  // enough: `memberships.user_id` is `on delete cascade`, so nothing this insert managed
+  // to write outlives the row it hangs off.
+  const { error: membershipError } = await service.from("memberships").insert({
+    user_id: data.user.id,
+    org_id: org.id,
+    is_org_admin: true,
+  });
+
+  if (membershipError) {
+    await service.from("users").delete().eq("id", data.user.id);
     await service.auth.admin.deleteUser(data.user.id);
 
     return { ok: false, reason: "create_failed" };

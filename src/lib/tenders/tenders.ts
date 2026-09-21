@@ -787,10 +787,13 @@ async function standingProblem(
  * so "no such row" and "somebody else's colleague" are the same answer, which is the
  * answer we want to give either way.
  *
- * `disabled_at` has to be checked here and not only in the pickers. A disabled member's
- * row is still visible to their colleagues — RLS hides it from *them*, not from the org —
- * so a posted id would otherwise hand a Tender to somebody who reads nothing and can act
- * on none of it.
+ * A live Membership has to be checked here and not only in the pickers. A Disabled
+ * colleague's row is still visible to the org — `shares_current_org()` counts ended
+ * Memberships on purpose, because the People screen is opened to look at them — so a
+ * posted id would otherwise hand a Tender to somebody who reads nothing and can act on
+ * none of it. The embed is what scopes it: read through the session client, `memberships`
+ * answers with the caller's Active Org only, the same shape the pickers in `members.ts`
+ * use. `users.disabled_at` is not what Disabling writes and is not consulted.
  *
  * The refusal is `unassignable`, never `not_found`: what is missing is the *person*, and
  * on /tenders/new there is no Tender to report as gone. The two share a shape and cannot
@@ -804,9 +807,9 @@ async function assignableProblem(
 
   const { data } = await supabase
     .from("users")
-    .select("id")
+    .select("id, memberships!inner(disabled_at)")
     .eq("id", userId)
-    .is("disabled_at", null)
+    .is("memberships.disabled_at", null)
     .maybeSingle();
 
   return data ? null : "unassignable";

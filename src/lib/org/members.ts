@@ -46,10 +46,10 @@ export async function listMembers(store: SessionCookieStore): Promise<Member[]> 
     // `!inner` turns it into the join that keeps everyone else out. A person with no
     // Membership of the caller's Active Org produces no row rather than a nameless one.
     .select("id, name, memberships!inner(disabled_at)")
-    // The Membership's end, not the account's. They say the same thing today, because one
-    // person holds one Membership and a trigger keeps the two columns in step; they stop
-    // saying the same thing the moment somebody holds two, and a colleague let go here
-    // should leave *this* org's pickers and no others'.
+    // The Membership's end, not the account's. Disabling writes `memberships.disabled_at`
+    // and nothing else, so a colleague let go here leaves *this* org's pickers and no
+    // others'; `users.disabled_at` is the dashboard's account-wide switch and is not what
+    // this question is about.
     .is("memberships.disabled_at", null)
     // Two colleagues can share a name — this is a picker, and an option that moves
     // between two openings of the same form is one a person clicks the wrong one of.
@@ -246,29 +246,26 @@ export async function setMembershipDisabled(
     return { ok: false, reason: "last_admin" };
   }
 
-  // **Still a write to `users.disabled_at`, and that is the one thing in this ticket the
-  // Membership table has not yet taken over.** The trigger carries it across, so the
-  // Membership above ends at the same instant and every read in the app agrees. What it
-  // cannot carry is *scope*: `users.disabled_at` is the account, and an account spans
-  // organisations. Today that is a distinction without a difference — everybody holds one
-  // Membership — and the day somebody holds two it becomes the sentence this whole ticket
-  // was written against, an Org Admin of one organisation ending somebody's access to
-  // another. Nothing in v1 creates a second Membership (ADR-0038), so the reach is
-  // unreachable rather than merely unlikely; the write moves onto `memberships` in the
-  // contract migration, which is the release that takes this column away and has to touch
-  // this line regardless.
+  // The write lands on the Membership, so Disabling ends this person's place in *this*
+  // organisation and says nothing about any other. For one release it was a write to
+  // `users.disabled_at` — the account — carried across by trigger, which answered "do all
+  // reads agree" and got the scope wrong: an account spans organisations, and the day
+  // somebody held two, an Org Admin of one would have been ending their access to the
+  // other. That was the sentence #177 was written against, and the contract migration
+  // (#206) is where the write could finally move.
   //
-  // The org filter that used to sit here is gone rather than kept, and its absence is the
-  // safer of the two. It read `users.org_id` — the legacy column, the person's one
-  // organisation — while `caller.orgId` now means the Active Org. The two hold the same
-  // value today and stop meaning the same thing the moment the column is dropped, which is
-  // how a filter that looks like a boundary becomes one that silently is not. The boundary
-  // is the Membership read above: it established that this colleague is one of *ours*, in
-  // the org this admin is actually looking at, which is more than the column ever said.
+  // `caller.orgId` is on the update as well as on the read above, and the repetition is
+  // the point. The read proved this colleague holds a place *here*; the filter makes the
+  // write unable to reach any other place they hold, whatever the read established. The
+  // Membership is the boundary, stated on both statements.
+  //
+  // `users.disabled_at` survives as the account-level switch, set from the dashboard and
+  // read by `current_org_id()` alongside this one. Nothing in the app writes it.
   const { data, error } = await service
-    .from("users")
+    .from("memberships")
     .update({ disabled_at: disabledAt === null ? null : disabledAt.toISOString() })
-    .eq("id", userId)
+    .eq("user_id", userId)
+    .eq("org_id", caller.orgId)
     .select("id");
 
   // A write that failed is not a person who is not here. The row was read a moment ago,

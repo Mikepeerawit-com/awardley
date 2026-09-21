@@ -98,9 +98,15 @@ async function createMember(org: string, who: { id: string; email: string }) {
 
   const { error: profileError } = await service
     .from("users")
-    .insert({ id: who.id, org_id: org, name: who.email, email: who.email });
+    .insert({ id: who.id, active_org_id: org, name: who.email, email: who.email });
 
   if (profileError) throw profileError;
+
+  const { error: membershipError } = await service
+    .from("memberships")
+    .insert({ user_id: who.id, org_id: org });
+
+  if (membershipError) throw membershipError;
 }
 
 /** Creates a Tender as the Owner and registers it for teardown. */
@@ -254,9 +260,10 @@ describe("createTender", () => {
 
   it("refuses a Disabled Owner", async () => {
     await service
-      .from("users")
+      .from("memberships")
       .update({ disabled_at: disabledAt })
-      .eq("id", mate.id);
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
 
     const result = await createTender(
       tenderInput({ ownerUserId: mate.id }),
@@ -268,7 +275,11 @@ describe("createTender", () => {
     // the person.
     expect(result).toEqual({ ok: false, reason: "unassignable" });
 
-    await service.from("users").update({ disabled_at: null }).eq("id", mate.id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: null })
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
   });
 
   it("refuses an Owner from another org", async () => {
@@ -336,7 +347,11 @@ describe("updateTender", () => {
     const tenderId = await aTender({ ownerUserId: mate.id });
     const store = await signedInAs(owner.email);
 
-    await service.from("users").update({ disabled_at: disabledAt }).eq("id", mate.id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: disabledAt })
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
 
     const result = await updateTender(
       {
@@ -356,7 +371,11 @@ describe("updateTender", () => {
 
     expect(result).toEqual({ ok: true });
 
-    await service.from("users").update({ disabled_at: null }).eq("id", mate.id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: null })
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
   });
 
   it("still refuses to hand a Tender to a Disabled colleague", async () => {
@@ -365,7 +384,11 @@ describe("updateTender", () => {
     const tenderId = await aTender();
     const store = await signedInAs(owner.email);
 
-    await service.from("users").update({ disabled_at: disabledAt }).eq("id", mate.id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: disabledAt })
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
 
     const result = await updateTender(
       {
@@ -385,7 +408,11 @@ describe("updateTender", () => {
 
     expect(result).toEqual({ ok: false, reason: "unassignable" });
 
-    await service.from("users").update({ disabled_at: null }).eq("id", mate.id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: null })
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
   });
 
   it("refuses a Tender in another org", async () => {
@@ -710,9 +737,10 @@ describe("Assignees", () => {
     const tenderItemId = await anItemOf(await aTender());
 
     await service
-      .from("users")
+      .from("memberships")
       .update({ disabled_at: disabledAt })
-      .eq("id", mate.id);
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
 
     const result = await addAssignee(
       { tenderItemId, userId: mate.id },
@@ -721,7 +749,11 @@ describe("Assignees", () => {
 
     expect(result).toEqual({ ok: false, reason: "unassignable" });
 
-    await service.from("users").update({ disabled_at: null }).eq("id", mate.id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: null })
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
   });
 
   it("still lets the Owner take a Disabled colleague off", async () => {
@@ -733,15 +765,20 @@ describe("Assignees", () => {
     await addAssignee({ tenderItemId, userId: mate.id }, store);
 
     await service
-      .from("users")
+      .from("memberships")
       .update({ disabled_at: disabledAt })
-      .eq("id", mate.id);
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
 
     expect(await removeAssignee({ tenderItemId, userId: mate.id }, store)).toEqual({
       ok: true,
     });
 
-    await service.from("users").update({ disabled_at: null }).eq("id", mate.id);
+    await service
+      .from("memberships")
+      .update({ disabled_at: null })
+      .eq("user_id", mate.id)
+      .eq("org_id", orgId);
   });
 
   it("refuses to assign someone from another org", async () => {

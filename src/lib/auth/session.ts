@@ -51,7 +51,27 @@ export const loginErrors = [...signInRefusals, "incomplete", "link"] as const;
 
 export type LoginError = (typeof loginErrors)[number];
 
-const profileColumns = "id, org_id, name, email, locale, theme, is_org_admin";
+/**
+ * The profile, and the Membership that says which org this request is happening in.
+ *
+ * `org_id` and `is_org_admin` used to be columns on this same row, which was the shape
+ * of the old claim that a person belongs to one organisation. They are facts about a
+ * **Membership** now, and the embed is how one round trip still answers both halves.
+ *
+ * **The embed does the scoping, not a filter written here.** `memberships` is read
+ * through the session client, so its own policy applies to the embedded rows exactly as
+ * it would to a direct read: `org_id = current_org_id()`, the caller's Active Org. Only
+ * one Membership can match, because a person holds at most one per org.
+ *
+ * **`!inner` is what keeps "disabled reads nothing" true.** Without it a caller with no
+ * live Membership — Disabled here, or holding several and having chosen none — would come
+ * back as a profile row with an empty `memberships` array, and this function would have
+ * to invent a sentence about what their org is. With it, no Membership means no row at
+ * all, which lands on the `!profile` return below: the same null the RLS-hidden profile
+ * row produced before, from the same cause.
+ */
+const profileColumns =
+  "id, name, email, locale, theme, memberships!inner(org_id, is_org_admin)";
 
 export async function signIn(
   credentials: { email: string; password: string },
@@ -130,9 +150,26 @@ export const currentUser = cache(async function currentUser(
 
   if (!profile) return null;
 
+  // An array, because `users` has many `memberships` — and of length one, because the
+  // policy on the embedded table answers with the Active Org and nothing else. The guard
+  // is not defensive padding: it is the one reading of this query that would otherwise
+  // hand every field below an `undefined`, and "no Membership" is already a sentence this
+  // function knows how to say.
+  //
+  // The shape is left to be inferred from the select string rather than written out, for
+  // the reason `members.ts` gives at the same point: naming it means writing
+  // `is_org_admin` followed by a colon, and `conventions.test.ts` allows exactly one file
+  // in the repo to do that — the one where an Org Admin is minted (ADR-0017).
+  const [membership] = profile.memberships;
+
+  if (!membership) return null;
+
   return {
     id: profile.id,
-    orgId: profile.org_id,
+    // The org this request is in — whichever Membership the Active Org selected, rather
+    // than a column on the person. Everything downstream that scopes a service-role read
+    // by hand is scoping it by this.
+    orgId: membership.org_id,
     name: profile.name,
     email: profile.email,
     locale: isLocale(profile.locale) ? profile.locale : null,
@@ -140,6 +177,9 @@ export const currentUser = cache(async function currentUser(
     // 'system'`, and a value this app does not ship could only come from a database
     // ahead of this build — where following the device is the safe reading.
     theme: isThemeChoice(profile.theme) ? profile.theme : defaultThemeChoice,
-    isOrgAdmin: profile.is_org_admin,
+    // Read off the Membership, so it is admin *here*: somebody who runs one organisation
+    // and is an ordinary member of another gets the invite form in one and not the other,
+    // and switching is what changes the answer.
+    isOrgAdmin: membership.is_org_admin,
   };
 });

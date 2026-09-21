@@ -486,10 +486,8 @@ _Avoid_: deleted, removed, deactivated, archived user
 One person's place in one organisation, and where their Org Admin capability lives. A
 person may hold several. It is the Membership rather than the person that an Invite
 creates, that Disabling ends, and that RLS reads — which is why admin of one organisation
-grants nothing anywhere else.
-_Not built yet_: `org_id` and `is_org_admin` sit on the `users` row, one organisation per
-person. Holding several — and every sentence above that turns on it — is settled language
-and unwritten code.
+grants nothing anywhere else. Nothing in the app yet creates a second one: the model
+permits it and no act produces it (ADR-0038).
 _Avoid_: role, org user, user_org, seat
 
 **Active Org**:
@@ -498,5 +496,6 @@ scoped to it, and a person holding several Memberships changes it deliberately r
 than seeing two organisations' Tenders in one list. The control that changes it does not
 render at all for the overwhelming majority who hold exactly one Membership — a global
 mode is worth its cost only to the people who actually have a second thing to switch to.
-_Not built yet_: there is nothing to switch between until a Membership can be held twice.
+It is a column on the person rather than a claim or a cookie, and it selects among
+Memberships actually held rather than granting anything itself (ADR-0037).
 _Avoid_: current org, selected org, workspace, tenant

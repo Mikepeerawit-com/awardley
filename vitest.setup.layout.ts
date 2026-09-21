@@ -51,6 +51,11 @@ vi.mock("@/app/actions/admin", () => ({
   setFxBufferAction: async () => ({}),
 }));
 vi.mock("@/app/actions/locale", () => ({ switchLocale: async () => ({}) }));
+// Reached by the app bar's menu, on every screen in the record. The switcher it belongs
+// to renders for nobody — it needs two live Memberships — but the module is imported
+// whether or not anything draws it, and it reads `users.active_org_id` behind
+// `server-only`, which is a throw on import rather than a screen that looks wrong.
+vi.mock("@/app/actions/org", () => ({ switchOrg: async () => ({}) }));
 vi.mock("@/app/actions/theme", () => ({ switchTheme: async () => ({}) }));
 vi.mock("@/app/actions/tenders", () => ({
   createTenderAction: async () => ({}),

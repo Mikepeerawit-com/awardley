@@ -31,6 +31,11 @@ import { AppMenu } from "./app-menu";
  * workable from the keyboard at the desk.
  */
 vi.mock("@/app/actions/auth", () => ({ signOutAction: async () => ({}) }));
+// The Active Org switcher's action, for the same reason: this project resolves packages
+// the way a browser does, so a module reaching `server-only` throws on import. The
+// switcher itself draws nothing here — it needs two live Memberships and this suite's
+// reader has none — which is exactly the assertion the row list below is making.
+vi.mock("@/app/actions/org", () => ({ switchOrg: async () => ({}) }));
 
 /** The trigger, focused and pressed. See the note above on why not a click. */
 async function open(messages: typeof en): Promise<void> {

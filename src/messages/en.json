@@ -23,6 +23,10 @@
     "dark": "Dark",
     "switching": "Changing appearance…"
   },
+  "orgSwitcher": {
+    "label": "Organisation",
+    "switching": "Switching organisation…"
+  },
   "login": {
     "title": "Sign in",
     "description": "Awardley is invitation-only. If you do not have an account yet, ask your Administrator to invite you.",

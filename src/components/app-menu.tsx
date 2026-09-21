@@ -6,6 +6,7 @@ import { Menu as MenuIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { signOutAction } from "@/app/actions/auth";
+import { ActiveOrgSwitcher } from "@/components/active-org-switcher";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -22,6 +23,15 @@ import { Button } from "@/components/ui/button";
  * are one `Settings` row now, and Settings has something in it for every member: the
  * language they read in moved there off the bar. Nothing here asks who is looking any
  * more; the Organisation group inside Settings is where that question is answered, once.
+ *
+ * **Still two rows for everybody, and since the Membership table that is a sentence about
+ * the reader rather than about the app.** Somebody holding a second Membership gets the
+ * Active Org switcher above the two; nobody else does, and today nobody holds one. It is
+ * a third row waiting on a fact about a person, not on a release. That is not the menu #132
+ * removed. That one changed with a *capability*: an Org Admin saw three rows nobody else
+ * did, for screens that were behind a gate anyway, so the menu's shape said what you were
+ * allowed to be. This changes with where the reader can actually go, and an organisation
+ * you are not in is not an option being withheld from you.
  *
  * **Sign out is deliberately in here** even though it is the one item every member has.
  * It is pressed once a day at most, and a destructive-ish control sitting a thumb's width
@@ -53,6 +63,13 @@ export function AppMenu() {
         <Menu.Portal>
           <Menu.Positioner sideOffset={8} align="end" className="z-50">
             <Menu.Popup className="border-border bg-popover text-popover-foreground shadow-raised min-w-44 rounded-surface border p-1 outline-none">
+              {/* First, and for almost nobody: a reader who holds one Membership gets
+                  nothing here and the menu is the two rows described above. It is first
+                  rather than last because it is the only thing in here that changes what
+                  every other screen says — Settings and Sign out are the same controls
+                  whichever organisation you are in, and this is the one that decides
+                  which. */}
+              <ActiveOrgSwitcher />
               <Menu.LinkItem href="/settings" className={item}>
                 {t("settings")}
               </Menu.LinkItem>

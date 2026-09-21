@@ -368,25 +368,38 @@ async function peopleById(
 ): Promise<Map<string, Recipient>> {
   const { data } = await createServiceClient()
     .from("users")
-    .select("id, name, email, locale, wecom_userid, disabled_at")
+    // The name, the address and the handle come off the person; whether they are still
+    // here comes off their Membership of *this* org, which is the only org this news is
+    // about. `!inner` is what states the boundary — it was `.eq("org_id", orgId)` on the
+    // row while a person belonged to one org, and the sentence it was making is the one
+    // the join makes now.
+    .select("id, name, email, locale, wecom_userid, memberships!inner(org_id, disabled_at)")
     .in("id", userIds)
-    .eq("org_id", orgId);
+    .eq("memberships.org_id", orgId);
 
   return new Map(
-    (data ?? []).map((user) => [
-      user.id,
-      {
-        name: user.name,
-        email: user.email as string,
-        // Null until their first sign-in; the default is what a null reads as, so a
-        // colleague who never signed in is reached in *some* language (ADR-0034).
-        locale: isLocale(user.locale) ? user.locale : defaultLocale,
-        // A Disabled colleague reads nothing and can act on none of it: no email, and
-        // @-ing them would put a name in the group chat that answers to nobody.
-        disabled: user.disabled_at !== null,
-        wecomUserid: user.disabled_at === null ? (user.wecom_userid ?? null) : null,
-      },
-    ]),
+    (data ?? []).map((user) => {
+      // One Membership, because a person holds at most one per org and the org is
+      // filtered above. Named once rather than reached into twice below, where the two
+      // uses of the same fact could drift apart.
+      const [membership] = user.memberships;
+      // A Disabled colleague reads nothing and can act on none of it: no email, and
+      // @-ing them would put a name in the group chat that answers to nobody.
+      const disabled = membership.disabled_at !== null;
+
+      return [
+        user.id,
+        {
+          name: user.name,
+          email: user.email as string,
+          // Null until their first sign-in; the default is what a null reads as, so a
+          // colleague who never signed in is reached in *some* language (ADR-0034).
+          locale: isLocale(user.locale) ? user.locale : defaultLocale,
+          disabled,
+          wecomUserid: disabled ? null : (user.wecom_userid ?? null),
+        },
+      ];
+    }),
   );
 }
 

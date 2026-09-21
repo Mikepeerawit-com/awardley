@@ -487,9 +487,14 @@ type Member = { email: string; locale: Locale };
 async function activeMembers(orgId: string): Promise<Map<string, Member>> {
   const { data } = await createServiceClient()
     .from("users")
-    .select("id, email, locale")
-    .eq("org_id", orgId)
-    .is("disabled_at", null);
+    // Who is in this org, and still in it, is a question about Memberships now — so the
+    // org filter and the disabled filter both move onto the embed, and `!inner` makes the
+    // pair a join rather than two optional columns. The service role bypasses RLS, so
+    // nothing narrows the embedded rows but these filters; that is the same bargain every
+    // read on this path already makes, and the reason the boundary is written out.
+    .select("id, email, locale, memberships!inner(org_id, disabled_at)")
+    .eq("memberships.org_id", orgId)
+    .is("memberships.disabled_at", null);
 
   return new Map(
     (data ?? []).map((user) => [
@@ -605,7 +610,7 @@ async function reminderBatches(
   const tenderIds = [...new Set(due.map((row) => row.tender_id))];
   const tenders = await tendersById(tenderIds);
   const sourcing = await loadSourcing(tenders);
-  const userids = await wecomUserids(tenders, sourcing);
+  const userids = await wecomUserids(orgId, tenders, sourcing);
 
   const settled: string[] = [];
   const batches: TenderBatch[] = [];
@@ -1158,6 +1163,7 @@ async function loadSourcing(tenders: Map<string, TenderRow>): Promise<Sourcing> 
  * from a working one from this side of the webhook (ADR-0005).
  */
 async function wecomUserids(
+  orgId: string,
   tenders: Map<string, TenderRow>,
   sourcing: Sourcing,
 ): Promise<Map<string, string>> {
@@ -1174,9 +1180,19 @@ async function wecomUserids(
     .from("users")
     // A Disabled colleague reads nothing and can act on none of it, so @-ing them puts a
     // name in the group chat that answers to nobody.
-    .select("id, wecom_userid")
+    //
+    // **Being Disabled is a fact about one Membership**, so it can only be read against
+    // the org whose group this message is going to. Until now the ids were trusted to be
+    // this org's already — they come from this org's Tenders and this org's Assignees —
+    // and a bare `disabled_at` on the row was enough. It is not enough once a person can
+    // be an active member here and a departed one elsewhere: read without an org, the
+    // question has two answers and the query picks whichever row it lands on. So the org
+    // is now stated, which also makes this read say out loud what the service role had
+    // been letting it leave implicit.
+    .select("id, wecom_userid, memberships!inner(org_id, disabled_at)")
     .in("id", [...ids])
-    .is("disabled_at", null);
+    .eq("memberships.org_id", orgId)
+    .is("memberships.disabled_at", null);
 
   return new Map(
     (data ?? [])

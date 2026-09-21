@@ -1,8 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { ActiveOrgProvider } from "@/components/active-org-switcher";
 import { BottomNav } from "@/components/app-nav";
 import { currentUser } from "@/lib/auth/session";
+import { listHeldOrgs } from "@/lib/org/active-org";
 
 /**
  * Everything behind the login.
@@ -28,15 +30,28 @@ import { currentUser } from "@/lib/auth/session";
  * destinations sit on the app bar instead (ADR-0021).
  */
 export default async function AppLayout({ children }: LayoutProps<"/">) {
-  const user = await currentUser(await cookies());
+  const store = await cookies();
+  const user = await currentUser(store);
 
   if (!user) redirect("/login");
   if (!user.locale) redirect("/choose-language");
 
+  // **Which organisations this person holds is read here and nowhere else**, even though
+  // what uses it is the bar, which this layout does not draw. The bar has to be drawn by
+  // each page — a layout cannot see the params of the page beneath it, so one drawn here
+  // could never name which Tender this is — and threading the answer down through every
+  // page that draws a header loses on the first page somebody adds and forgets.
+  //
+  // It costs one round trip on a layout that was already awaiting `currentUser`, for
+  // everybody, to draw a control almost nobody has. That is the price of the alternative
+  // being a control that is missing for the one person it is for, and it is a read of two
+  // indexed rows.
+  const orgs = await listHeldOrgs(store);
+
   return (
-    <>
+    <ActiveOrgProvider orgs={orgs} activeOrgId={user.orgId}>
       {children}
       <BottomNav />
-    </>
+    </ActiveOrgProvider>
   );
 }

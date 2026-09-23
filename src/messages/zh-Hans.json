@@ -105,7 +105,8 @@
     "menu": "菜单",
     "back": "返回",
     "itemLocation": "{client}·{item}",
-    "currencyConversion": "外币换算"
+    "currencyConversion": "外币换算",
+    "billing": "套餐"
   },
   "images": {
     "viewing": "第 {position} 张，共 {total} 张",
@@ -652,6 +653,48 @@
       "save_failed": "保存失败。数值未被修改，请重试。"
     },
     "percentSign": "%"
+  },
+  "billing": {
+    "title": "套餐",
+    "description": "这里是组织正在为什么付费，以及如何更改。银行卡由 Stripe 保管，本应用从不接触。",
+    "plan": {
+      "free": "你的组织目前使用免费套餐。",
+      "paid": "你的组织目前使用付费套餐。"
+    },
+    "trial": {
+      "ends": "免费试用到 {date} 为止。",
+      "ended": "免费试用已于 {date} 结束。"
+    },
+    "people": "当前套餐按 {paid} 人付费，其中 {live} 人现在在组织里。",
+    "pastDue": "上一次扣款没有成功。Stripe 正在重试，请到付款管理页更换银行卡。",
+    "thanks": "已收到。Stripe 确认付款后，套餐会马上更新。",
+    "trialForm": {
+      "explain": "不用绑定银行卡，也可以先试用一段时间付费套餐。每个组织只能试用一次。",
+      "start": "开始免费试用",
+      "starting": "正在开始…"
+    },
+    "subscribeForm": {
+      "explain": "按人数逐月付费，需要多少人就付多少人。人数之后还可以再改。",
+      "label": "付费人数",
+      "submit": "订阅",
+      "submitting": "正在打开 Stripe…"
+    },
+    "portalForm": {
+      "explain": "更换银行卡、调整套餐所付的人数，或者停止付费。",
+      "submit": "管理付款",
+      "submitting": "正在打开 Stripe…"
+    },
+    "status": {
+      "not_admin": "只有组织管理员可以更改组织的付费设置。",
+      "trial_used": "这个组织的免费试用已经用过了。",
+      "already_paying": "这个组织已经在付费，没有可以开始的试用了。",
+      "no_trial": "目前没有提供免费试用。",
+      "save_failed": "没能保存下来。什么都没有改动，请重试。",
+      "no_origin": "本应用不知道自己的网址，Stripe 没有地方把你送回来。请告诉搭建它的同事。",
+      "too_few": "付费人数不能少于组织里现有的人数。",
+      "no_customer": "还没有人为这个组织付过费，暂时没有可管理的内容。",
+      "stripe_failed": "连不上 Stripe。没有产生任何扣款，请重试。"
+    }
   },
   "email": {
     "reminder": {

@@ -2,7 +2,7 @@ import "server-only";
 
 import { currentUser } from "@/lib/auth/session";
 import { getOrgSettings } from "@/lib/org/org";
-import { capReached } from "@/lib/plan/plan";
+import { capReached, effectiveMembershipCap } from "@/lib/plan/plan";
 import { createServiceClient } from "@/lib/supabase/service-client";
 import {
   createSessionClient,
@@ -321,20 +321,52 @@ export async function membershipCapReached(
   orgId: string,
   store: SessionCookieStore,
 ): Promise<boolean> {
-  const { plan } = await getOrgSettings(store);
+  const { plan, paidMemberships } = await getOrgSettings(store);
 
-  // Before the count, because an uncapped plan has no count to take.
-  if (plan.membershipCap === null) return false;
+  // **The cap is the tier's and the subscription's together** (#180, {@link effectiveMembershipCap}).
+  // Read as `plan.membershipCap` alone this would hand every paying organisation an
+  // uncapped one, because the `paid` row promises nothing but "no cap" on purpose — the
+  // figure that actually bounds a paying org is the quantity it bought.
+  const cap = effectiveMembershipCap(plan, paidMemberships);
 
+  // Before the count, because a plan with no cap on either side has no count to take.
+  if (cap === null) return false;
+
+  const count = await liveMembershipCount(orgId);
+
+  if (count === null) return true;
+
+  return capReached(cap, count);
+}
+
+/**
+ * How many live Memberships this organisation holds — not Disabled, counted and never
+ * stored.
+ *
+ * Its own function because two very different callers need the identical number and must
+ * not be allowed to disagree about it: {@link membershipCapReached} asks whether one more
+ * would cross the line, and the checkout path (#180) asks it to decide how many people a
+ * subscription must be bought for and how far the quantity may be adjusted down. A
+ * subscription sold for fewer people than the organisation already has is a cap breached
+ * the moment it is paid for, so the two answers being the same read is the whole point.
+ *
+ * Counted with the service client and the org filtered by hand, exactly as the counts
+ * around it are: the client bypasses RLS, so the boundary the session client would have
+ * stated is written out.
+ *
+ * **Null is "could not be read", not zero**, and the callers part company there — a cap
+ * check refuses and a checkout falls back to the floor of one. An organisation with no
+ * live Memberships is not a thing that exists (ADR-0017 keeps an admin in every one), so
+ * a genuine zero here would be a broken read wearing a plausible number.
+ */
+export async function liveMembershipCount(orgId: string): Promise<number | null> {
   const { count } = await createServiceClient()
     .from("memberships")
     .select("id", { count: "exact", head: true })
     .eq("org_id", orgId)
     .is("disabled_at", null);
 
-  if (count === null) return true;
-
-  return capReached(plan.membershipCap, count);
+  return count;
 }
 
 /**

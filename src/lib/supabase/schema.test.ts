@@ -234,6 +234,109 @@ describe("plans", () => {
   });
 });
 
+/**
+ * What Stripe has decided, held on the organisation's row (#180).
+ *
+ * Five columns that are a *read model* and not facts this app owns: the webhook re-reads
+ * the subscription and writes absolute state, so the only guarantees worth stating in the
+ * schema are the ones that keep two organisations from answering for each other, and the
+ * one that keeps a subscription from paying for nobody.
+ *
+ * The status column deliberately has **no** CHECK, and that absence is asserted here for
+ * the same reason the four in "the columns that must stay absent" are: it looks exactly
+ * like an oversight. The vocabulary is Stripe's, they extend it, and a constraint here
+ * would turn one of their releases into a write that fails on a webhook nobody is
+ * watching. The mapping in `subscription.ts` judges the word instead, and sends every one
+ * it does not know to the free plan.
+ */
+describe("what Stripe has decided about an organisation", () => {
+  async function newOrg(fields: Record<string, unknown> = {}): Promise<string> {
+    return insert("orgs", { name: `Stripe ${crypto.randomUUID()}`, ...fields });
+  }
+
+  it("starts every organisation knowing nothing about Stripe", async () => {
+    const id = await newOrg();
+
+    const { data } = await service
+      .from("orgs")
+      .select(
+        "stripe_customer_id, stripe_subscription_id, stripe_subscription_status, paid_memberships, trial_ends_at",
+      )
+      .eq("id", id)
+      .single();
+
+    // All five null, which is the whole of "this organisation has never met Stripe" —
+    // no sentinel, no zero, and no trial marked as used before one was offered.
+    expect(data).toEqual({
+      stripe_customer_id: null,
+      stripe_subscription_id: null,
+      stripe_subscription_status: null,
+      paid_memberships: null,
+      trial_ends_at: null,
+    });
+
+    await service.from("orgs").delete().eq("id", id);
+  });
+
+  it("refuses a subscription that pays for nobody", async () => {
+    // A quantity of zero is not a subscription, it is a cancelled one — a different fact
+    // the schema has a column for. Left allowed it would become a cap admitting nobody,
+    // on an organisation that is paying.
+    const { error } = await service
+      .from("orgs")
+      .insert({ name: `Stripe zero ${run}`, paid_memberships: 0 });
+
+    expect(error).not.toBeNull();
+
+    await service.from("orgs").delete().eq("name", `Stripe zero ${run}`);
+  });
+
+  it("will not let two organisations share one Stripe Customer", async () => {
+    // Each subscription answers for exactly one organisation. Shared, every event would
+    // be ambiguous and `applySubscription` would write whichever row the read happened
+    // to return first.
+    const id = await newOrg({ stripe_customer_id: `cus_unique_${run}` });
+
+    const { error } = await service
+      .from("orgs")
+      .insert({ name: `Stripe twin ${run}`, stripe_customer_id: `cus_unique_${run}` });
+
+    expect(error).not.toBeNull();
+
+    await service.from("orgs").delete().eq("id", id);
+  });
+
+  it("will not let two organisations share one subscription", async () => {
+    const id = await newOrg({ stripe_subscription_id: `sub_unique_${run}` });
+
+    const { error } = await service.from("orgs").insert({
+      name: `Stripe sub twin ${run}`,
+      stripe_subscription_id: `sub_unique_${run}`,
+    });
+
+    expect(error).not.toBeNull();
+
+    await service.from("orgs").delete().eq("id", id);
+  });
+
+  it("stores a status word it has never heard of, rather than refusing the write", async () => {
+    // The absence of a CHECK, asserted. A constraint here would turn a word Stripe adds
+    // into a failing webhook — the app would keep the *old* state, which is the one
+    // outcome a read model must never do.
+    const id = await newOrg({ stripe_subscription_status: "a_status_from_the_future" });
+
+    const { data } = await service
+      .from("orgs")
+      .select("stripe_subscription_status")
+      .eq("id", id)
+      .single();
+
+    expect(data?.stripe_subscription_status).toBe("a_status_from_the_future");
+
+    await service.from("orgs").delete().eq("id", id);
+  });
+});
+
 describe("tender_item_assignees", () => {
   // Asked of the database directly because the guarantees are the database's: the app's
   // upsert is *built on* this key, and the cascade fires on a path no app code walks.

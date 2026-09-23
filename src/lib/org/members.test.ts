@@ -167,6 +167,22 @@ async function capMembershipsAt(cap: number | null): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Says how many people this suite's org is paying for, or that it pays for nobody (#180).
+ *
+ * The org row rather than the plan row, which is the whole distinction the second half of
+ * the cap exists to make: the tier is shared by every organisation on it and the quantity
+ * is bought by one.
+ */
+async function payingForMemberships(quantity: number | null): Promise<void> {
+  const { error } = await service
+    .from("orgs")
+    .update({ paid_memberships: quantity })
+    .eq("id", orgId);
+
+  if (error) throw error;
+}
+
 beforeAll(async () => {
   const { error: planError } = await service.from("plans").insert({
     id: planId,
@@ -604,6 +620,93 @@ describe("setMembershipDisabled", () => {
       );
 
       expect(result).toEqual({ ok: true });
+    });
+
+    /**
+     * The other half of the same cap: what the organisation is *paying for* (#180).
+     *
+     * This is the half that has to exist for a paid organisation to be capped at all.
+     * The `paid` tier promises nothing but "no cap" so its figures can never go out of
+     * date, which means that without the quantity on the org row a subscription for two
+     * would let an organisation add twenty. Every case here leaves the tier uncapped or
+     * generous on purpose, so that what is being read is the subscription and not the
+     * row #179 already proved.
+     */
+    describe("and what the organisation is paying for", () => {
+      afterEach(async () => {
+        await payingForMemberships(null);
+      });
+
+      it("refuses the person the subscription is not paying for, on an uncapped tier", async () => {
+        // Two live Memberships once the leaver has gone, and a subscription for two: the
+        // organisation is exactly on the line it bought, and the third person is the one
+        // nobody is paying for.
+        await leaverHasGone();
+        await payingForMemberships(2);
+
+        const result = await setMembershipDisabled(
+          { userId: leaver.id, disabledAt: null },
+          await signedInAs(adminTwin().email),
+        );
+
+        expect(result).toEqual({ ok: false, reason: "plan_limit" });
+      });
+
+      it("readmits them once the subscription pays for one more", async () => {
+        await leaverHasGone();
+        await payingForMemberships(3);
+
+        const result = await setMembershipDisabled(
+          { userId: leaver.id, disabledAt: null },
+          await signedInAs(adminTwin().email),
+        );
+
+        expect(result).toEqual({ ok: true });
+      });
+
+      it("takes the tier's figure when the tier is the tighter of the two", async () => {
+        // Bought five, on a tier allowing two. Buying more of a smaller thing does not
+        // enlarge it, so the answer is the tier's and the readmission is refused.
+        await leaverHasGone();
+        await capMembershipsAt(2);
+        await payingForMemberships(5);
+
+        const result = await setMembershipDisabled(
+          { userId: leaver.id, disabledAt: null },
+          await signedInAs(adminTwin().email),
+        );
+
+        expect(result).toEqual({ ok: false, reason: "plan_limit" });
+      });
+
+      it("takes the subscription's figure when the subscription is the tighter", async () => {
+        // And the other way round, which is the direction that costs money: a tier
+        // allowing five does not entitle an organisation to the three it did not buy.
+        await leaverHasGone();
+        await capMembershipsAt(5);
+        await payingForMemberships(2);
+
+        const result = await setMembershipDisabled(
+          { userId: leaver.id, disabledAt: null },
+          await signedInAs(adminTwin().email),
+        );
+
+        expect(result).toEqual({ ok: false, reason: "plan_limit" });
+      });
+
+      it("never refuses a Disabling, however few people are paid for", async () => {
+        // The same promise the tier's half makes, and it has to hold here too: the way
+        // back under a line the subscription drew is to let somebody go, so that
+        // direction can never be the direction refused.
+        await payingForMemberships(1);
+
+        const result = await setMembershipDisabled(
+          { userId: leaver.id, disabledAt },
+          await signedInAs(adminTwin().email),
+        );
+
+        expect(result).toEqual({ ok: true });
+      });
     });
   });
 });

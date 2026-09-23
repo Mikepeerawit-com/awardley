@@ -6,16 +6,16 @@ import { currentUser } from "@/lib/auth/session";
 import { getOrgSettings } from "@/lib/org/org";
 
 /**
- * **Settings: one destination, one frame, four screens** (#132).
+ * **Settings: one destination, one frame, five screens** (#132, #180).
  *
  * The frame is drawn here rather than by each page, which is the one place in this app
  * where that is right. #73 moved the app bar onto the page because the bar says *where the
  * reader is* and a layout cannot see the params of the page beneath it — but every screen
- * under Settings is about no record at all, so all four draw the same wordmark bar, and
- * the sub-navigation column beside them is the same on all four too. What is left for a
+ * under Settings is about no record at all, so all five draw the same wordmark bar, and
+ * the sub-navigation column beside them is the same on all five too. What is left for a
  * page is its own heading and its own form.
  *
- * **`measure="42rem"` for all of them**, because each of the four is a short form and
+ * **`measure="42rem"` for all of them**, because each of the five is a short form and
  * nothing else — which is the case ADR-0022 gives for the tighter of its two measures.
  * The sub-navigation is outside it and spans the region, as that ADR says navigation does.
  *

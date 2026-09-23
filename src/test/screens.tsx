@@ -1,9 +1,12 @@
-import { NextIntlClientProvider, useTranslations } from "next-intl";
+import { NextIntlClientProvider, useFormatter, useTranslations } from "next-intl";
 
 import "@/app/globals.css";
 
 import { AppHeader, type AppLocation } from "@/components/app-header";
 import { BottomNav } from "@/components/app-nav";
+import { BillingPortalForm } from "@/components/admin/billing-portal-form";
+import { BillingSubscribeForm } from "@/components/admin/billing-subscribe-form";
+import { BillingTrialForm } from "@/components/admin/billing-trial-form";
 import { CurrencyConversionForm } from "@/components/admin/currency-conversion-form";
 import { GroupRobotForm } from "@/components/admin/group-robot-form";
 import { InviteForm } from "@/components/admin/invite-form";
@@ -53,6 +56,7 @@ import {
 import { ScreenError } from "@/components/ui/screen-error";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { ScreenSkeleton } from "@/components/ui/screen-skeleton";
+import { instantDayFormat } from "@/lib/calendar-date";
 // A type only, and it has to stay one: the module is `server-only`, so a value
 // imported from it would throw the moment a browser test loaded this file.
 import type { SheetItem } from "@/lib/comparison/sheet";
@@ -758,7 +762,7 @@ export function screens(m: Messages) {
         </Body>
       ),
     },
-    // ── Settings: one destination, two groups, four screens ────────────────────────
+    // ── Settings: one destination, two groups, five screens ────────────────────────
     //
     // The three Org Admin screens arrived here in #131. Nothing measured them before: each
     // is an `async` Server Component behind an `isOrgAdmin` gate, and the record they were
@@ -839,6 +843,72 @@ export function screens(m: Messages) {
 
           <Measure>
             <p className="type-quiet">{m.currencyConversion.affects}</p>
+          </Measure>
+        </SettingsBody>
+      ),
+    },
+    // Plan and payment, twice, and for the reason Preferences is twice: it is the one
+    // screen in Settings whose *body* differs by the organisation looking at it rather
+    // than by the reader, and neither half contains the other. An organisation that has
+    // never paid is offered two things and told one; an organisation whose card has just
+    // stopped working is offered one thing and told four, including the two longest
+    // sentences on the screen. A single fixture would leave whichever half it dropped
+    // unmeasured at 390px, and the dropped half is where the prose is.
+    "the plan and payment screen": {
+      measure: 672,
+      body: (
+        <SettingsBody>
+          <ScreenHeader heading={m.billing.title}>
+            <p className="type-quiet">{m.billing.description}</p>
+          </ScreenHeader>
+
+          <Measure>
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
+              <p className="text-sm">{m.billing.plan.free}</p>
+            </section>
+          </Measure>
+
+          <Measure>
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
+              <BillingTrialForm />
+            </section>
+          </Measure>
+
+          {/* Four, which is the org the People screen above is drawn for — two fixtures
+              naming two different-sized organisations would photograph as two products. */}
+          <Measure>
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
+              <BillingSubscribeForm live={4} />
+            </section>
+          </Measure>
+        </SettingsBody>
+      ),
+    },
+    "the plan and payment screen, for an organisation whose last payment failed": {
+      measure: 672,
+      body: (
+        <SettingsBody>
+          <ScreenHeader heading={m.billing.title}>
+            <p className="type-quiet">{m.billing.description}</p>
+          </ScreenHeader>
+
+          <Measure>
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
+              <p className="text-sm">{m.billing.plan.paid}</p>
+              {/* The trial this organisation converted from, still said out loud — the
+                  date is kept after it lapses precisely so this line can exist. */}
+              <BillingTrialEnded endedAt="2026-08-20T09:15:00Z" />
+              {/* Paying for fewer people than are in the org, which is the gap the two
+                  numbers exist to show and the widest this sentence gets. */}
+              <BillingPaidFor paid={3} live={4} />
+              <p className="text-destructive text-sm">{m.billing.pastDue}</p>
+            </section>
+          </Measure>
+
+          <Measure>
+            <section className="bg-card rounded-surface shadow-surface flex flex-col gap-field p-4">
+              <BillingPortalForm />
+            </section>
           </Measure>
         </SettingsBody>
       ),
@@ -1108,7 +1178,7 @@ export function Body({
 /**
  * A **Settings** screen, in the frame `(app)/settings/layout.tsx` really draws round it.
  *
- * The four screens under Settings share a layout rather than each composing their own, so
+ * The five screens under Settings share a layout rather than each composing their own, so
  * a fixture that drew only the page's own body would measure a screen the router never
  * assembles — with no sub-navigation column beside it and therefore none of the width it
  * takes off the measure at the desk.
@@ -1208,6 +1278,35 @@ function SourcedBy({ name }: { name: string }) {
   return (
     <p className="type-quiet break-words">{t("sourcedBy", { name })}</p>
   );
+}
+
+/**
+ * The day a free trial ran out, as the Billing screen says it.
+ *
+ * A component for the reason {@link YourQuotesHeading} is one — the message carries a
+ * value — and it formats the instant rather than taking a formatted string, because the
+ * whole point of `instantDayFormat` is that a moment's *day* is a question only the org's
+ * timezone answers, and a fixture that pre-rendered the date would measure a screen
+ * nobody's timezone produces.
+ */
+function BillingTrialEnded({ endedAt }: { endedAt: string }) {
+  const t = useTranslations("billing");
+  const format = useFormatter();
+
+  return (
+    <p className="type-quiet">
+      {t("trial.ended", {
+        date: format.dateTime(new Date(endedAt), instantDayFormat("Asia/Bangkok")),
+      })}
+    </p>
+  );
+}
+
+/** How many people the plan pays for against how many are here, the same way. */
+function BillingPaidFor({ paid, live }: { paid: number; live: number }) {
+  const t = useTranslations("billing");
+
+  return <p className="type-quiet">{t("people", { paid, live })}</p>;
 }
 
 /** The client's own pictures for one Item, as the sourcing page hands them to the brief. */

@@ -10,9 +10,9 @@ import { captureWindow, phone } from "./src/test/phone.mts";
  * Two seams, told apart by the file extension.
  *
  * **`.test.ts` — server.** Route handlers and server actions, run against the real local
- * Postgres that `supabase start` brings up. Nothing is mocked but the three outbound
- * boundaries (the WeCom robot webhook, the Resend email send, the Frankfurter rate
- * fetch), because the riskiest logic here — derived progress, the overdue conditions,
+ * Postgres that `supabase start` brings up. Nothing is mocked but the four outbound
+ * boundaries (the WeCom robot webhook, the Resend email send, the Frankfurter rate fetch,
+ * and Stripe), because the riskiest logic here — derived progress, the overdue conditions,
  * the reminder engine's state across runs — does not survive being lifted out of the
  * database.
  *

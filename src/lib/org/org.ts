@@ -34,12 +34,32 @@ import {
  * every enforcement point — opening a Tender, inviting, uploading, drawing money — reads
  * one answer from one place (ADR-0040). It is settings in the same sense the other three
  * are: the business's answer, changed by data and not by a deploy.
+ *
+ * The last four are the plan's *billing* side (#180), and they are not settings at all:
+ * nobody in this app decides any of them. They are the read model of what Stripe has
+ * already decided, kept on the org row by the webhook, and they are read here because
+ * this is where a screen already comes to ask what the organisation's plan is — the
+ * Billing screen needs the same answer with the money showing.
+ *
+ * **`hasStripeCustomer` is a boolean and not the id.** Everything the app does with a
+ * customer id happens server-side with a key the browser has never seen, and the only
+ * question a screen has is whether there is a billing portal to open. Handing the
+ * identifier to a component that needs a yes or no is how it ends up in markup for no
+ * reason anybody reading either end could later reconstruct.
  */
 export type OrgSettings = {
   timezone: string;
   fxBufferPct: number;
   reportingCurrency: string;
   plan: Plan;
+  /** How many people the subscription pays for. Null when none does (#180). */
+  paidMemberships: number | null;
+  /** When the free trial ends, or ended — non-null means it has been used. */
+  trialEndsAt: string | null;
+  /** Stripe's own word for the subscription, verbatim. Null when there is none. */
+  subscriptionStatus: string | null;
+  /** Whether there is a Stripe Customer, and so a billing portal to open. */
+  hasStripeCustomer: boolean;
 };
 
 /**
@@ -65,6 +85,13 @@ const fallback: OrgSettings = {
   fxBufferPct: 0.02,
   reportingCurrency: "THB",
   plan: noPlan,
+  // Nothing bought, no trial taken, no customer — which is both the honest reading of an
+  // unreadable row and the closed direction, since `paidMemberships` is the half of the
+  // cap that can only ever loosen it.
+  paidMemberships: null,
+  trialEndsAt: null,
+  subscriptionStatus: null,
+  hasStripeCustomer: false,
 };
 
 export async function getOrgSettings(
@@ -78,7 +105,7 @@ export async function getOrgSettings(
     // One literal rather than two joined: supabase-js infers the row shape from the
     // string, and a concatenation is `string` to it, which types every column away.
     .select(
-      "timezone, fx_buffer_pct, reporting_currency, plan:plans(id, open_tender_cap, membership_cap, photos_per_item_cap, money_layer)",
+      "timezone, fx_buffer_pct, reporting_currency, paid_memberships, trial_ends_at, stripe_subscription_status, stripe_customer_id, plan:plans(id, open_tender_cap, membership_cap, photos_per_item_cap, money_layer)",
     )
     .limit(1)
     .maybeSingle();
@@ -98,6 +125,12 @@ export async function getOrgSettings(
     fxBufferPct: Number(data.fx_buffer_pct),
     reportingCurrency: data.reporting_currency,
     plan: plan === null ? noPlan : asPlan(plan),
+    paidMemberships: data.paid_memberships,
+    trialEndsAt: data.trial_ends_at,
+    subscriptionStatus: data.stripe_subscription_status,
+    // The id is read and then thrown away deliberately: the question every reader of this
+    // has is whether there is a portal to open, and the answer to that is a boolean.
+    hasStripeCustomer: data.stripe_customer_id !== null,
   };
 }
 

@@ -31,7 +31,7 @@ export type EmailMessage = { to: string; subject: string; text: string };
  *
  * Deliberately not a global `fetch` stub, for the reason ADR-0012 already records: the
  * send path is reached from code that also talks to Postgres over HTTP, and a global
- * stub takes `supabase-js` down with it. This is one of exactly three stubbed outbound
+ * stub takes `supabase-js` down with it. This is one of exactly four stubbed outbound
  * boundaries in the project — see the note in vitest.config.mts.
  */
 export type EmailBoundary = {

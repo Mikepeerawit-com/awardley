@@ -15,12 +15,12 @@ import { useTranslations } from "next-intl";
  * - **Organisation** is what a change affects *everybody*, and only an Org Admin has it.
  *
  * **The split is the point of the grouping**, and it is why the two are labelled rather
- * than run together as one list of four: an Org Admin should be able to see at a glance
+ * than run together as one list of five: an Org Admin should be able to see at a glance
  * which of their changes land on their colleagues' screens.
  *
  * **Preferences carries no heading of its own**, because a group of one whose heading is
  * its only row's name is that word said twice. The row *is* the group. Organisation has
- * three rows and so has something for a heading to say.
+ * four rows and so has something for a heading to say.
  */
 const groups = [
   {
@@ -41,13 +41,19 @@ const groups = [
         // FX Buffer is the FX side of the money layer — it exists to turn a supplier's
         // foreign price into a Landed Cost — so an organisation that did not buy the
         // money has nothing to set here, and the page itself refuses with `notFound()`
-        // for the same reason the three Organisation screens refuse a non-admin.
+        // for the same reason the other Organisation screens refuse a non-admin.
         //
         // Marked on the *screen* rather than as a group, because it is the only one of
-        // the three that goes: a group of two is what an Org Admin on the free tier has,
+        // the four that goes: a group of three is what an Org Admin on the free tier has,
         // not a group withheld.
         moneyLayerOnly: true,
       },
+      // Last, and deliberately **not** marked `moneyLayerOnly` (#180). It is the one
+      // Organisation screen the plan does not decide on, because it is where the plan is
+      // bought: withholding it from a free organisation would hide the upgrade behind the
+      // upgrade, and the row above it — withheld from exactly that organisation — is what
+      // sends somebody looking for this one.
+      { href: "/settings/billing", label: "nav.billing" },
     ],
   },
 ] as const satisfies readonly {
@@ -86,10 +92,10 @@ const groups = [
  *
  * **Nothing is marked as the current screen**, for the reason `app-nav.tsx` gives and
  * more strongly here: the screen's own `ScreenHeader` heading is the first thing beside
- * this column and says in words which of these four is open. Marking it would mean reading
+ * this column and says in words which of these five is open. Marking it would mean reading
  * the path, which turns this into a Client Component — and a Client Component cannot be
  * composed in the shared screen record, which is where every layout guard it inherits
- * lives. If a reader is ever seen losing their place among four labelled rows, this is
+ * lives. If a reader is ever seen losing their place among five labelled rows, this is
  * the thing to add.
  */
 export function SettingsFrame({
@@ -152,8 +158,8 @@ export function SettingsNav({
           ) : null}
           {group.screens.map((screen) => (
             // `prefetch={false}`, as everywhere else a link is on every screen of a
-            // destination: this column is drawn beside all four, so its prefetches fire
-            // four times over and are discarded. See the note in `tender-row.tsx`.
+            // destination: this column is drawn beside all five, so its prefetches fire
+            // five times over and are discarded. See the note in `tender-row.tsx`.
             <Link
               key={screen.href}
               href={screen.href}

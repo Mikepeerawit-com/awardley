@@ -46,7 +46,7 @@ export type { SendOutcome };
  *
  * Deliberately not a global `fetch` stub: the send path is reached from server actions
  * that also talk to Postgres over HTTP, and stubbing `fetch` globally would take
- * `supabase-js` down with it. This is one of exactly three stubbed outbound boundaries
+ * `supabase-js` down with it. This is one of exactly four stubbed outbound boundaries
  * in the project — see the note in vitest.config.mts.
  */
 export type RobotBoundary = {

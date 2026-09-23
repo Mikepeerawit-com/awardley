@@ -217,6 +217,11 @@ function renderSheet() {
             photos={photos}
             referenceImages={referenceImages}
             reportingCurrency="THB"
+            // The money on, which is the widest this sheet ever gets: the pricing block
+            // is a third column in every Item row and the totals bar is the longest line
+            // on the page. A plan without it measures narrower by construction, so the
+            // bar is cleared here or nowhere.
+            moneyLayer
           />
         </main>
       </div>

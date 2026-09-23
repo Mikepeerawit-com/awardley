@@ -197,6 +197,14 @@ export default async function TenderPage({ params }: PageProps<"/tenders/[id]">)
               reportingCurrency={
                 view.sheet.reportingCurrency ?? tender.reportingCurrency
               }
+              // The second seam of the same kind as the branch above, and threaded
+              // rather than discriminated because it withholds part of a screen rather
+              // than a whole one: an Owner on a plan without the money layer still gets
+              // the comparison sheet, ranked and selectable, with the cost and selling
+              // columns gone. The figures themselves are already absent — the loader
+              // nulls them — so this decides only whether the fields and the totals bar
+              // are drawn.
+              moneyLayer={view.moneyLayer}
             />
           </Section>
 

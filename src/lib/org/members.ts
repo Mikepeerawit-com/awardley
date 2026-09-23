@@ -1,6 +1,8 @@
 import "server-only";
 
 import { currentUser } from "@/lib/auth/session";
+import { getOrgSettings } from "@/lib/org/org";
+import { capReached } from "@/lib/plan/plan";
 import { createServiceClient } from "@/lib/supabase/service-client";
 import {
   createSessionClient,
@@ -162,6 +164,7 @@ export const membershipDisableRefusals = [
   "not_admin",
   "not_found",
   "last_admin",
+  "plan_limit",
   "failed",
 ] as const;
 
@@ -231,12 +234,27 @@ export async function setMembershipDisabled(
   // out. `caller.orgId` is the Active Org, which is the org this screen is showing.
   const { data: target } = await service
     .from("memberships")
-    .select("is_org_admin")
+    .select("is_org_admin, disabled_at")
     .eq("user_id", userId)
     .eq("org_id", caller.orgId)
     .maybeSingle();
 
   if (!target) return { ok: false, reason: "not_found" };
+
+  // **Readmitting is an Invite by another name, and the plan counts it as one** (ADR-0040).
+  // Both conditions are load-bearing. `disabledAt === null` is the readmission — Disabling
+  // is refused by no cap ever, because a plan that stopped an organisation letting
+  // somebody go would be a cap that made itself harder to get under. And
+  // `target.disabled_at !== null` is what keeps the no-op a no-op: pressing Restore on a
+  // colleague who never left changes nothing, adds nobody, and must not be answered with
+  // a sentence about the plan on an org that happens to be sitting on its cap.
+  if (
+    disabledAt === null &&
+    target.disabled_at !== null &&
+    (await membershipCapReached(caller.orgId, store))
+  ) {
+    return { ok: false, reason: "plan_limit" };
+  }
 
   if (
     disabledAt !== null &&
@@ -275,6 +293,48 @@ export async function setMembershipDisabled(
   if (error !== null) return { ok: false, reason: "failed" };
 
   return data.length === 1 ? { ok: true } : { ok: false, reason: "not_found" };
+}
+
+/**
+ * Would one more live Membership put this organisation over its plan (ADR-0040)?
+ *
+ * The one question both ways into an organisation ask — `invite` before it sends
+ * anything, and the readmission above — which is why it lives here rather than once in
+ * each. Live means not Disabled, exactly as {@link listMembers} means it: a colleague who
+ * has been let go holds every row they ever owned and occupies nothing the plan counts,
+ * so an org at its cap gets back under it by Disabling somebody rather than by deleting
+ * them. Nobody is ever deleted (ADR-0017's neighbouring promise), and this is the check
+ * that has to be written so that nobody ever needs to be.
+ *
+ * Counted over `memberships` with the service client and the org filtered by hand, which
+ * is `anotherAdminRemains`' shape below and for its reason: the client bypasses RLS, so
+ * the boundary the session client would have stated is written out. The *plan* is read
+ * through the session client instead, because that is the one read whose answer RLS
+ * already scopes — and reading it any other way would be asking a question about an
+ * organisation the caller named rather than the one they are in.
+ *
+ * A count that could not be read is not an empty organisation, and refuses. `noPlan`
+ * makes the identical call one level up: a broken read must never come out as a free
+ * upgrade, and the direction this fails in is a refusal somebody will report.
+ */
+export async function membershipCapReached(
+  orgId: string,
+  store: SessionCookieStore,
+): Promise<boolean> {
+  const { plan } = await getOrgSettings(store);
+
+  // Before the count, because an uncapped plan has no count to take.
+  if (plan.membershipCap === null) return false;
+
+  const { count } = await createServiceClient()
+    .from("memberships")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .is("disabled_at", null);
+
+  if (count === null) return true;
+
+  return capReached(plan.membershipCap, count);
 }
 
 /**

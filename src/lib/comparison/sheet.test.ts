@@ -49,6 +49,19 @@ let tenderId = "";
 let glovesId = "";
 let syringesId = "";
 
+/**
+ * The plan this suite's org is on, and one without the money layer.
+ *
+ * Rows of this suite's own rather than the seeded `free` and `paid`: those are the
+ * product's public promise, and every suite in the repo runs against the same database at
+ * the same time, so a test that edited one would be changing what a dozen others were
+ * half-way through asking. This sheet is the money, so the org sits on the first of these
+ * throughout and moves to the second only inside the tests about what a plan without it
+ * refuses.
+ */
+const planId = `plan-${run}`;
+const noMoneyPlanId = `plan-${run}-no-money`;
+
 async function signedInAs(email: string): Promise<SessionCookieStore> {
   const store = memoryCookieStore();
   const result = await signIn({ email, password }, store);
@@ -99,9 +112,28 @@ function aQuote(overrides: Partial<QuoteFields> & { tenderItemId: string }): Quo
 }
 
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert([
+    {
+      id: planId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: true,
+    },
+    {
+      id: noMoneyPlanId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: false,
+    },
+  ]);
+
+  if (planError) throw planError;
+
   const { data, error } = await service
     .from("orgs")
-    .insert({ name: `Sheet ${run}` })
+    .insert({ name: `Sheet ${run}`, plan_id: planId })
     .select("id")
     .single();
 
@@ -185,6 +217,11 @@ afterAll(async () => {
   }
 
   await service.from("orgs").delete().eq("id", orgId);
+
+  // After the org, never before: `orgs.plan_id` references these rows, and a plan deleted
+  // out from under an organisation still pointing at it is a foreign key refusing the
+  // teardown rather than the teardown happening.
+  await service.from("plans").delete().in("id", [planId, noMoneyPlanId]);
 });
 
 describe("reading the whole Tender at once", () => {
@@ -556,5 +593,96 @@ describe("pricing an Item inline", () => {
         store,
       ),
     ).toEqual({ ok: false, reason: "not_found" });
+  });
+});
+
+/**
+ * **A plan without the money layer, at the endpoint rather than at the screen** (#179).
+ *
+ * The Owner on such a plan is handed a sheet with the figures already subtracted and a
+ * component that draws no fields to type them into, so nobody reaches these refusals by
+ * using the app. What reaches them is a POST, and a server action is a public HTTP
+ * endpoint — the same argument `setFxBuffer` makes for gating the admin check in the
+ * function rather than in the page.
+ *
+ * The second claim is the one that makes the free tier a product rather than a demo:
+ * **selecting a Quote is not money.** The whole sourcing mechanism stays — Quotes ranked,
+ * converted into the Reporting Currency, selected, ruled out — and what the paid tier
+ * adds is what we pay and what we charge. A gate drawn one field too wide here would take
+ * the decision itself off the free tier, which is the product.
+ */
+describe("a plan without the money layer", () => {
+  /** The clock the request boundary would have supplied (ADR-0010). */
+  const confirmedAt = new Date("2026-08-22T09:00:00.000Z");
+
+  /** The suite's org, moved onto a plan with no money for the length of one test. */
+  async function onThatPlan(act: () => Promise<void>): Promise<void> {
+    await service.from("orgs").update({ plan_id: noMoneyPlanId }).eq("id", orgId);
+
+    try {
+      await act();
+    } finally {
+      await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
+    }
+  }
+
+  it("refuses a Landed Cost, and writes nothing", async () => {
+    const store = await signedInAs(owner.email);
+
+    await onThatPlan(async () => {
+      expect(
+        await setLandedCost({ tenderItemId: glovesId, landedCostPerUnit: 640, confirmedAt }, store),
+      ).toEqual({ ok: false, reason: "not_on_plan" });
+    });
+
+    // Asserted after the plan is back, because a refusal that had written the column
+    // anyway would leave a figure the sheet draws the moment anybody upgrades — which is
+    // the one way this could fail while looking like it passed.
+    const sheet = await getComparisonSheet(tenderId, store);
+
+    expect(sheet.items[0].landedCostPerUnit).toBeNull();
+    expect(sheet.items[0].landedCostConfirmedAt).toBeNull();
+  });
+
+  it("refuses a selling price, and writes nothing", async () => {
+    const store = await signedInAs(owner.email);
+
+    await onThatPlan(async () => {
+      expect(
+        await setSellingPrice({ tenderItemId: glovesId, sellingPricePerUnit: 900 }, store),
+      ).toEqual({ ok: false, reason: "not_on_plan" });
+    });
+
+    expect((await getComparisonSheet(tenderId, store)).items[0].sellingPricePerUnit).toBeNull();
+  });
+
+  it("still lets the Owner select a Quote, because deciding is not money", async () => {
+    const store = await signedInAs(owner.email);
+    const quote = await createQuote(aQuote({ tenderItemId: glovesId }), store);
+
+    if (!quote.ok) throw new Error(quote.reason);
+
+    await onThatPlan(async () => {
+      expect(await selectQuote({ tenderItemId: glovesId, quoteId: quote.quoteId }, store)).toEqual(
+        { ok: true },
+      );
+    });
+
+    expect((await getComparisonSheet(tenderId, store)).items[0].selectedQuoteId).toBe(
+      quote.quoteId,
+    );
+  });
+
+  it("refuses a signed-out caller as forbidden rather than telling them the plan", async () => {
+    // The order again, the other way round: an organisation's plan is not a fact to
+    // report to somebody who is not in it.
+    await onThatPlan(async () => {
+      expect(
+        await setLandedCost(
+          { tenderItemId: glovesId, landedCostPerUnit: 10, confirmedAt },
+          memoryCookieStore(),
+        ),
+      ).toEqual({ ok: false, reason: "forbidden" });
+    });
   });
 });

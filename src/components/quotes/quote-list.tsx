@@ -35,6 +35,7 @@ export function QuoteList({
   tenderItemId,
   quotes,
   photos,
+  photoAllowance,
   callerId,
   ownerUserId,
   selectedQuoteId,
@@ -46,6 +47,14 @@ export function QuoteList({
   quotes: Quote[];
   /** Every Quote's photos, keyed by Quote — one query for the whole Item. */
   photos: Map<string, QuotePhoto[]>;
+  /**
+   * How many more photos this Item may carry under the plan, or null when it caps none.
+   *
+   * One number for the whole list rather than one per Quote, because the cap is on the
+   * Item across every Quote on it (ADR-0040) — adding a photograph to any row here spends
+   * the same allowance.
+   */
+  photoAllowance: number | null;
   /** Who is reading. A Quote is correctable by whoever sourced it, and by nobody else. */
   callerId: string;
   /** Who owns the Tender — the one override on sourced-by, and never a role. */
@@ -210,6 +219,7 @@ export function QuoteList({
             tenderId={tenderId}
             quoteId={quote.id}
             photos={photos.get(quote.id) ?? []}
+            photoAllowance={photoAllowance}
           />
 
           {/* Correcting belongs to the Assignee who sourced it, with the Owner

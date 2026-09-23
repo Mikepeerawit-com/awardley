@@ -304,7 +304,52 @@ function syringes({
   };
 }
 
-function renderSheet(item: SheetItem) {
+/**
+ * **The money layer, which the plan either bought or did not** (#179, ADR-0040).
+ *
+ * The figures are gone before they reach this component — `loadTenderScreen` nulls the
+ * three columns rather than flagging them — so what is asserted here is the other half of
+ * the rule, and the half a null cannot state: the *places* somebody would type a figure
+ * into. An empty "Cost to us / unit" box on a plan without the money layer is an
+ * invitation to type into a field whose write refuses, and a totals bar summing three
+ * nulls reads as a Tender worth nothing rather than a Tender whose worth is not on this
+ * plan.
+ *
+ * The opposite claim is tested alongside it, because it is the one that makes the free
+ * tier a product: everything that is not money stays. Eight Quotes, ranked, converted,
+ * selectable, with the Owner's rule-outs intact — the whole sourcing mechanism, which is
+ * what this screen mostly is.
+ */
+describe("a plan without the money layer", () => {
+  it("draws no cost, no selling price and no totals bar", () => {
+    renderSheet(syringes(), false);
+
+    expect(screen.queryByText(messages.comparison.label.landedCost)).toBeNull();
+    expect(screen.queryByText(messages.comparison.label.selling)).toBeNull();
+    expect(screen.queryByText(messages.comparison.totals.bidTotal)).toBeNull();
+    expect(screen.queryByText(messages.comparison.totals.landedCost)).toBeNull();
+  });
+
+  it("keeps every quote ranked, and the selection that decides between them", () => {
+    renderSheet(syringes({ ruleOut: ["box-of-50"] }), false);
+
+    expect(ranks()).toEqual(["1", "2", "3", "4", "5", "6", "7"]);
+    expect(screen.getAllByText(messages.comparison.quote.lowest)).toHaveLength(1);
+    expect(screen.getAllByText(messages.comparison.select)).toHaveLength(7);
+  });
+
+  it("draws all of it again on a plan that has the money layer", () => {
+    // The control, and not a formality: a sheet that had stopped drawing its pricing for
+    // everybody would pass both assertions above.
+    renderSheet(syringes());
+
+    expect(screen.getByText(messages.comparison.label.landedCost)).toBeDefined();
+    expect(screen.getByText(messages.comparison.label.selling)).toBeDefined();
+    expect(screen.getByText(messages.comparison.totals.bidTotal)).toBeDefined();
+  });
+});
+
+function renderSheet(item: SheetItem, moneyLayer = true) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages} timeZone="Asia/Bangkok">
       <WorkingSheet
@@ -313,6 +358,9 @@ function renderSheet(item: SheetItem) {
         photos={new Map<string, QuotePhoto[]>()}
         referenceImages={[]}
         reportingCurrency="THB"
+        // On by default, because every test above this one is about the ranking and the
+        // paid shape is the one they were all written against.
+        moneyLayer={moneyLayer}
       />
     </NextIntlClientProvider>,
   );

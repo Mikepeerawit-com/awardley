@@ -9,7 +9,8 @@ import {
   createSessionClient,
   type SessionCookieStore,
 } from "@/lib/supabase/session-client";
-import { isItemOutcome, type ItemOutcome } from "@/lib/tenders/outcome";
+import { capReached } from "@/lib/plan/plan";
+import { isItemOutcome, tenderOutcome, type ItemOutcome } from "@/lib/tenders/outcome";
 import { announceOutcome, type OutboundBoundary } from "./outcome-news";
 
 /**
@@ -58,6 +59,7 @@ export const tenderProblems = [
   "invalid_quantity",
   "last_item",
   "invalid_outcome",
+  "plan_limit",
   "failed",
 ] as const;
 
@@ -200,6 +202,15 @@ export async function createTender(
     itemsProblem(input.items);
 
   if (problem) return { ok: false, reason: problem };
+
+  // The plan is asked after the form has been checked and before a single row is written.
+  // After, because a half-filled form is not a customer who has outgrown their plan and
+  // must not be told it is — `incomplete` is the sentence that gets them moving. Before,
+  // because a cap refuses the *next* act (ADR-0040): a Tender inserted and then deleted
+  // would burn a reference from the org's counter, and the counter never goes back.
+  if (await openTenderCapReached(null, store, supabase)) {
+    return { ok: false, reason: "plan_limit" };
+  }
 
   // `reference` is deliberately absent from the payload: a trigger issues it from the
   // org's counter, and anything sent here would be overwritten anyway.
@@ -502,7 +513,7 @@ export async function setItemOutcome(
   const supabase = createSessionClient(store);
   const { data: item } = await supabase
     .from("tender_items")
-    .select("outcome")
+    .select("outcome, tender_id")
     .eq("id", itemId)
     .maybeSingle();
 
@@ -514,6 +525,17 @@ export async function setItemOutcome(
   // one that was really taken. `outcome_at` is what "won this month" is counted on, so a
   // save that changed nothing would quietly move a January win into August.
   if (item.outcome === outcome) return { ok: true };
+
+  // **Taking an Outcome back off can open a Tender, and an opened Tender is an addition.**
+  // The equality above has already settled the rest: reaching here with `null` means the
+  // Item is decided today and is about to stop being, which is the only move in this
+  // function that can raise the org's count of open Tenders. Recording an Outcome only
+  // ever lowers it, and is refused by nothing here however far over a cap the org is —
+  // a plan that stopped somebody closing work would hold their data hostage, which is the
+  // opposite of what "a cap refuses the next act and never destroys data" means.
+  if (outcome === null && (await reopeningCapReached(item.tender_id, store, supabase))) {
+    return { ok: false, reason: "plan_limit" };
+  }
 
   const { data, error } = await supabase
     .from("tender_items")
@@ -813,6 +835,93 @@ async function assignableProblem(
     .maybeSingle();
 
   return data ? null : "unassignable";
+}
+
+/**
+ * Would one more open Tender put this organisation over its plan (ADR-0040)?
+ *
+ * **Counted, never stored.** "Open" here is exactly what the Tender list means by it —
+ * `tenderOutcome(items) === null`, no Outcome recorded — so the cap and the screens are
+ * reading the same rows and can never disagree about which Tenders are open. A column on
+ * `orgs` holding the total would be a second answer to a question the Items already
+ * answer, and the first thing that would drift the day somebody deleted a Tender in the
+ * dashboard.
+ *
+ * The read goes through the *session* client, so RLS is the whole of the scoping: the
+ * caller's org is the only org whose Tenders come back, and there is no `org_id` on this
+ * query for the same reason `getOrgSettings` has no `.eq()` on the org's id.
+ *
+ * `exceptTenderId` is the one the caller is about to change — left out because the
+ * question is what the org will hold *afterwards*, and a Tender being reopened must not
+ * be counted once in the total and once again as the addition.
+ */
+async function openTenderCapReached(
+  exceptTenderId: string | null,
+  store: SessionCookieStore,
+  supabase: ReturnType<typeof createSessionClient>,
+): Promise<boolean> {
+  const { plan } = await getOrgSettings(store);
+
+  // Asked before the count, because an uncapped plan has no count to take: the free
+  // tier's figure is a row and `null` is how that row says "no cap" (ADR-0040), so most
+  // organisations pay nothing for this check at all.
+  if (plan.openTenderCap === null) return false;
+
+  const { data } = await supabase
+    .from("tenders")
+    .select("id, items:tender_items(outcome)")
+    .overrideTypes<
+      { id: string; items: { outcome: ItemOutcome | null }[] }[],
+      { merge: false }
+    >();
+
+  // A read that failed is answered as the cap being reached, not as nothing being open:
+  // every plan check fails closed (ADR-0040, `noPlan`), because a count that failed open
+  // is a cap nobody can tell from a lifted one. The Membership and photo counts make the
+  // same call.
+  if (data === null) return true;
+
+  const open = data.filter(
+    (row) => row.id !== exceptTenderId && tenderOutcome(row.items) === null,
+  );
+
+  return capReached(plan.openTenderCap, open.length);
+}
+
+/**
+ * Would clearing an Outcome on this Tender open one more than the plan allows?
+ *
+ * Two questions in order, and the order is what keeps the refusal honest. **Is the Tender
+ * closed today?** Only a closed one is opened by this, and a Tender still half out with
+ * the client is already counted among the org's open ones — clearing an Item on it adds
+ * nothing, and an organisation sitting on its cap has to stay able to correct a typo.
+ * Then, and only then, the cap.
+ *
+ * An unreadable Item list is refused, like every other plan read that fails (ADR-0040).
+ * The lenient direction was considered — the act is somebody undoing a decision they
+ * recorded by mistake, and the overshoot would be one — and refused, because a check
+ * that fails open is a cap nobody can tell from a lifted one, and one rule everywhere is
+ * worth more than a kinder sentence on a read that fails almost never.
+ */
+async function reopeningCapReached(
+  tenderId: string,
+  store: SessionCookieStore,
+  supabase: ReturnType<typeof createSessionClient>,
+): Promise<boolean> {
+  const { data: items } = await supabase
+    .from("tender_items")
+    .select("outcome")
+    .eq("tender_id", tenderId)
+    .overrideTypes<{ outcome: ItemOutcome | null }[], { merge: false }>();
+
+  // Unreadable siblings fail closed like every other plan read (ADR-0040): the act is
+  // undoing a mistake, but a check that cannot tell whether it reopens anything is a
+  // check that has not been made.
+  if (items === null) return true;
+
+  if (tenderOutcome(items) === null) return false;
+
+  return openTenderCapReached(tenderId, store, supabase);
 }
 
 /**

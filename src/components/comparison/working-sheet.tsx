@@ -79,6 +79,7 @@ export function WorkingSheet({
   photos,
   referenceImages,
   reportingCurrency,
+  moneyLayer,
 }: {
   tenderId: string;
   items: SheetItem[];
@@ -97,6 +98,22 @@ export function WorkingSheet({
    * sorted column would be two units drawn as one list.
    */
   reportingCurrency: string;
+  /**
+   * Whether this organisation's plan includes the money at all (#179, ADR-0040).
+   *
+   * Off, the sheet draws no cost, no selling price, no Margin and no totals bar — and it
+   * is already drawing none of them by construction, because `loadTenderScreen` hands
+   * over Items with those three fields nulled. This prop is what stops the *fields*
+   * appearing: an empty Landed Cost box invites somebody to type into it, and the write
+   * behind it would refuse them. So the figures are subtracted by the loader and the
+   * places they would have been typed are left out here, which are two halves of one
+   * rule and neither is sufficient alone.
+   *
+   * Everything else stays. The ranked Quotes, their frozen converted prices, selecting
+   * one and ruling one out are the sourcing mechanism, and that is what the free tier is
+   * — the whole of this screen except what we pay and what we charge.
+   */
+  moneyLayer: boolean;
 }) {
   const t = useTranslations("comparison");
   const undecided = itemsNeedingDecision(items);
@@ -138,6 +155,7 @@ export function WorkingSheet({
                 tenderId={tenderId}
                 item={item}
                 reportingCurrency={reportingCurrency}
+                moneyLayer={moneyLayer}
               />
             }
             panel={
@@ -155,8 +173,13 @@ export function WorkingSheet({
         ))}
       </ul>
 
-      {/* The whole Tender's money, under the rows it is made of. */}
-      <TotalsBar items={items} reportingCurrency={reportingCurrency} />
+      {/* The whole Tender's money, under the rows it is made of — and nothing at all on a
+          plan without the money layer, where every figure it sums has been subtracted
+          before it got here. A bar reporting "0 of 4 items priced" and three zeros would
+          be the app inventing a state nobody is in. */}
+      {moneyLayer ? (
+        <TotalsBar items={items} reportingCurrency={reportingCurrency} />
+      ) : null}
 
       <p className="type-quiet">{t("derivedNote", { currency: reportingCurrency })}</p>
     </div>
@@ -268,10 +291,12 @@ function ItemSummary({
   tenderId,
   item,
   reportingCurrency,
+  moneyLayer,
 }: {
   tenderId: string;
   item: SheetItem;
   reportingCurrency: string;
+  moneyLayer: boolean;
 }) {
   const t = useTranslations("comparison");
   const tq = useTranslations("quotes");
@@ -364,12 +389,20 @@ function ItemSummary({
 
       {/* Pricing is inline in the row, not a step of its own: landed cost pre-filled from
           the Selected Quote and editable over it, selling price beside it, and the Margin
-          under both, computing in the browser as the digits are typed. */}
-      <ItemPricing
-        tenderId={tenderId}
-        item={item}
-        reportingCurrency={reportingCurrency}
-      />
+          under both, computing in the browser as the digits are typed.
+
+          Drawn only where the plan has the money layer (#179). Not disabled and not
+          empty: an empty box beside "Cost to us / unit" is an invitation to type a figure
+          the write behind it would refuse, and a greyed one advertises what this
+          organisation did not buy on the row it would have gone on. The block simply is
+          not there, and the two beside it take the width back. */}
+      {moneyLayer ? (
+        <ItemPricing
+          tenderId={tenderId}
+          item={item}
+          reportingCurrency={reportingCurrency}
+        />
+      ) : null}
     </>
   );
 }

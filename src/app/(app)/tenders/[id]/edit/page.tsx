@@ -16,6 +16,8 @@ import {
 import { currentUser } from "@/lib/auth/session";
 import { listReferenceImages } from "@/lib/images/reference-images";
 import { listMembers, ownerOptions } from "@/lib/org/members";
+import { getOrgSettings } from "@/lib/org/org";
+import { referenceImageCap, remainingUnderCap } from "@/lib/plan/plan";
 import { getTender } from "@/lib/tenders/tenders";
 
 export default async function EditTenderPage({
@@ -33,10 +35,14 @@ export default async function EditTenderPage({
   // reads still happening when there is no such Tender — they come back empty through
   // RLS and are thrown away, which is one wasted trip on the mistaken link in exchange
   // for two removed from every real edit.
-  const [tender, members, referenceImages] = await Promise.all([
+  const [tender, members, referenceImages, settings] = await Promise.all([
     getTender(id, store),
     listMembers(store),
     listReferenceImages(id, store),
+    // A fourth, for the plan's cap on Reference Images. It joins the batch rather than
+    // being read inside the Section below, where it would not begin until React rendered
+    // that far down — later than serial.
+    getOrgSettings(store),
   ]);
 
   if (!tender) notFound();
@@ -105,7 +111,18 @@ export default async function EditTenderPage({
       <Section id="reference-images" title={t("referenceImages.title")}>
         {/* The hint lives on the input rather than on the heading — one sentence, beside
             the thing it is about. */}
-        <ReferenceImageUploader tenderId={tender.id} />
+        {/* What the plan leaves room for, worked out here because both halves of it are
+            already in hand: the Items the Tender has, which is what buys the allowance,
+            and the pictures already on it. A courtesy to the picker — the signing step
+            refuses the same way and is what actually holds — but it is the half that
+            arrives before somebody on mobile data spends the upload. */}
+        <ReferenceImageUploader
+          tenderId={tender.id}
+          allowance={remainingUnderCap(
+            referenceImageCap(settings.plan, tender.items.length),
+            referenceImages.length,
+          )}
+        />
 
         <ReferenceImageGallery
           tenderId={tender.id}

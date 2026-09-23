@@ -93,6 +93,7 @@ export function QuoteForm({
   tenderItemId,
   defaults,
   reportingCurrency,
+  photoAllowance,
 }: {
   tenderId: string;
   tenderItemId: string;
@@ -108,6 +109,23 @@ export function QuoteForm({
    * only caller that can answer it is one holding a Tender.
    */
   reportingCurrency: string;
+  /**
+   * How many more Quote Photos this Tender Item may carry, or null on a plan capping
+   * none — counted across every Quote on the Item, because that is the grain the cap is
+   * at (ADR-0040) and this form is about to add one more Quote to it.
+   *
+   * Handed down so the picker can refuse at the pick. Without it the only refusal
+   * available is the server's, and the server's arrives after the Quote row is written —
+   * which puts the photos in `outstanding`, where the only offer is a retry, and a retry
+   * of the same batch against the same standing cap is refused every time, forever. That
+   * is precisely the trap `too_many` is checked here to avoid.
+   *
+   * It is a number read when the screen was drawn, so it can be stale by the time the
+   * batch is signed: a colleague adding photographs to another Quote on the same Item
+   * moves it. That is fine and is why the server check stays — being one short at the
+   * sign is the ordinary race, and being eleven short at the pick is the bug.
+   */
+  photoAllowance: number | null;
 }) {
   const t = useTranslations("quotes");
   // The same sentences `ImageProblemNotice` renders, without its box: here they are one
@@ -121,11 +139,12 @@ export function QuoteForm({
   /** Unique within the held list, which is all a React key has to be. */
   const nextKey = useRef(0);
 
-  // Refused at the picker, before anything is held. Only `too_many` reaches it today, and
-  // the reason it is said here rather than by the uploader is that by the time the
-  // uploader could say it the Quote is written and the photos are stranded against it —
-  // where the only offer is a retry, and a retry of eleven photos is refused for being
-  // eleven photos every time. Said at the pick, it is one the person can act on.
+  // Refused at the picker, before anything is held — `too_many` and `plan_limit`, which
+  // are here for one reason: by the time the uploader could say either, the Quote is
+  // written and the photos are stranded against it, where the only offer is a retry —
+  // and a retry of eleven photos is refused for being eleven photos every time, exactly
+  // as a retry against a standing plan cap is refused for the cap every time. Said at the
+  // pick, both are refusals the person can act on.
   const [pickProblem, setPickProblem] = useState<ImageProblem | null>(null);
 
   // Kept apart from `held` on purpose: these belong to Quotes that already exist, so they
@@ -150,6 +169,17 @@ export function QuoteForm({
   function pick(files: File[]) {
     if (held.length + files.length > maxImagesAtOnce) {
       setPickProblem("too_many");
+      return;
+    }
+
+    // After `too_many`, and the order is the advice rather than the arithmetic. Both can
+    // be true of one pick — eleven pictures against an allowance of five — and only one
+    // of the two sentences is then worth reading: *add them in smaller batches* is what
+    // gets the five in, while *remove one, or upgrade* would send somebody to delete a
+    // photograph they did not need to. Where the allowance really is the wall, picking
+    // fewer cannot help and `too_many` is not true, so this is what is said.
+    if (photoAllowance !== null && held.length + files.length > photoAllowance) {
+      setPickProblem("plan_limit");
       return;
     }
 

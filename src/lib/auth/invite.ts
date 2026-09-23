@@ -1,11 +1,17 @@
 import "server-only";
 
+import { membershipCapReached } from "@/lib/org/members";
 import { createServiceClient } from "@/lib/supabase/service-client";
 import type { SessionCookieStore } from "@/lib/supabase/session-client";
 
 import { currentUser } from "./session";
 
-export const inviteRefusals = ["not_admin", "already_invited", "send_failed"] as const;
+export const inviteRefusals = [
+  "not_admin",
+  "plan_limit",
+  "already_invited",
+  "send_failed",
+] as const;
 
 export type InviteRefusal = (typeof inviteRefusals)[number];
 
@@ -52,6 +58,24 @@ export async function invite(
 
   if (!caller?.isOrgAdmin) {
     return { ok: false, reason: "not_admin" };
+  }
+
+  // **Before the send, and that is the whole of where this line goes** (ADR-0040).
+  // `inviteUserByEmail` is not a read: it mints an auth account and puts an email in
+  // front of a colleague. A cap checked afterwards would refuse the admin while the
+  // person it refused was already reading their invitation — and the undo is the one this
+  // file spends three paragraphs on below, because an account deleted a moment late
+  // leaves an address that comes back `already_invited` forever. A refusal must cost no
+  // auth write, so the count happens while there is still nothing to undo.
+  //
+  // The one sentence this order gets wrong, and accepts: an admin at the cap who re-types
+  // an address that already holds an account hears about the cap rather than about the
+  // account, although the invite would have added nobody. Telling the two apart first
+  // would mean looking the address up in Auth before every invite — a third call, on a
+  // path that is at its cap and is refused either way — and the readmission path in
+  // `members.ts` can afford the finer answer only because the row it reads is its own.
+  if (await membershipCapReached(caller.orgId, store)) {
+    return { ok: false, reason: "plan_limit" };
   }
 
   const service = createServiceClient();

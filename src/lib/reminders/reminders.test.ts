@@ -118,7 +118,10 @@ async function markSent(tenderId: string): Promise<void> {
 beforeAll(async () => {
   const { data: org, error: orgError } = await service
     .from("orgs")
-    .insert({ name: `Reminders ${run}` })
+    // On the uncapped tier: a new org defaults to `free`, which allows one open Tender
+    // (ADR-0040), and every schedule below is read off a Tender of its own. The seeded
+    // row is referenced and never written.
+    .insert({ name: `Reminders ${run}`, plan_id: "paid" })
     .select("id")
     .single();
 

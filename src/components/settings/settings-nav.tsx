@@ -37,13 +37,23 @@ const groups = [
       {
         href: "/settings/currency-conversion",
         label: "nav.currencyConversion",
+        // The one screen the plan decides on rather than the role (#179, ADR-0040). The
+        // FX Buffer is the FX side of the money layer — it exists to turn a supplier's
+        // foreign price into a Landed Cost — so an organisation that did not buy the
+        // money has nothing to set here, and the page itself refuses with `notFound()`
+        // for the same reason the three Organisation screens refuse a non-admin.
+        //
+        // Marked on the *screen* rather than as a group, because it is the only one of
+        // the three that goes: a group of two is what an Org Admin on the free tier has,
+        // not a group withheld.
+        moneyLayerOnly: true,
       },
     ],
   },
 ] as const satisfies readonly {
   heading: string | null;
   orgAdminOnly: boolean;
-  screens: readonly { href: string; label: string }[];
+  screens: readonly { href: string; label: string; moneyLayerOnly?: boolean }[];
 }[];
 
 /**
@@ -84,16 +94,19 @@ const groups = [
  */
 export function SettingsFrame({
   isOrgAdmin,
+  moneyLayer,
   children,
 }: {
   isOrgAdmin: boolean;
+  /** Whether the organisation's plan includes the money — see `groups` above. */
+  moneyLayer: boolean;
   children: ReactNode;
 }) {
   return (
     // A block above the screen on a phone, a column beside it from `md`. 390px has no
     // room for a column next to anything, and a monitor has no reason to stack.
     <div className="flex flex-col gap-landmark md:flex-row">
-      <SettingsNav isOrgAdmin={isOrgAdmin} />
+      <SettingsNav isOrgAdmin={isOrgAdmin} moneyLayer={moneyLayer} />
       <div className="flex min-w-0 flex-1 flex-col gap-landmark">{children}</div>
     </div>
   );
@@ -103,9 +116,27 @@ export function SettingsFrame({
  * The column itself. Exported for the suite that asks what is in it for whom; everything
  * that draws a Settings screen goes through {@link SettingsFrame}.
  */
-export function SettingsNav({ isOrgAdmin }: { isOrgAdmin: boolean }) {
+export function SettingsNav({
+  isOrgAdmin,
+  moneyLayer,
+}: {
+  isOrgAdmin: boolean;
+  moneyLayer: boolean;
+}) {
   const t = useTranslations();
-  const drawn = groups.filter((group) => isOrgAdmin || !group.orgAdminOnly);
+  // Two filters of the same kind, in the order the column is built: which groups this
+  // reader has, then which screens this organisation's plan has inside them. A screen
+  // withheld by the plan is withheld the way a group withheld by the role is — not drawn
+  // at all, never greyed — because a row leading to a `notFound()` is an advertisement
+  // for a screen nobody here can open.
+  const drawn = groups
+    .filter((group) => isOrgAdmin || !group.orgAdminOnly)
+    .map((group) => ({
+      ...group,
+      screens: group.screens.filter(
+        (screen) => moneyLayer || !("moneyLayerOnly" in screen && screen.moneyLayerOnly),
+      ),
+    }));
 
   return (
     <nav

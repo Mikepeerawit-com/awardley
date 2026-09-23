@@ -26,11 +26,17 @@ import { getOrgSettings } from "@/lib/org/org";
 export default async function CurrencyConversionPage() {
   const store = await cookies();
   const user = await currentUser(store);
+  const { fxBufferPct, reportingCurrency, plan } = await getOrgSettings(store);
 
-  if (!user?.isOrgAdmin) notFound();
+  // Two refusals with one shape, because they are the same sentence said about two
+  // different things: this screen is not this reader's, and this screen is not this
+  // organisation's (#179). `notFound()` for both, for the reason the admin check already
+  // gives — a page that says "you are not allowed here" also says that here exists, and
+  // an upgrade prompt on a settings screen is an advertisement where a setting was. The
+  // real gate is `setFxBuffer`, which refuses the same two ways on the public endpoint.
+  if (!user?.isOrgAdmin || !plan.moneyLayer) notFound();
 
   const t = await getTranslations("currencyConversion");
-  const { fxBufferPct, reportingCurrency } = await getOrgSettings(store);
 
   return (
     <>

@@ -123,6 +123,12 @@ export const imageProblems = [
   "not_found",
   "no_images",
   "too_many",
+  // Beside `too_many` because they are the same shape of refusal read from two different
+  // places: that one is about this batch, which the picker could have stopped, and this
+  // one is about what the Item or the Tender is already carrying, which it could not.
+  // The wording has to carry that difference — nothing about picking fewer helps here,
+  // and the only two ways forward are removing a picture or leaving the plan.
+  "plan_limit",
   "too_large",
   "not_an_image",
   "not_uploaded",

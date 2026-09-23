@@ -41,10 +41,18 @@ function rowsIn(container: HTMLElement): [string, string][] {
   ]);
 }
 
-function drawFor(locale: string, messages: typeof en, isOrgAdmin: boolean): HTMLElement {
+function drawFor(
+  locale: string,
+  messages: typeof en,
+  isOrgAdmin: boolean,
+  moneyLayer = true,
+): HTMLElement {
   const { container } = render(
     <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Bangkok">
-      <SettingsNav isOrgAdmin={isOrgAdmin} />
+      {/* The money layer on by default: it is the shape every claim below about the
+          Organisation group was written against, and the one a paid organisation's
+          Administrator really opens. */}
+      <SettingsNav isOrgAdmin={isOrgAdmin} moneyLayer={moneyLayer} />
     </NextIntlClientProvider>,
   );
 
@@ -88,6 +96,24 @@ describe.each([
     expect(
       screen.queryByRole("heading", { name: messages.nav.organisation }),
     ).toBeNull();
+  });
+
+  it("withholds only Foreign prices from an Org Admin whose plan has no money layer", () => {
+    // The plan withholds a *screen*, not a group — which is the distinction this asserts
+    // as a whole list rather than as an absence. People and the WeCom group are still
+    // this Administrator's to run: what the free tier loses is the money, and the FX
+    // Buffer is the FX half of it (#179). A heading left standing over two rows is
+    // correct here and a heading over none would not be, so the group's name is checked
+    // too.
+    expect(rowsIn(drawFor(locale, messages, true, false))).toEqual([
+      ["/settings", messages.preferences.title],
+      ["/settings/people", messages.nav.people],
+      ["/settings/group-robot", messages.nav.groupRobot],
+    ]);
+
+    expect(
+      screen.getByRole("heading", { name: messages.nav.organisation }),
+    ).toBeDefined();
   });
 
   it("still draws the column for them, rather than a different kind of screen", () => {

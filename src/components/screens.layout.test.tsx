@@ -206,6 +206,9 @@ describe(`the create-a-Quote form with photos held, at ${phone.width}×${phone.h
             tenderItemId="item-gloves"
             defaults={blankQuote({ unit: "piece", today: "2026-08-12", reportingCurrency: "THB" })}
             reportingCurrency="THB"
+            // Uncapped: the widest the picker ever is, which is what a width bar
+            // measures.
+            photoAllowance={null}
           />
         </Body>
       </Screen>,

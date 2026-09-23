@@ -164,6 +164,76 @@ describe("the v1 schema", () => {
   });
 });
 
+/**
+ * The plan an organisation is on (ADR-0040).
+ *
+ * What is asserted here is **shape, not figures**. The caps are data precisely so that
+ * changing a tier is an update and not a deploy, so a test that pinned the free tier to
+ * one open Tender would be the deploy — it would go red the morning the business changed
+ * its mind, which is the one morning nothing should have to ship. What cannot change
+ * without the app changing with it is the grammar: `free` promises numbers, `paid`
+ * promises none, and `null` is the only way either row says "no cap".
+ */
+describe("plans", () => {
+  it("starts a new organisation on the free tier", async () => {
+    // The column defaults to `free`, and the migration that added it defaulted to `paid`
+    // for exactly as long as it took to backfill: an organisation that existed before
+    // plans did was already a customer using everything, and one signing up from here
+    // starts on the floor and pays to leave it.
+    const { data, error } = await service
+      .from("orgs")
+      .insert({ name: `Plan default ${run}` })
+      .select("plan_id")
+      .single();
+
+    expect(error).toBeNull();
+    expect(data?.plan_id).toBe("free");
+
+    await service.from("orgs").delete().eq("name", `Plan default ${run}`);
+  });
+
+  it("states a figure for every cap on the free tier, and draws no money", async () => {
+    const { data } = await service
+      .from("plans")
+      .select("open_tender_cap, membership_cap, photos_per_item_cap, money_layer")
+      .eq("id", "free")
+      .single();
+
+    expect(data?.open_tender_cap).not.toBeNull();
+    expect(data?.membership_cap).not.toBeNull();
+    expect(data?.photos_per_item_cap).not.toBeNull();
+    expect(data?.money_layer).toBe(false);
+  });
+
+  it("promises nothing but 'no cap' on the paid tier, and draws money", async () => {
+    // Every cap null, which is why the paid row has no figures to go out of date.
+    const { data } = await service
+      .from("plans")
+      .select("open_tender_cap, membership_cap, photos_per_item_cap, money_layer")
+      .eq("id", "paid")
+      .single();
+
+    expect(data).toEqual({
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: true,
+    });
+  });
+
+  it("refuses a tier on which nothing may be opened", async () => {
+    // A cap of zero is not a plan, it is a closed account — a different fact the schema
+    // has no word for, and one a `0` typed into the dashboard would quietly invent.
+    const { error } = await service
+      .from("plans")
+      .insert({ id: `zero-${run}`, open_tender_cap: 0 });
+
+    expect(error).not.toBeNull();
+
+    await service.from("plans").delete().eq("id", `zero-${run}`);
+  });
+});
+
 describe("tender_item_assignees", () => {
   // Asked of the database directly because the guarantees are the database's: the app's
   // upsert is *built on* this key, and the cascade fires on a path no app code walks.

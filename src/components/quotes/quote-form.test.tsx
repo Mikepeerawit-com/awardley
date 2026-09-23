@@ -82,7 +82,7 @@ function aPhoto(name: string): File {
   return new File([new Uint8Array([0xff, 0xd8])], name, { type: "image/jpeg" });
 }
 
-function renderForm() {
+function renderForm(photoAllowance: number | null = null) {
   return render(
     <NextIntlClientProvider locale="en" messages={messages} timeZone="Asia/Bangkok">
       <QuoteForm
@@ -90,6 +90,9 @@ function renderForm() {
         tenderItemId="an-item"
         defaults={blankQuote({ unit: "box of 50", today: "2026-08-21", reportingCurrency: "THB" })}
         reportingCurrency="THB"
+        // Uncapped unless a test is about the cap: every claim above this one is about
+        // the holding and the ordering, which a plan has no opinion on.
+        photoAllowance={photoAllowance}
       />
     </NextIntlClientProvider>,
   );
@@ -201,6 +204,70 @@ describe("photos picked while the Quote is being entered", () => {
     // Refused rather than truncated: a picker that silently kept ten of eleven is one
     // that loses a photograph without saying so.
     expect(screen.queryByText("photo-0.jpg")).toBeNull();
+  });
+
+  it("refuses a batch past the plan's allowance at the picker, for the same reason", async () => {
+    // The harder version of the refusal above. A Quote Photo is signed only *after* the
+    // Quote row is written, so a `plan_limit` from the server lands in `outstanding` —
+    // where the only offer is a retry of the same batch against the same standing cap,
+    // refused every single time. Nothing the person does on this screen clears it. At the
+    // pick it is a sentence they can act on.
+    const user = userEvent.setup();
+
+    renderForm(1);
+    await user.upload(choosePhotos(), [aPhoto("first.jpg"), aPhoto("second.jpg")]);
+
+    expect(screen.getByRole("alert").textContent).toMatch(/limit of pictures/i);
+    expect(screen.queryByText("first.jpg")).toBeNull();
+  });
+
+  it("counts what is already held against the allowance, not just the new pick", async () => {
+    // The camera hands over one photograph at a time, so an allowance reached across two
+    // separate picks is the ordinary way to reach it — and a check reading only the files
+    // in this `change` event would let an allowance of one through twice.
+    const user = userEvent.setup();
+
+    renderForm(1);
+    await user.upload(choosePhotos(), aPhoto("first.jpg"));
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText("first.jpg")).not.toBeNull();
+
+    await user.upload(choosePhotos(), aPhoto("second.jpg"));
+
+    expect(screen.getByRole("alert").textContent).toMatch(/limit of pictures/i);
+    // The one already held survives the refusal: it was within the allowance when it was
+    // picked, and dropping it would lose a photograph to the next pick's mistake.
+    expect(screen.queryByText("first.jpg")).not.toBeNull();
+    expect(screen.queryByText("second.jpg")).toBeNull();
+  });
+
+  it("says the batch is too many rather than the plan when picking fewer would work", async () => {
+    // Both refusals are true of eleven pictures against an allowance of five, and only
+    // one of the two sentences helps: *add them in smaller batches* gets the five in,
+    // while *remove one, or upgrade* sends somebody to delete a photograph they did not
+    // need to. The order of the two checks is that piece of advice.
+    const user = userEvent.setup();
+
+    renderForm(5);
+    await user.upload(
+      choosePhotos(),
+      Array.from({ length: maxImagesAtOnce + 1 }, (_unused, index) =>
+        aPhoto(`photo-${index}.jpg`),
+      ),
+    );
+
+    expect(screen.getByRole("alert").textContent).toMatch(/too many pictures at once/i);
+  });
+
+  it("caps nothing at the picker on a plan with no cap", async () => {
+    const user = userEvent.setup();
+
+    renderForm(null);
+    await user.upload(choosePhotos(), [aPhoto("first.jpg"), aPhoto("second.jpg")]);
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText("second.jpg")).not.toBeNull();
   });
 
   it("keeps them through a refusal, and attaches them to the corrected resubmit", async () => {

@@ -80,6 +80,7 @@ function renderForm(locale: string, messages: typeof en) {
         tenderItemId="an-item"
         defaults={blankQuote({ unit: "box of 50", today: "2026-08-21", reportingCurrency: "THB" })}
         reportingCurrency="THB"
+        photoAllowance={null}
       />
     </NextIntlClientProvider>,
   );

@@ -43,6 +43,19 @@ let orgId = "";
 let itemId = "";
 
 /**
+ * The plan this suite's org is on, and one without the money layer.
+ *
+ * Rows of this suite's own rather than the seeded `free` and `paid`: those are the
+ * product's public promise, and every suite in the repo runs against the same database at
+ * the same time, so a test that edited one would be changing what a dozen others were
+ * half-way through asking. The FX Buffer is the FX half of the money layer, so the org
+ * sits on the first of these throughout and moves to the second only inside the test
+ * about what a plan without it refuses.
+ */
+const planId = `plan-${run}`;
+const noMoneyPlanId = `plan-${run}-no-money`;
+
+/**
  * A day no other suite's rates are dated, so the `fx_rates` rows these Quotes cache can
  * be cleaned up by date without deleting a row another suite is standing on.
  */
@@ -160,9 +173,28 @@ async function aQuoteAt(rate: number, store: SessionCookieStore): Promise<string
 }
 
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert([
+    {
+      id: planId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: true,
+    },
+    {
+      id: noMoneyPlanId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: false,
+    },
+  ]);
+
+  if (planError) throw planError;
+
   const { data, error } = await service
     .from("orgs")
-    .insert({ name: `Buffer ${run}` })
+    .insert({ name: `Buffer ${run}`, plan_id: planId })
     .select("id")
     .single();
 
@@ -226,6 +258,11 @@ afterAll(async () => {
   }
 
   await service.from("orgs").delete().eq("id", orgId);
+
+  // After the org, never before: `orgs.plan_id` references these rows, and a plan deleted
+  // out from under an organisation still pointing at it is a foreign key refusing the
+  // teardown rather than the teardown happening.
+  await service.from("plans").delete().in("id", [planId, noMoneyPlanId]);
 });
 
 describe("reading a percentage a person typed", () => {
@@ -322,6 +359,51 @@ describe("setting the buffer", () => {
     }
 
     expect(await storedBuffer()).toBeCloseTo(0.02, 8);
+  });
+
+  it("refuses an Org Admin whose plan has no money layer, and says which", async () => {
+    // A different refusal from `not_admin` and addressed to a different person: this one
+    // is an Administrator, and nothing about their permissions is the answer. The buffer
+    // exists to price a foreign Quote into a Landed Cost, so an organisation that did not
+    // buy the money has no use for it (#179) — and the screen is withheld from them for
+    // the same reason, which makes this the endpoint answering for itself.
+    const store = await signedInAs(admin.email);
+
+    await service.from("orgs").update({ plan_id: noMoneyPlanId }).eq("id", orgId);
+
+    try {
+      expect(await setFxBuffer({ entered: "5" }, store)).toEqual({
+        ok: false,
+        reason: "not_on_plan",
+      });
+      // Before the parse, so a figure that is also malformed is still answered with the
+      // plan: sending an admin to correct a number on a screen their organisation does
+      // not have would be answering a question nobody asked.
+      expect(await setFxBuffer({ entered: "0.125" }, store)).toEqual({
+        ok: false,
+        reason: "not_on_plan",
+      });
+      expect(await storedBuffer()).toBeCloseTo(0.02, 8);
+    } finally {
+      await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
+    }
+  });
+
+  it("refuses a member on that plan as not an Admin, not as a plan they are not on", async () => {
+    // The order of the two checks, stated: an organisation's plan is not a fact to report
+    // to somebody who has no standing to change anything here anyway.
+    const store = await signedInAs(member.email);
+
+    await service.from("orgs").update({ plan_id: noMoneyPlanId }).eq("id", orgId);
+
+    try {
+      expect(await setFxBuffer({ entered: "5" }, store)).toEqual({
+        ok: false,
+        reason: "not_admin",
+      });
+    } finally {
+      await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
+    }
   });
 });
 

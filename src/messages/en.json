@@ -119,6 +119,7 @@
       "not_found": "That tender, item or picture is no longer there.",
       "no_images": "Choose at least one picture.",
       "too_many": "That is too many pictures at once. Add them in smaller batches.",
+      "plan_limit": "Your plan's limit of pictures here is reached. Remove one, or upgrade.",
       "too_large": "One of those pictures is too big, even after shrinking. Keep each one under 10 MB.",
       "not_an_image": "One of those files is not a picture this app can store.",
       "not_uploaded": "One of those pictures did not finish uploading. Try again.",
@@ -295,6 +296,7 @@
       "invalid_quantity": "Give each item a quantity greater than zero.",
       "last_item": "This is the tender's only item, so it cannot be removed.",
       "invalid_outcome": "That is not an outcome that can be recorded against an item.",
+      "plan_limit": "Your plan's limit of open tenders is reached. Record an outcome on one, or upgrade.",
       "failed": "That could not be saved. Try again."
     },
     "sourcing": {
@@ -466,6 +468,7 @@
       "error": {
         "forbidden": "You are not signed in.",
         "not_found": "That item is no longer on this tender.",
+        "not_on_plan": "Prices and profit are not part of your plan.",
         "invalid_amount": "Enter an amount in {currency}, or leave it empty.",
         "failed": "Could not save the figure. Try again."
       }
@@ -564,6 +567,7 @@
       "status": {
         "sent": "Invitation sent. They set their own password from the link.",
         "not_admin": "Only an Administrator can invite.",
+        "plan_limit": "Your plan's limit of members is reached. Disable somebody who has left, or upgrade.",
         "already_invited": "That address already has an account.",
         "send_failed": "The invitation could not be sent. Check the email settings.",
         "incomplete": "Enter both a name and an email address."
@@ -604,6 +608,7 @@
         "not_admin": "Only an Administrator can change this.",
         "not_found": "That person is not in your org.",
         "last_admin": "This is the only Administrator. Somebody else has to be made one first, or nobody would be able to invite anyone again.",
+        "plan_limit": "Your plan's limit of members is reached, so they cannot be restored. Disable somebody else, or upgrade.",
         "failed": "That did not save. Try again."
       }
     }
@@ -640,6 +645,7 @@
     "status": {
       "saved": "Saved. Quotes recorded from now on use the new figure.",
       "not_admin": "Only an Administrator can change this.",
+      "not_on_plan": "Prices and profit are not part of your plan.",
       "not_a_percentage": "That is not a number. Enter a percentage, such as 2 or 2.5.",
       "out_of_range": "Enter a percentage between 0 and 10. A 2 typed as 200 would treble every foreign price.",
       "too_precise": "Two decimal places at most — 2.25, not 2.255.",

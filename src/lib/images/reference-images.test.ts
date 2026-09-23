@@ -53,6 +53,20 @@ let otherTenderId = "";
 /** Every Tender any test made beyond the fixture, torn down however the test ended. */
 const created: string[] = [];
 
+/**
+ * The plan both fixture orgs are on, and one with nothing on it at all.
+ *
+ * A row of this suite's own rather than the seeded `free` and `paid`: those are the
+ * product's public promise and every suite in the repo runs against the same database at
+ * the same time, so a test that edited one would be changing what a dozen other suites
+ * were half-way through asking. `photos_per_item_cap: 2` puts the fixture Tender's
+ * allowance at four — two Items — which is above anything the rest of this suite records
+ * and low enough for the cap tests to reach; the other caps are null, because this suite
+ * opens several Tenders and is about none of that.
+ */
+const planId = `plan-${run}`;
+const uncappedPlanId = `plan-${run}-uncapped`;
+
 /** Every object any test put in the bucket. Nothing cascades from a row into Storage. */
 const objects: string[] = [];
 
@@ -178,8 +192,31 @@ async function uploaded(
 }
 
 beforeAll(async () => {
+  const { error: planError } = await service.from("plans").insert([
+    {
+      id: planId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: 2,
+      money_layer: false,
+    },
+    {
+      id: uncappedPlanId,
+      open_tender_cap: null,
+      membership_cap: null,
+      photos_per_item_cap: null,
+      money_layer: false,
+    },
+  ]);
+
+  if (planError) throw planError;
+
   orgId = await createOrg(`Reference images ${run}`);
   otherOrgId = await createOrg(`Reference images other ${run}`);
+
+  // Before a single Tender is opened, so nothing in the suite is ever measured against
+  // the `free` row a new organisation defaults to.
+  await service.from("orgs").update({ plan_id: planId }).in("id", [orgId, otherOrgId]);
 
   await createMember(orgId, owner);
   await createMember(otherOrgId, outsider);
@@ -213,6 +250,11 @@ afterAll(async () => {
   }
 
   await service.from("orgs").delete().in("id", [orgId, otherOrgId].filter(Boolean));
+
+  // After the orgs, never before: `orgs.plan_id` references this row, and a plan deleted
+  // out from under an organisation still pointing at it is a foreign key refusing the
+  // teardown rather than the teardown happening.
+  await service.from("plans").delete().in("id", [planId, uncappedPlanId]);
 });
 
 describe("signing an upload", () => {
@@ -569,5 +611,110 @@ describe("an image whose object has gone", () => {
 
     expect(images).toHaveLength(1);
     expect(images[0].url).toBe("");
+  });
+});
+
+/**
+ * **The plan's cap, asked of the Tender because that is where the act happens** (#179).
+ *
+ * The plan states a figure per Item, and a Reference Image arrives Unassigned — nobody
+ * has said which Item it is of, and for some of them nobody ever will. So the question
+ * "is this Item full" cannot be asked at the moment the upload is signed, and the
+ * Tender's allowance is asked instead: the per-Item figure times the Items it has.
+ *
+ * That is why both shapes are tested rather than one. A Tender with one Item and a Tender
+ * with two are the same plan and different allowances, and a check that read the figure
+ * off the plan row and stopped there would pass the first and quietly halve the second.
+ */
+describe("the plan's cap on a Tender's Reference Images", () => {
+  /** A batch of that many, described the way the browser describes one. */
+  function aBatch(count: number) {
+    return Array.from({ length: count }, () => anImage());
+  }
+
+  it("refuses the image after the allowance on a Tender with one Item", async () => {
+    const store = await signedInAs(owner.email);
+    const oneItem = await aTender(owner);
+
+    created.push(oneItem.tenderId);
+
+    const recorded = await recordReferenceImages(
+      {
+        tenderId: oneItem.tenderId,
+        storagePaths: await uploaded(2, store, oneItem.tenderId),
+      },
+      store,
+    );
+
+    if (!recorded.ok) throw new Error(`could not record images: ${recorded.reason}`);
+
+    const result = await signReferenceImageUploads(
+      { tenderId: oneItem.tenderId, images: aBatch(1) },
+      store,
+    );
+
+    expect(result).toEqual({ ok: false, reason: "plan_limit" });
+  });
+
+  it("gives a Tender with two Items twice the allowance", async () => {
+    // The fixture Tender, which has two. Four in one batch is the whole of what the plan
+    // bought and is signed; a check that had taken the per-Item figure as the Tender's
+    // would have refused this at three.
+    const store = await signedInAs(owner.email);
+
+    const result = await signReferenceImageUploads({ tenderId, images: aBatch(4) }, store);
+
+    expect(result.ok).toBe(true);
+
+    if (result.ok) objects.push(...result.uploads.map((upload) => upload.storagePath));
+  });
+
+  it("counts a placed image as one of the Tender's, not as room made", async () => {
+    // Assigning a picture to an Item is somebody saying what it is of, and it does not
+    // buy the Tender another one: the allowance was bought by the Items, not by the
+    // pictures that have found theirs.
+    const store = await signedInAs(owner.email);
+    const recorded = await recordReferenceImages(
+      { tenderId, storagePaths: await uploaded(4, store) },
+      store,
+    );
+
+    if (!recorded.ok) throw new Error(recorded.reason);
+
+    await assignReferenceImage(
+      { imageId: recorded.imageIds[0], tenderItemId: itemIds[0] },
+      store,
+    );
+
+    const result = await signReferenceImageUploads({ tenderId, images: aBatch(1) }, store);
+
+    expect(result).toEqual({ ok: false, reason: "plan_limit" });
+  });
+
+  it("caps nothing at all on a plan whose cap is null", async () => {
+    // Uncapped is the absence of a number rather than a large one, so the check has to be
+    // skipped outright rather than compared against something generous.
+    const store = await signedInAs(owner.email);
+    const recorded = await recordReferenceImages(
+      { tenderId, storagePaths: await uploaded(4, store) },
+      store,
+    );
+
+    if (!recorded.ok) throw new Error(recorded.reason);
+
+    await service.from("orgs").update({ plan_id: uncappedPlanId }).eq("id", orgId);
+
+    try {
+      const result = await signReferenceImageUploads(
+        { tenderId, images: aBatch(5) },
+        store,
+      );
+
+      expect(result.ok).toBe(true);
+
+      if (result.ok) objects.push(...result.uploads.map((upload) => upload.storagePath));
+    } finally {
+      await service.from("orgs").update({ plan_id: planId }).eq("id", orgId);
+    }
   });
 });

@@ -37,14 +37,24 @@ export function QuotePhotoControls({
   tenderId,
   quoteId,
   photos,
+  photoAllowance,
 }: {
   tenderId: string;
   quoteId: string;
   photos: QuotePhoto[];
+  /**
+   * How many more photos the *Item* may carry under the plan, or null when it caps none.
+   *
+   * The Item and not this Quote: the cap crosses every Quote on the Item (ADR-0040), so
+   * `photos.length` above cannot answer it and the number is read on the server and
+   * handed down. It is what lets the picker refuse before a phone spends an upload on a
+   * batch the signing step is going to turn away.
+   */
+  photoAllowance: number | null;
 }) {
   const t = useTranslations("quotes.photos");
   const shared = useTranslations("images");
-  const { error, progress, busy, upload } = useImageUpload();
+  const { error, progress, busy, upload } = useImageUpload({ allowance: photoAllowance });
 
   return (
     <div className="flex flex-col gap-label">

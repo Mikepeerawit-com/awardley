@@ -14,6 +14,8 @@ import {
   signUploads,
   signedReadUrls,
 } from "@/lib/images/stored-images";
+import { getOrgSettings } from "@/lib/org/org";
+import { capReached, referenceImageCap } from "@/lib/plan/plan";
 import {
   createSessionClient,
   type SessionCookieStore,
@@ -57,6 +59,19 @@ export type ReferenceImageUpload = StoredImageUpload;
  * Five pictures are one act, so a single image over the cap refuses the lot and says
  * why. The token is minted through the caller's own session, so the storage policy is
  * what decides whether the path is theirs to write.
+ *
+ * **The plan's cap is asked of the Tender, because that is where the act happens**
+ * (ADR-0040). The figure on the plan row is per Item, and a Reference Image arrives
+ * Unassigned — nobody has said which Item it is of, and for some of them nobody ever
+ * will — so a per-Item cap is a question this moment cannot answer. `referenceImageCap`
+ * turns it into the Tender's allowance, the per-Item figure times the Items it has, and
+ * the count it is measured against is every Reference Image on the Tender whether placed
+ * or not. Same promise, kept at the grain the upload really has.
+ *
+ * **Only signing is capped; `recordReferenceImages` never asks again** — see the note on
+ * `signQuotePhotoUploads`, which is the same argument: the count was made when the token
+ * was minted, and refusing after the phone has uploaded would refuse pictures already
+ * sitting in Storage.
  */
 export async function signReferenceImageUploads(
   { tenderId, images }: { tenderId: string; images: PendingImage[] },
@@ -76,13 +91,38 @@ export async function signReferenceImageUploads(
 
   // RLS turns another org's Tender into no row, which is the same answer as one deleted
   // while the picker was open — and the same answer is the right one to give.
+  // The Items come back with it, as ids and nothing else: how many there are is the only
+  // thing the cap needs, and it is a fact this lookup can carry for free rather than a
+  // second round trip on the one read that was happening anyway.
   const { data: tender } = await supabase
     .from("tenders")
-    .select("id")
+    .select("id, tender_items(id)")
     .eq("id", tenderId)
-    .maybeSingle();
+    .maybeSingle()
+    .overrideTypes<{ id: string; tender_items: { id: string }[] }, { merge: false }>();
 
   if (!tender) return { ok: false, reason: "not_found" };
+
+  const { plan } = await getOrgSettings(store);
+  const cap = referenceImageCap(plan, tender.tender_items.length);
+
+  // A null cap is no cap, and counting to hand the answer to a `capReached` that would
+  // say no whatever it is would be a round trip spent learning nothing.
+  if (cap !== null) {
+    // Assigned and Unassigned alike. Placing a picture on an Item does not make room for
+    // another: the Tender's allowance is what the plan bought, and an image that has
+    // found its Item is still one of the Tender's pictures.
+    const { count } = await supabase
+      .from("reference_images")
+      .select("id", { count: "exact", head: true })
+      .eq("tender_id", tenderId);
+
+    // A null count is a read that failed, and it fails closed — as the cap on Quote
+    // Photos and the cap on Memberships both do (ADR-0040).
+    if (count === null || capReached(cap, count, images.length)) {
+      return { ok: false, reason: "plan_limit" };
+    }
+  }
 
   return signUploads(
     { orgId: caller.orgId, owner: "tenders", entityId: tenderId, images },

@@ -34,7 +34,7 @@ import {
  * frozen into the row as it is written, and nothing about a rate service being down can
  * stop any of that happening.
  *
- * Only the Frankfurter boundary is stubbed — one of the three outbound boundaries this
+ * Only the Frankfurter boundary is stubbed — one of the four outbound boundaries this
  * project mocks. Everything else is real, because what is risky here lives in the
  * database: the generated `unit_price_reporting`, the Reporting Currency the Tender was
  * stamped with, the `alternative_named` constraint, the

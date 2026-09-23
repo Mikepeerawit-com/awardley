@@ -63,12 +63,13 @@ describe.each([
   ["en", en],
   ["zh-Hans", zhHans],
 ])("the Settings column, in %s", (locale, messages) => {
-  it("offers an Org Admin their own preferences and the organisation's three screens", () => {
+  it("offers an Org Admin their own preferences and the organisation's four screens", () => {
     expect(rowsIn(drawFor(locale, messages, true))).toEqual([
       ["/settings", messages.preferences.title],
       ["/settings/people", messages.nav.people],
       ["/settings/group-robot", messages.nav.groupRobot],
       ["/settings/currency-conversion", messages.nav.currencyConversion],
+      ["/settings/billing", messages.nav.billing],
     ]);
   });
 
@@ -98,17 +99,24 @@ describe.each([
     ).toBeNull();
   });
 
-  it("withholds only Foreign prices from an Org Admin whose plan has no money layer", () => {
+  it("withholds only Foreign prices from an Org Admin whose plan has no money layer, and keeps Plan", () => {
     // The plan withholds a *screen*, not a group — which is the distinction this asserts
     // as a whole list rather than as an absence. People and the WeCom group are still
     // this Administrator's to run: what the free tier loses is the money, and the FX
-    // Buffer is the FX half of it (#179). A heading left standing over two rows is
+    // Buffer is the FX half of it (#179). A heading left standing over three rows is
     // correct here and a heading over none would not be, so the group's name is checked
     // too.
+    //
+    // **Plan is in this list and not the one above it only**, which is the claim #180
+    // adds: it is where a free organisation buys the money layer, so a column that
+    // withheld it alongside Foreign prices would put the upgrade behind the upgrade. It
+    // is asserted here rather than in a test of its own because the whole-list shape is
+    // what makes the absence of the *other* row meaningful in the same breath.
     expect(rowsIn(drawFor(locale, messages, true, false))).toEqual([
       ["/settings", messages.preferences.title],
       ["/settings/people", messages.nav.people],
       ["/settings/group-robot", messages.nav.groupRobot],
+      ["/settings/billing", messages.nav.billing],
     ]);
 
     expect(
@@ -146,7 +154,7 @@ describe("every row of the column", () => {
 
     // The empty case would pass the loop below silently, and a column that stopped
     // drawing anything is precisely one of the faults this is here for.
-    expect(paths).toHaveLength(4);
+    expect(paths).toHaveLength(5);
 
     // Reported as pairs so a failure names the path that has no page, rather than
     // saying `false` was not `true`.

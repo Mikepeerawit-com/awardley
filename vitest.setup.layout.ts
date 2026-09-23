@@ -50,6 +50,14 @@ vi.mock("@/app/actions/admin", () => ({
   setGroupRobotAction: async () => ({}),
   setFxBufferAction: async () => ({}),
 }));
+// Its own module rather than `admin`, and reached only by the Billing screen: the three
+// actions there end at Stripe rather than at a row of ours, which is a boundary of a
+// different kind from everything in `admin` (#180).
+vi.mock("@/app/actions/billing", () => ({
+  startTrialAction: async () => ({}),
+  startCheckoutAction: async () => ({}),
+  openPortalAction: async () => ({}),
+}));
 vi.mock("@/app/actions/locale", () => ({ switchLocale: async () => ({}) }));
 // Reached by the app bar's menu, on every screen in the record. The switcher it belongs
 // to renders for nobody — it needs two live Memberships — but the module is imported

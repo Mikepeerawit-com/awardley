@@ -411,9 +411,10 @@ The one place a member changes what is theirs and an Org Admin changes what is t
 organisation's. It has two groups, and which group a thing is in is the whole of what the
 grouping says: **Preferences** is what affects the reader alone — the language they read in
 and the **Theme** they read it in — and every member has one. **Organisation** is what
-affects everybody, and only an **Org Admin** has one: People, the Group Robot and
-Converting foreign prices, which had been three loose rows in a menu with no collective
-name until this term existed.
+affects everybody, and only an **Org Admin** has one: People, the Group Robot,
+Converting foreign prices and the **Plan** — the first three had been three loose rows in
+a menu with no collective name until this term existed, and the fourth is where the
+organisation pays (ADR-0041).
 
 The two are named apart so that an Org Admin can tell at a glance which of their changes
 land on their colleagues' screens. Where the groups sit and what is drawn for whom is
@@ -443,9 +444,10 @@ deliberately not a role enum, but it is a property of a **Membership** rather th
 person: admin of one organisation says nothing about any other. An organisation must
 always have at least one, so the last one cannot be Disabled (ADR-0017).
 
-It is what the **Organisation** group of **Settings** belongs to: those three screens are
+It is what the **Organisation** group of **Settings** belongs to: those four screens are
 the whole of what the capability governs beyond inviting, and a member who is not an Org
-Admin has no such group.
+Admin has no such group. Paying is one of them: only an Org Admin starts a Trial, goes
+out to Stripe to subscribe, or opens the billing portal (ADR-0041).
 _Label_: en "Administrator" · zh 组织管理员.
 _Avoid_: admin, owner, superuser, manager
 
@@ -538,4 +540,29 @@ Owner keeps the ranked Quotes, the conversion, selection and ruling out, and los
 Cost, Selling price, Margin, Coverage and the FX Buffer setting. Prices, tier names and
 trial terms are not here and not in the repo; they are Stripe's, which is what moves an
 organisation between plans.
+
+**Stripe is the source of truth and the organisation's plan is a read model of it**
+(ADR-0041). An Org Admin subscribes through Stripe Checkout and changes the subscription
+in Stripe's Customer Portal; the app never sees a card. Stripe's webhook is the one thing
+that moves an organisation onto the paid plan or off it, and it also records how many
+live Memberships the subscription pays for — a second cap on the same count an Invite
+already makes, and the tighter of the two wins. A subscription whose last payment failed
+stays paid for as long as Stripe keeps retrying it; the day Stripe gives up, the
+organisation lapses to free, with everything readable and nothing deleted. The one plan
+state Stripe does not own is the **Trial**.
+_Label_: the screen: en "Plan" · zh 套餐. Stripe's "seats" are live Memberships here.
 _Avoid_: tier, subscription, seat, quota, licence
+
+**Trial**:
+The paid plan without a card, for a fixed time. A state of the organisation — the paid
+plan and a day it ends — rather than a Stripe subscription, because the point is that no
+card was asked for: Checkout happens the day the organisation converts, if it does. An
+Org Admin starts it from the Plan screen, once; how long it runs is Stripe's to say, read
+off the price at the moment it starts, and never a figure in this repo. It ends when the
+morning run finds its day has passed and puts the organisation back on free — lapsing,
+exactly as a cancelled subscription lapses: nothing is deleted and the surplus is
+read-only. Subscribing before then converts it, and the end date goes. An organisation
+whose Trial has ended is not offered another (ADR-0041).
+_Label_: en "Free trial" · zh 免费试用.
+_Avoid_: demo, evaluation, grace period — the last is what Stripe's retries are, and it
+is not a plan state

@@ -5,6 +5,7 @@ import {
   noPlan,
   referenceImageCap,
   remainingUnderCap,
+  effectiveMembershipCap,
   type Plan,
 } from "./plan";
 
@@ -113,5 +114,53 @@ describe("referenceImageCap", () => {
     // the allowance a Tender has earned is nothing. It is not `null` — `null` here would
     // read as uncapped, which is the opposite answer.
     expect(referenceImageCap(planWith({ photosPerItemCap: 5 }), 0)).toBe(0);
+  });
+});
+
+/**
+ * The two halves of the cap on live Memberships (#180), and the rule that neither may
+ * override the other.
+ *
+ * Every other cap in this file has one source. This one has two — what the tier allows
+ * and what the subscription pays for — and the whole of the arithmetic is which one wins.
+ * Pure, and tested pure, because both wrong answers are silent: the wrong way round, an
+ * organisation adds people nobody is paying for, and there is no screen on which that
+ * looks like anything.
+ */
+describe("effectiveMembershipCap", () => {
+  it("is the plan's own cap when nothing is being paid for", () => {
+    // The free tier, and every organisation that has never subscribed: the tier's figure
+    // is the whole answer, which is what keeps #179's enforcement points unchanged for
+    // everybody who has not met Stripe yet.
+    expect(effectiveMembershipCap(planWith({ membershipCap: 3 }), null)).toBe(3);
+  });
+
+  it("is uncapped when neither half states a number", () => {
+    // Null is the absence of a number on both sides, and the absence of both is still an
+    // absence rather than a zero.
+    expect(effectiveMembershipCap(planWith({ membershipCap: null }), null)).toBeNull();
+  });
+
+  it("is what was paid for when the tier states no cap", () => {
+    // The ordinary paid organisation. The `paid` row promises nothing but "no cap"
+    // (#179), so without this half a subscription would be a licence to add people it is
+    // not paying for — and a cap that fails in that direction is the one that costs
+    // money rather than a refusal.
+    expect(effectiveMembershipCap(planWith({ membershipCap: null }), 5)).toBe(5);
+  });
+
+  it("is the tighter of the two when both state a number", () => {
+    // Neither half may be lifted by the other, in either direction. A tier allowing three
+    // does not become five because somebody bought five, and a subscription for two does
+    // not become three because the tier would have allowed three.
+    expect(effectiveMembershipCap(planWith({ membershipCap: 3 }), 5)).toBe(3);
+    expect(effectiveMembershipCap(planWith({ membershipCap: 5 }), 2)).toBe(2);
+  });
+
+  it("allows nothing on the plan a failed read falls back to, whatever was paid for", () => {
+    // `noPlan` caps at zero and zero is tighter than any quantity, so an unreadable plan
+    // row stays the refusal somebody reports rather than becoming an upgrade bought with
+    // a subscription the row could not be read to confirm.
+    expect(effectiveMembershipCap(noPlan, 5)).toBe(0);
   });
 });

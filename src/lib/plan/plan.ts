@@ -92,6 +92,40 @@ export function remainingUnderCap(cap: number | null, count: number): number | n
 }
 
 /**
+ * How many live Memberships this organisation may hold, once what it *bought* is taken
+ * into account as well as what its tier allows (#180).
+ *
+ * The plan's `membershipCap` is what the tier permits; `paidMemberships` is how many
+ * people the Stripe subscription pays for, copied onto the org row from the quantity on
+ * the subscription. The effective cap is the tighter of the two, and neither may lift the
+ * other:
+ *
+ *   * A subscription for five on a tier allowing three is still three. The tier is the
+ *     product's promise and buying more of a smaller thing does not enlarge it.
+ *   * A subscription for two on the uncapped `paid` tier is two. This is the direction
+ *     that matters most: `paid` promises "no cap" precisely so its figures cannot go out
+ *     of date, so without this half every paying organisation would be able to add people
+ *     nobody is paying for, silently and with no screen on which it looks wrong.
+ *
+ * **Null on either side is the absence of a number, never a large one** — the same rule
+ * {@link capReached} is written to, so an uncapped tier with no subscription comes out
+ * `null` and enters no comparison at all. The arithmetic is `Math.min` rather than a
+ * chain of comparisons for the same reason: both figures are counts of people, and the
+ * tighter of two counts is a minimum.
+ *
+ * Quantity changes made in Stripe's billing portal reach this figure through the
+ * subscription webhook, which re-reads and rewrites absolute state — so an organisation
+ * that buys two more people is allowed them on the next act, and one that gives two back
+ * is refused the next add without anything being deleted.
+ */
+export function effectiveMembershipCap(plan: Plan, paidMemberships: number | null): number | null {
+  if (plan.membershipCap === null) return paidMemberships;
+  if (paidMemberships === null) return plan.membershipCap;
+
+  return Math.min(plan.membershipCap, paidMemberships);
+}
+
+/**
  * How many Reference Images a Tender with this many Items may carry.
  *
  * A Reference Image arrives on the Tender and is placed on an Item afterwards, or never

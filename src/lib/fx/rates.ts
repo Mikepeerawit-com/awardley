@@ -36,7 +36,7 @@ import type { createSessionClient } from "@/lib/supabase/session-client";
  */
 
 /**
- * The outbound boundary, injected so tests can stand at it — one of exactly three stubbed
+ * The outbound boundary, injected so tests can stand at it — one of exactly four stubbed
  * in this project (see the note in vitest.config.mts). Not a global `fetch` stub: this
  * runs inside a server action that also talks to Postgres over HTTP, and taking `fetch`
  * out globally would take `supabase-js` with it.

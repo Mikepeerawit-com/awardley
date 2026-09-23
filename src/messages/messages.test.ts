@@ -10,6 +10,8 @@ import { setPasswordErrors } from "@/lib/auth/password";
 import { signupErrors } from "@/lib/auth/signup";
 import { inviteStatuses, wecomUserIdStatuses } from "@/lib/auth/invite";
 import { pricingProblems, selectionProblems } from "@/lib/comparison/sheet";
+import { checkoutRefusals, portalRefusals } from "@/lib/billing/checkout";
+import { trialRefusals } from "@/lib/billing/trial";
 import { fxBufferStatuses } from "@/lib/org/fx-buffer";
 import { membershipDisableStatuses } from "@/lib/org/members";
 import { imageProblems } from "@/lib/images/images";
@@ -329,6 +331,17 @@ describe.each(locales)("%s wording", (locale) => {
     // Quote and no Quote already frozen.
     const missing = fxBufferStatuses.filter(
       (status) => !flat.has(`currencyConversion.status.${status}`),
+    );
+
+    expect(missing).toEqual([]);
+  });
+
+  it("has a sentence for every way paying can be refused", () => {
+    // Three refusal lists feed one `billing.status.*` namespace, rendered from a
+    // template the source scan cannot see. A refusal without a sentence lands on the
+    // Plan screen as a raw key, on the one screen where a reader was about to pay.
+    const missing = [...trialRefusals, ...checkoutRefusals, ...portalRefusals].filter(
+      (status) => !flat.has(`billing.status.${status}`),
     );
 
     expect(missing).toEqual([]);

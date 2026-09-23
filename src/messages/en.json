@@ -105,7 +105,8 @@
     "menu": "Menu",
     "back": "Back",
     "itemLocation": "{client} · {item}",
-    "currencyConversion": "Foreign prices"
+    "currencyConversion": "Foreign prices",
+    "billing": "Plan"
   },
   "images": {
     "viewing": "{position} of {total}",
@@ -652,6 +653,48 @@
       "save_failed": "That could not be saved. The figure is unchanged — try again."
     },
     "percentSign": "%"
+  },
+  "billing": {
+    "title": "Plan",
+    "description": "What your organisation pays for, and how to change it. The card is held by Stripe — this app never sees it.",
+    "plan": {
+      "free": "Your organisation is on the free plan.",
+      "paid": "Your organisation is on a paid plan."
+    },
+    "trial": {
+      "ends": "Your free trial runs until {date}.",
+      "ended": "Your free trial ended on {date}."
+    },
+    "people": "Your plan pays for {paid} people, and {live} of them are in the organisation now.",
+    "pastDue": "The last payment did not go through. Stripe is retrying it — update your card in the billing portal.",
+    "thanks": "Thank you — your plan updates as soon as Stripe confirms the payment.",
+    "trialForm": {
+      "explain": "Try the paid plan for a while without handing over a card. One trial per organisation.",
+      "start": "Start free trial",
+      "starting": "Starting…"
+    },
+    "subscribeForm": {
+      "explain": "Pay every month for as many people as you need. The number can be changed afterwards.",
+      "label": "People to pay for",
+      "submit": "Subscribe",
+      "submitting": "Opening Stripe…"
+    },
+    "portalForm": {
+      "explain": "Change the card, change how many people your plan pays for, or stop paying.",
+      "submit": "Manage billing",
+      "submitting": "Opening Stripe…"
+    },
+    "status": {
+      "not_admin": "Only an Administrator can change what the organisation pays for.",
+      "trial_used": "This organisation has already had its free trial.",
+      "already_paying": "This organisation is already paying, so there is no trial left to start.",
+      "no_trial": "There is no free trial on offer at the moment.",
+      "save_failed": "That could not be saved. Nothing has changed — try again.",
+      "no_origin": "This app does not know its own address, so Stripe has nowhere to send you back to. Tell whoever set it up.",
+      "too_few": "Pay for at least as many people as are in the organisation now.",
+      "no_customer": "Nothing has been paid for this organisation yet, so there is nothing to manage.",
+      "stripe_failed": "Stripe could not be reached. Nothing has been charged — try again."
+    }
   },
   "email": {
     "reminder": {

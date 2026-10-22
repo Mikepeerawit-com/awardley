@@ -404,6 +404,60 @@ money banked, not money at stake, and drops out. Replaces the deleted "total quo
 value", which summed competing Quotes for the same goods and so overstated by ~7×.
 _Avoid_: pipeline, total quoted value, open value
 
+### Purchasing
+
+Everything in this section is settled language and unwritten code: ADR-0042 opened the
+module on 21 October 2026, and the ticket that builds it will take the `_Not built yet_`
+lines off.
+
+**Supplier**:
+A company we buy from, held once per organisation and pointed at by every Quote they
+give us. Named here for the first time because a Purchase Order is addressed to one, and
+a document needs a recipient with a contact person, a way to reach them and an address —
+which a name and a country are not. A trading company's supplier list is an asset of its
+own, not a side effect of its Quotes.
+_Not built yet_: a supplier is a name and a country created in passing from a Quote;
+there is no screen and no contact.
+_Label_: en "Supplier" · zh 供应商.
+_Avoid_: vendor, source, manufacturer — the last may be true and is not what the word
+means here
+
+**Purchase Order**:
+One order to one Supplier, under one Tender, listing the won Tender Items whose Selected
+Quote is theirs. Raised by the Owner after the win; a Tender won across three suppliers
+raises three. It is the first link in the chain after "won", and there is no Sales Order
+before it: the sale *is* the won Item, which already says the client, the quantity and
+the selling price (ADR-0042). Priced in the Supplier's currency and derived into the
+Reporting Currency at the Quote's Frozen Rate, never at a fresh one.
+Its states are facts — **Draft**, **Sent**, **Confirmed**, **Cancelled** — read off
+dates the way Progress is, not a column somebody sets. Sent is the human's record that
+the Supplier was given the document, by whatever channel; the app does not send it.
+Confirmed carries the day the Supplier promised. A Draft may be deleted; a Sent order is
+only ever Cancelled, because the Supplier has seen it.
+_Not built yet_.
+_Label_: en "Purchase order" · zh 采购单; the states en "Draft" / "Sent" / "Confirmed" /
+"Cancelled" · zh 草稿 / 已发出 / 已确认 / 已取消.
+_Avoid_: PO as a label (it is fine in conversation), order, sales order, requisition
+
+**Purchase Line**:
+One Tender Item on one Purchase Order: quantity, unit price and currency, pre-filled
+from the Selected Quote and then edited, because clients award fewer than they asked for
+and suppliers move on price once the order is real. Keeps a pointer to the Quote it came
+from, and **never writes back to it or to Landed Cost** — what was quoted, what the Bid
+was costed on and what we actually bought at are three facts (ADR-0042).
+_Not built yet_.
+_Label_: the document shows items, not "lines"; the word is ours.
+_Avoid_: line item, order item, PO line
+
+**Not Yet Ordered**:
+A won Tender Item whose ordered quantity — summed over its Purchase Lines on orders not
+Cancelled — is short of what was won. Derived, never stored. The purchasing counterpart
+of Not Yet Sourced: the finishable list of what the win still obliges us to buy, which
+empties by raising orders and refills when one is Cancelled or an Outcome is cleared.
+_Not built yet_.
+_Label_: named by what is owed rather than by its condition — en "To order" · zh 待采购.
+_Avoid_: unordered, pending purchase, open, backlog
+
 ### Identity
 
 **Settings**:
